@@ -1,0 +1,16 @@
+{
+  "source_directories": ["."],
+  "strict": true,
+  "ignore_all_errors": [
+    "env/",
+    ".env/",
+    "venv/",
+    ".venv/"
+  ],
+  "search_path": [
+    "env/lib/python3.9/site-packages",
+    ".env/lib/python3.9/site-packages",
+    "venv/lib/python3.9/site-packages",
+    ".venv/lib/python3.9/site-packages"
+  ]
+}
