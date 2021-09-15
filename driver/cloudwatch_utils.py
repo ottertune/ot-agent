@@ -4,7 +4,7 @@ import logging
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from mypy_boto3_cloudwatch.client import CloudWatchClient
-from driver_lib.aws import AwsWrapper, get_sts_credentials
+# from driver_lib.aws import AwsWrapper, get_sts_credentials
 from driver.exceptions import CloudWatchException, DriverConfigException
 
 # TODO make cloudwatch work locally
@@ -16,34 +16,35 @@ def cloudwatch_collector(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
 def _prepare_for_cloudwatch(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     """Prepare db_id, client, and list of metrics info so that we
     can collect data from cloudwatch"""
-
+    # TODO(nkaviratna) reimplement this in agent friendly manner
+    raise NotImplementedError
     # TODO(bohan): [OTT-312]change arn to role_arn when the frontend is supported
     # tokens = [
     #     driver_conf["aws_credentials"]["arn"],
     #     driver_conf["aws_credentials"]["external_id"],
     #     driver_conf["rds_identifier"],
     # ]
-    try:
-        # todo get these into agent
-        role_arn, external_id, rds_identifier = "None", "None", "None"
-        creds = get_sts_credentials(role_arn, external_id, AwsWrapper.sts_client())
-    except Exception as ex:
-        msg = "Failed to get encrypted data / credentials"
-        raise DriverConfigException(msg, ex) from ex
+    # try:
+    #     # todo get these into agent
+    #     role_arn, external_id, rds_identifier = "None", "None", "None"
+    #     creds = get_sts_credentials(role_arn, external_id, AwsWrapper.sts_client())
+    # except Exception as ex:
+    #     msg = "Failed to get encrypted data / credentials"
+    #     raise DriverConfigException(msg, ex) from ex
 
-    preparations: Dict[str, Any] = {}
-    preparations["db_identifier"] = rds_identifier
-    preparations["client"] = AwsWrapper.cloudwatch_client(
-        access_key_id=creds["AccessKeyId"],
-        secret_access_key=creds["SecretAccessKey"],
-        region_name=driver_conf["db_region"],
-        session_token=creds["SessionToken"],
-    )
-    preparations["metrics_to_retrieve"] = driver_conf[
-        "metrics_to_retrieve_from_source"
-    ]["cloudwatch"]
-    preparations["now_time"] = datetime.utcnow()
-    return preparations
+    # preparations: Dict[str, Any] = {}
+    # preparations["db_identifier"] = rds_identifier
+    # preparations["client"] = AwsWrapper.cloudwatch_client(
+    #     access_key_id=creds["AccessKeyId"],
+    #     secret_access_key=creds["SecretAccessKey"],
+    #     region_name=driver_conf["db_region"],
+    #     session_token=creds["SessionToken"],
+    # )
+    # preparations["metrics_to_retrieve"] = driver_conf[
+    #     "metrics_to_retrieve_from_source"
+    # ]["cloudwatch"]
+    # preparations["now_time"] = datetime.utcnow()
+    # return preparations
 
 
 def _get_metrics_from_cloudwatch(
