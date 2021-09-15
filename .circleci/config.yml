@@ -9,9 +9,9 @@ jobs:
       - image: cimg/python:3.8.8
     steps:
       - checkout
-      - run:
-          name: Install pip dependencies
-          command: pip install -r requirements-dev.txt
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
           name: Lint
           command: pylint driver/ tests/
@@ -37,9 +37,9 @@ jobs:
           MYSQL_TCP_PORT: 3307
     steps:
       - checkout
-      - run:
-          name: Install pip dependencies
-          command: pip install -r requirements-dev.txt
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
           name: Waiting for MySQL 8 to be ready
           command: |
@@ -87,9 +87,9 @@ jobs:
           PGPORT: 5434
     steps:
       - checkout
-      - run:
-          name: Install pip dependencies
-          command: pip install -r requirements-dev.txt
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
       - run:
       # Our primary container isn't Postgres so run a sleep command until it's ready.
           name: Waiting for Postgres 9.6 to be ready
