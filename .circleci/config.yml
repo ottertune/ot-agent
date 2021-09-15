@@ -14,18 +14,16 @@ jobs:
           pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
       - run:
-          command: |
-            pylint driver/ tests/
           name: Lint
+          command: pylint driver/ tests/
       - run:
+          name: typecheck-ci
           # There may be a better way to specify the search path
           command: |
             pyre --noninteractive --search-path /home/circleci/.pyenv/versions/3.8.8/lib/python3.8/site-packages
-          name: typecheck-ci
       - run:
-          command: |
-            pytest
           name: Test
+          command: pytest
   
   mysql_test:
     docker:
