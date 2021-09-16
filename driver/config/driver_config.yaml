@@ -1,0 +1,71 @@
+# OtterTune Driver Configuration for On-Prem Deployment
+# On-Prem customers need to specify correct driver option values in this config file
+
+# ====================================================================
+#  SERVER OPTIONS
+# ====================================================================
+# This section is required for connecting to the ottertune compute server
+
+# URL of the OtterTune server that the driver communicates with
+server_url: 'http://localhost:8000'
+
+# HTTP proxy used to connect to the server. If you don't need proxy, leave it blank
+server_http_proxy: ''
+
+# HTTPS proxy used to connect to the server. If you don't need proxy, leave it blank
+server_https_proxy: ''
+
+# Database unique identifier in the OtterTune server, the driver will upload data to it
+database_id: 15213
+
+# ====================================================================
+#  DATABASE OPTIONS
+# ====================================================================
+# This section is required for connecting to the target database
+
+# Database type (mysql or postgres)
+db_type: 'postgres'
+
+# Database host ip address
+db_host: 'localhost'
+
+# Database port
+db_port: 32768
+
+# Database user used to connect to the target database
+db_user: 'database_username'
+
+# Database password used to connect to the target database
+db_password: 'database_password'
+
+# Require SSL connection to the database. If set to true, you need to specify ssl information
+db_enable_ssl: false
+
+# File containing the SSL certificate authority. If ssl is disabled, leave it blank
+db_ssl_ca: ''
+
+# File containing the SSL certificate file. If ssl is disabled, leave it blank
+db_ssl_cert: ''
+
+# File containing the SSL key. If ssl is disabled, leave it blank
+db_ssl_key: ''
+
+# If you need more parameters to connect to the database besides the above ones,
+# you can add options in db_conn_extend. For example,
+# db_conn_extend:
+#     pool_size: 10
+#     autocommit: false
+# For MySQL, we use mysql-connector-python, supported connection parameters can be found in:
+# https://dev.mysql.com/doc/connector-python/en/connector-python-connectargs.html
+# For Postgres, we use psycopg2, supported parameters can be found here:
+# https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+db_conn_extend: null
+
+# ====================================================================
+#  DRIVER OPTIONS
+# ====================================================================
+# Setup pertinent to ottertune agent driver behavior
+
+api_key: "test_file_key"
+db_key: "test_db_key"
+monitor_interval: 60
