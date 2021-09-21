@@ -74,6 +74,7 @@ def collect_data_from_database(driver_conf: Dict[str, Any]) -> Observation:
         "knobs_data": knobs,
         "metrics_data": metrics,
         "summary": summary,
-        "db_key": driver_conf["db_key"]
+        "db_key": driver_conf["db_key"],
+        "organization_id": driver_conf["organization_id"]
     }
     return observation

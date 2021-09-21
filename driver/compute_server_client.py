@@ -26,6 +26,7 @@ class Observation(TypedDict):
         str, Any
     ]  # summary information like observation time, database version, etc
     db_key: str
+    organization_id: str
 
 
 class DriverStatus(TypedDict):
