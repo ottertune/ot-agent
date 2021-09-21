@@ -25,7 +25,7 @@ def _test_onprem_config_data() -> Dict[str, Any]:
         "server_url": "test_server_url",
         "api_key": "test_api_key",
         "db_key": "test_db_key",
-        "organization_id": "test_organization"
+        "organization_id": "test_organization",
         "database_id": 1,
         "server_http_proxy": "test_server_http_proxy",
         "server_https_proxy": "test_server_https_proxy",
@@ -46,7 +46,7 @@ def _test_onprem_config_data() -> Dict[str, Any]:
         "db_provider": "on_premise",
         "api_key": "test_api_key",
         "db_key": "test_db_key",
-        "organization_id": "test_organization"
+        "organization_id": "test_organization",
         "enable_tuning": True,
         "enable_restart": False,
         "monitor_interval": 60,
