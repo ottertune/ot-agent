@@ -3,6 +3,7 @@
 # OTTERTUNE_DB_TYPE eg: postgres, mysql
 # OTTERTUNE_API_KEY - secret key granted from ottertune.com
 # OTTERTUNE_DB_KEY - db identifier key from ottertune.com
+# OTTERTUNE_ORG_ID - organization id from ottertune.com
 # OTTERTUNE_DB_USERNAME - username to access database
 # OTTERTUNE_DB_PASSWORD - password to access database
 # OTTERTUNE_HOSTNAME - hostname of the database

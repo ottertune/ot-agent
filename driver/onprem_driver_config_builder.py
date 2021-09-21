@@ -48,6 +48,7 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
 
     api_key: StrictStr
     db_key: StrictStr
+    organization_id: StrictStr
 
     monitor_interval: StrictInt
 
@@ -154,6 +155,7 @@ class OnPremDriverConfig: # pylint: disable=too-many-instance-attributes
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
+    organization_id: str # Org id handed to agent proxy to identify database
 
     monitor_interval: int # how frequently to query database for metrics
 

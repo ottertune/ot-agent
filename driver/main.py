@@ -92,6 +92,12 @@ def _get_args() -> argparse.Namespace:
         help="override db type (postgres or mysql)",
         default=None,
     )
+    parser.add_argument(
+        "--override-organization-id",
+        type=str,
+        help="override organization-id",
+        default=None,
+    )
     return parser.parse_args()
 
 
@@ -106,6 +112,7 @@ class Overrides(NamedTuple):
     override_port: str
     override_api_key: str
     override_db_key: str
+    override_organization_id: str
     override_db_type: str
     monitor_interval: int
 
@@ -132,6 +139,8 @@ def poll_config_and_schedule_monitor_job(
         config.api_key = overrides.override_api_key
     if overrides.override_db_key:
         config.db_key = overrides.override_db_key
+    if overrides.override_organization_id:
+        config.override_organization_id = overrides.override_organization_id
     if overrides.override_db_type:
         config.db_type = overrides.override_db_type
 
@@ -159,6 +168,7 @@ def run() -> None:
         override_port=args.override_port,
         override_api_key=args.override_api_key,
         override_db_key=args.override_db_key,
+        override_organization_id=args.override_organization_id,
         override_db_type=args.override_db_type,
         monitor_interval=args.monitor_interval,
     )
