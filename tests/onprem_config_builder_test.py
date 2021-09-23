@@ -39,7 +39,7 @@ def _test_onprem_config_data() -> Dict[str, Any]:
         "db_ssl_key": "",
         "db_enable_ssl": False,
         "db_conn_extend": {"pool_size": 10},
-        "monitor_interval": 60
+        "monitor_interval": 60,
     }
 
     partial_onprem_config_from_server: Dict[str, Any] = {
@@ -97,6 +97,7 @@ def test_partial_onprem_config_from_file_invalid_db_ssl(
         PartialOnPremConfigFromFile(**test_data_from_file)
     assert "db_enable_ssl" in str(ex.value)
 
+
 def test_partial_onprem_config_from_file_none_db_conn_extend(
     test_onprem_config_data: Dict[str, Any]
 ) -> None:
@@ -106,7 +107,9 @@ def test_partial_onprem_config_from_file_none_db_conn_extend(
     partial_config = PartialOnPremConfigFromFile(**test_data_from_file).dict()
     assert test_data_from_file == partial_config
 
-def test_create_onprem_driver_config_builder_invalid_config(test_onprem_config_data: Dict[str, Any]
+
+def test_create_onprem_driver_config_builder_invalid_config(
+    test_onprem_config_data: Dict[str, Any]
 ) -> None:
     with pytest.raises(DriverConfigException) as ex:
         with tempfile.NamedTemporaryFile("w") as temp:

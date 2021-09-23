@@ -2,11 +2,11 @@
 
 from datetime import datetime
 import logging
+from requests import Session
 
 from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.onprem_driver_config_builder import OnPremDriverConfig
-from driver.request import build_request_session
 from driver.compute_server_client import ComputeServerClient
 from driver.database import collect_observation_for_on_prem
 
@@ -17,7 +17,7 @@ APPLY_EVENT_JOB_ID = "apply_event_job"
 
 def driver_pipeline_for_onprem(
     config: OnPremDriverConfig,
-    job_id: str, # pylint: disable=unused-argument
+    job_id: str,  # pylint: disable=unused-argument
 ) -> None:
     """
     Run the core pipeline for the driver in on-prem deployment
@@ -29,9 +29,8 @@ def driver_pipeline_for_onprem(
 
     logging.debug("Posting observation data to the server.")
 
-    req_session = build_request_session()
     compute_server_client = ComputeServerClient(
-        config.server_url, req_session, config.api_key
+        config.server_url, Session(), config.api_key
     )
 
     compute_server_client.post_observation(observation)
