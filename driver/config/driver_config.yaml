@@ -7,7 +7,7 @@
 # This section is required for connecting to the ottertune compute server
 
 # URL of the OtterTune server that the driver communicates with
-server_url: 'https://dev.api.ottertune.com'
+server_url: 'http://dev.api.ottertune.com'
 
 # HTTP proxy used to connect to the server. If you don't need proxy, leave it blank
 server_http_proxy: ''
@@ -22,6 +22,9 @@ database_id: 15213
 #  DATABASE OPTIONS
 # ====================================================================
 # This section is required for connecting to the target database
+
+# Database identifier
+db_identifier: "<db_identifier_here>"
 
 # Database type (mysql or postgres)
 db_type: 'postgres'
@@ -61,6 +64,8 @@ db_ssl_key: ''
 # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 db_conn_extend: null
 
+metric_source: ["cloudwatch"]
+
 # ====================================================================
 #  DRIVER OPTIONS
 # ====================================================================
@@ -70,3 +75,4 @@ api_key: "test_file_key"
 db_key: "test_db_key"
 organization_id: "test_org_id"
 monitor_interval: 60
+aws_region: "us-east-2"

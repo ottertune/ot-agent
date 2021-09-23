@@ -3,7 +3,6 @@ The driver pipeline function. It's responsible for a single tuning/monitoring lo
 """
 
 import time
-from dataclasses import asdict
 from typing import Dict, Any
 
 from driver.compute_server_client import Observation
@@ -27,10 +26,9 @@ def collect_observation_for_on_prem(config: OnPremDriverConfig) -> Observation:
         MysqlCollectorException: unable to connect to MySQL database or get version.
         PostgresCollectorException: unable to connect to Postgres database or get version.
     """
-    observation = collect_data_from_database(asdict(config))
-    # TODO do we need the agent to collect cloudwatch data too?
-    # metrics_from_sources = collect_data_from_metric_sources(config._asdict())
-    # observation['metrics_data']['global'].update(metrics_from_sources)
+    observation = collect_data_from_database(config._asdict())
+    metrics_from_sources = collect_data_from_metric_sources(config._asdict())
+    observation["metrics_data"]["global"].update(metrics_from_sources)
     return observation
 
 
