@@ -3,7 +3,6 @@ The driver pipeline function. It's responsible for a single tuning/monitoring lo
 """
 
 import time
-from dataclasses import asdict
 from typing import Dict, Any
 
 from driver.compute_server_client import Observation

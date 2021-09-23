@@ -4,7 +4,6 @@ It fetches the necessary information to run the driver pipeline from the local f
 """
 
 from typing import Dict, Any, Optional, NamedTuple, List
-import yaml
 import json
 
 from pydantic import (
@@ -15,6 +14,7 @@ from pydantic import (
     validator,
     ValidationError,
 )
+import yaml
 
 from driver.aws.rds import get_db_version, get_db_port, get_db_hostname, get_db_type
 from driver.aws.wrapper import AwsWrapper
@@ -188,6 +188,7 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         self.rds_client = AwsWrapper.rds_client(aws_region)
 
     def from_file(self, config_path: str) -> DriverConfigBuilder:
+        """build config options from config file"""
         with open(config_path, "r") as config_file:
             data = yaml.safe_load(config_file)
             if not isinstance(data, dict):
@@ -203,11 +204,11 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
                     "the driver option from file is missing or invalid"
                 )
                 raise DriverConfigException(msg, ex) from ex
-
-            self.config.update(data)
+            self.config.update(partial_config_from_file)
         return self
 
     def from_rds(self, db_instance_identifier) -> DriverConfigBuilder:
+        """build config options from rds description of database"""
         config_from_rds = {
             "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
             "db_port": get_db_port(db_instance_identifier, self.rds_client),
@@ -225,19 +226,24 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
             )
             raise DriverConfigException(msg, ex) from ex
 
-        self.config.update(config_from_rds)
+        self.config.update(partial_config_from_rds)
         return self
 
-    def _get_cloudwatch_metrics_file(self, db_version, db_type):
+    def _get_cloudwatch_metrics_file(self):
+        # TODO - actually select metrics file based on db info
+        print(self)
         return "./driver/config/cloudwatch_metrics/rds_postgres-13.json"
 
     def from_cloudwatch_metrics(self, db_instance_identifier) -> DriverConfigBuilder:
+        """Build config options from cloudwatch metrics configurations"""
         db_version = get_db_version(db_instance_identifier, self.rds_client)
         db_type = get_db_type(db_instance_identifier, self.rds_client)
+        print(db_version)
+        print(db_type)
 
         metric_names = []
         with open(
-            self._get_cloudwatch_metrics_file(db_version, db_type)
+            self._get_cloudwatch_metrics_file()
         ) as metrics_file:
             metrics = json.load(metrics_file)
             for metric in metrics:
@@ -249,6 +255,7 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         return self
 
     def from_overrides(self, overrides) -> DriverConfigBuilder:
+        """Override config options supplied from other builder steps"""
         supplied_overrides = {
             k: v for k, v in overrides._asdict().items() if v is not None
         }

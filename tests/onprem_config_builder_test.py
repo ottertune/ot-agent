@@ -11,8 +11,8 @@ import pytest
 
 from driver.exceptions import DriverConfigException
 from driver.onprem_driver_config_builder import (
-    create_onprem_driver_config_builder,
     PartialOnPremConfigFromFile,
+    OnPremDriverConfigBuilder
 )
 
 # pylint: disable=missing-class-docstring
@@ -87,47 +87,29 @@ def test_partial_onprem_config_from_file_missing_value(
     assert "server_url" in str(ex.value)
 
 
-def test_partial_onprem_config_from_file_invalid_db_ssl(
-    test_onprem_config_data: Dict[str, Any]
-) -> None:
-    # invalid database ssl fetched from file
-    test_data_from_file = test_onprem_config_data["file"]
-    test_data_from_file["db_enable_ssl"] = True
-    with pytest.raises(ValidationError) as ex:
-        PartialOnPremConfigFromFile(**test_data_from_file)
-    assert "db_enable_ssl" in str(ex.value)
-
-def test_partial_onprem_config_from_file_none_db_conn_extend(
-    test_onprem_config_data: Dict[str, Any]
-) -> None:
-    # db_conn_extend is None
-    test_data_from_file = test_onprem_config_data["file"]
-    test_data_from_file["db_conn_extend"] = None
-    partial_config = PartialOnPremConfigFromFile(**test_data_from_file).dict()
-    assert test_data_from_file == partial_config
-
 def test_create_onprem_driver_config_builder_invalid_config(test_onprem_config_data: Dict[str, Any]
 ) -> None:
     with pytest.raises(DriverConfigException) as ex:
         with tempfile.NamedTemporaryFile("w") as temp:
             test_onprem_config_data["file"]["database_id"] = "15213"
             yaml.safe_dump(test_onprem_config_data["file"], temp)
-            create_onprem_driver_config_builder(temp.name)
+            config_builder = OnPremDriverConfigBuilder('us-east-2') 
+            config_builder.from_file(temp.name)
     assert "database_id" in ex.value.message
 
 
 def test_create_onprem_driver_config_builder_invalid_config_path() -> None:
     # Invalid config file path
-    with pytest.raises(DriverConfigException) as ex:
-        create_onprem_driver_config_builder("invalid_name")
-    assert "cannot load configuration" in ex.value.message
+    with pytest.raises(FileNotFoundError) as ex:
+            config_builder = OnPremDriverConfigBuilder('us-east-2') 
+            config_builder.from_file("invalid_name")
 
 
 def test_create_onprem_driver_config_builder_invalid_yaml() -> None:
     # Invalid yaml config file
     with tempfile.NamedTemporaryFile("w") as temp:
-        with pytest.raises(DriverConfigException) as ex:
+        with pytest.raises(ValueError) as ex:
             temp.write("bad_format")
             temp.seek(0)
-            create_onprem_driver_config_builder(temp.name)
-    assert "cannot load configuration" in ex.value.message
+            config_builder = OnPremDriverConfigBuilder('us-east-2') 
+            config_builder.from_file(temp.name)

@@ -3,7 +3,6 @@ The main entrypoint for the driver. The driver will poll for new configurations 
 executions of monitoring and tuning pipeline.
 """
 
-from typing import NamedTuple
 import argparse
 import logging
 
@@ -149,13 +148,7 @@ def run() -> None:
 
     config = get_config(args)
 
-    scheduler.add_job(
-        schedule_monitor_job,
-        "interval",
-        seconds=args.polling_interval,
-        id="polling_loop",
-        args=[config],
-    )
+    schedule_monitor_job(config)
     scheduler.start()
 
 

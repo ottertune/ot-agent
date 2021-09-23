@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict
 from unittest.mock import MagicMock
 import pytest
-from driver.cloudwatch_utils import _get_metrics_from_cloudwatch
+from driver.aws.cloudwatch import _get_metrics_from_cloudwatch
 
 # pylint: disable=missing-class-docstring, invalid-name
 # pylint: disable=missing-function-docstring
