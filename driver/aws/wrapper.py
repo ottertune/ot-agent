@@ -30,21 +30,6 @@ class AwsWrapper:
     """
     Wrapper class that returns boto client libraries.
     """
-
-    @staticmethod
-    def ec2_client(region_name: str) -> EC2Client:
-        """
-        Wrapper for EC2 client
-        """
-        return boto3.client("ec2")
-
-    @staticmethod
-    def sts_client(region_name: str) -> STSClient:
-        """
-        Wrapper for STS client
-        """
-        return boto3.client("sts")
-
     @staticmethod
     def rds_client(region_name: str) -> RDSClient:
         """
@@ -52,12 +37,6 @@ class AwsWrapper:
         """
         return boto3.client("rds", region_name=region_name)
 
-    @staticmethod
-    def iam_client(region_name: str) -> IAMClient:
-        """
-        Wrapper for IAM client
-        """
-        return boto3.client("iam", region_name=region_name)
 
     @staticmethod
     def cloudwatch_client(region_name: str) -> CloudWatchClient:
