@@ -26,7 +26,7 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--monitor-interval",
         type=int,
-        default=1,
+        default=60,
         help="How often to collect new data (in seconds)",
     )
     parser.add_argument(
@@ -143,7 +143,7 @@ def run() -> None:
     loglevel = args.log
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
+        raise ValueError(f"Invalid log level: {loglevel}")
     logging.basicConfig(level=numeric_level)
 
     config = get_config(args)

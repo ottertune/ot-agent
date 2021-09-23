@@ -60,7 +60,7 @@ class ComputeServerClient:
         """
         headers = {}
         headers["ApiKey"] = self._api_key
-
+        headers["organization_id"] = data["organization_id"]
         url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
