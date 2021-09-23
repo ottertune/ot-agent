@@ -9,12 +9,8 @@ import logging
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.onprem_driver_config_builder import create_onprem_driver_config_builder
-from driver.onprem_driver_config_builder import OnPremDriverConfigBuilder
-from driver.pipeline import (
-    schedule_or_update_job,
-    MONITOR_JOB_ID,
-)
+from driver.onprem_driver_config_builder import OnPremDriverConfigBuilder, Overrides
+from driver.pipeline import schedule_or_update_job, MONITOR_JOB_ID
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
 scheduler = BlockingScheduler()
@@ -54,6 +50,12 @@ def _get_args() -> argparse.Namespace:
         " Required for on-prem deployment",
     )
     parser.add_argument(
+        "--override-db-identifier",
+        type=str,
+        help="override aws rds database identifier",
+        default=None,
+    )
+    parser.add_argument(
         "--override-db-username",
         type=str,
         help="override username used for db",
@@ -64,15 +66,6 @@ def _get_args() -> argparse.Namespace:
         type=str,
         help="override password used for db",
         default=None,
-    )
-    parser.add_argument(
-        "--override-hostname",
-        type=str,
-        help="override hostname used for db",
-        default=None,
-    )
-    parser.add_argument(
-        "--override-port", type=str, help="override port used for db", default=None
     )
     parser.add_argument(
         "--override-api-key",
@@ -101,49 +94,10 @@ def _get_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-class Overrides(NamedTuple):
-    """
-    Runtime overrides for configurations in files, useful for when running in container
-    """
-
-    override_db_username: str
-    override_db_password: str
-    override_hostname: str
-    override_port: str
-    override_api_key: str
-    override_db_key: str
-    override_organization_id: str
-    override_db_type: str
-    monitor_interval: int
-
-
-def poll_config_and_schedule_monitor_job(
-    driver_config_builder: OnPremDriverConfigBuilder, overrides: Overrides
-) -> None:
+def schedule_monitor_job(config) -> None:
     """
     The outer polling loop for the driver
     """
-    config = driver_config_builder.get_config()
-
-    config.monitor_interval = int(overrides.monitor_interval)
-
-    if overrides.override_db_username:
-        config.db_user = overrides.override_db_username
-    if overrides.override_db_password:
-        config.db_password = overrides.override_db_password
-    if overrides.override_hostname:
-        config.db_host = overrides.override_hostname
-    if overrides.override_port:
-        config.db_port = int(overrides.override_port)
-    if overrides.override_api_key:
-        config.api_key = overrides.override_api_key
-    if overrides.override_db_key:
-        config.db_key = overrides.override_db_key
-    if overrides.override_organization_id:
-        config.override_organization_id = overrides.override_organization_id
-    if overrides.override_db_type:
-        config.db_type = overrides.override_db_type
-
     schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
 
 
@@ -160,25 +114,26 @@ def run() -> None:
         raise ValueError("Invalid log level: %s" % loglevel)
     logging.basicConfig(level=numeric_level)
 
-    driver_config_builder = create_onprem_driver_config_builder(args.config)
+    driver_config_builder = OnPremDriverConfigBuilder()
     overrides = Overrides(
-        override_db_username=args.override_db_username,
-        override_db_password=args.override_db_password,
-        override_hostname=args.override_hostname,
-        override_port=args.override_port,
-        override_api_key=args.override_api_key,
-        override_db_key=args.override_db_key,
-        override_organization_id=args.override_organization_id,
-        override_db_type=args.override_db_type,
+        db_username=args.override_db_username,
+        db_password=args.override_db_password,
+        api_key=args.override_api_key,
+        db_key=args.override_db_key,
+        organization_id=args.override_organization_id,
+        db_type=args.override_db_type,
+        db_identifier=args.override_db_identifier
         monitor_interval=args.monitor_interval,
     )
+    driver_config_builder.from_file(args.config).from_rds().from_overrides(overrides)
+    config = driver_config_builder.get_config()
 
     scheduler.add_job(
-        poll_config_and_schedule_monitor_job,
+        schedule_monitor_job,
         "interval",
         seconds=args.polling_interval,
         id="polling_loop",
-        args=[driver_config_builder, overrides],
+        args=[config],
     )
     scheduler.start()
 
