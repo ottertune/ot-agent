@@ -17,7 +17,7 @@ APPLY_EVENT_JOB_ID = "apply_event_job"
 
 def driver_pipeline_for_onprem(
     config: OnPremDriverConfig,
-    job_id: str, # pylint: disable=unused-argument
+    job_id: str,  # pylint: disable=unused-argument
 ) -> None:
     """
     Run the core pipeline for the driver in on-prem deployment

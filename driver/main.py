@@ -109,8 +109,8 @@ def schedule_monitor_job(config) -> None:
 
 def get_config(args):
     """
-    Build configuration from file, command line overrides, rds info, 
-    """    
+    Build configuration from file, command line overrides, rds info,
+    """
     driver_config_builder = OnPremDriverConfigBuilder(args.aws_region)
     overrides = Overrides(
         db_user=args.override_db_username,

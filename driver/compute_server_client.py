@@ -39,9 +39,7 @@ class DriverStatus(TypedDict):
 class ComputeServerClient:
     """Defines the compute server client which communicates with the server."""
 
-    def __init__(
-        self, server_url: str, req_session: Session, api_key: str
-    ) -> None:
+    def __init__(self, server_url: str, req_session: Session, api_key: str) -> None:
         """Initialze the compute server client.
 
         Args:

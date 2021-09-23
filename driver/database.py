@@ -29,7 +29,7 @@ def collect_observation_for_on_prem(config: OnPremDriverConfig) -> Observation:
     """
     observation = collect_data_from_database(config._asdict())
     metrics_from_sources = collect_data_from_metric_sources(config._asdict())
-    observation['metrics_data']['global'].update(metrics_from_sources)
+    observation["metrics_data"]["global"].update(metrics_from_sources)
     return observation
 
 
@@ -74,6 +74,6 @@ def collect_data_from_database(driver_conf: Dict[str, Any]) -> Observation:
         "metrics_data": metrics,
         "summary": summary,
         "db_key": driver_conf["db_key"],
-        "organization_id": driver_conf["organization_id"]
+        "organization_id": driver_conf["organization_id"],
     }
     return observation

@@ -22,7 +22,9 @@ from driver.driver_config_builder import DriverConfigBuilder
 from driver.exceptions import DriverConfigException
 
 
-class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninitialized variables
+class PartialOnPremConfigFromFile(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from local file for on-prem deployment.
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
@@ -57,7 +59,7 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
     aws_region: StrictStr
 
     @validator("db_enable_ssl")
-    def check_db_ssl( # pylint: disable=no-self-argument, no-self-use
+    def check_db_ssl(  # pylint: disable=no-self-argument, no-self-use
         cls, val: bool, values: Dict[str, Any]
     ) -> bool:
         """Validate that database ssl.
@@ -92,10 +94,12 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
             )
         return val
 
+
 class Overrides(NamedTuple):
     """
     Runtime overrides for configurations in files, useful for when running in container
     """
+
     db_user: str
     db_password: str
     api_key: str
@@ -105,23 +109,32 @@ class Overrides(NamedTuple):
     monitor_interval: int
     db_identifier: str
 
-class PartialOnPremConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+
+class PartialOnPremConfigFromRDS(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     """
+
     db_host: StrictStr
     db_port: StrictInt
     db_version: StrictStr
 
-class PartialOnPremConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+
+class PartialOnPremConfigFromCloudwatchMetrics(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     """
+
     metrics_to_retrieve_from_source: Dict[StrictStr, List[StrictStr]]
 
-class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attributes
+
+class OnPremDriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     """Driver Config for on-prem deployment."""
 
     server_url: str  # OtterTune server url, required
@@ -129,12 +142,12 @@ class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attrib
     server_https_proxy: str  # HTTPS proxy to connect to the server
     database_id: int  # Database primary key in the server model, required
 
-    db_identifier: str # AWS RDS Database identifier
+    db_identifier: str  # AWS RDS Database identifier
 
     db_type: str  # Database type (mysql or postgres), required
     db_host: str  # Database host address, required
     db_port: int  # Database port, required
-    db_version: str # Database version number, key for what metrics to fetch
+    db_version: str  # Database version number, key for what metrics to fetch
     db_user: str  # Database username, required
     db_password: str  # Database password, required
 
@@ -153,12 +166,16 @@ class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attrib
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
-    organization_id: str # Org id handed to agent proxy to identify database
+    organization_id: str  # Org id handed to agent proxy to identify database
 
-    monitor_interval: int # how frequently to query database for metrics
+    monitor_interval: int  # how frequently to query database for metrics
 
-    metric_source: List[str]  # Extra metric sources where we want to collect metric data
-    metrics_to_retrieve_from_source: Dict[str, List[str]]  # A list of target metric names
+    metric_source: List[
+        str
+    ]  # Extra metric sources where we want to collect metric data
+    metrics_to_retrieve_from_source: Dict[
+        str, List[str]
+    ]  # A list of target metric names
 
     aws_region: str
 
@@ -189,11 +206,13 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
 
             self.config.update(data)
         return self
-    
+
     def from_rds(self, db_instance_identifier) -> DriverConfigBuilder:
-        config_from_rds = {"db_host": get_db_hostname(db_instance_identifier, self.rds_client),
-                           "db_port": get_db_port(db_instance_identifier, self.rds_client),
-                           "db_version": get_db_version(db_instance_identifier, self.rds_client)}
+        config_from_rds = {
+            "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
+            "db_port": get_db_port(db_instance_identifier, self.rds_client),
+            "db_version": get_db_version(db_instance_identifier, self.rds_client),
+        }
 
         try:
             partial_config_from_rds: PartialOnPremConfigFromRDS = (
@@ -209,7 +228,6 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         self.config.update(config_from_rds)
         return self
 
-
     def _get_cloudwatch_metrics_file(self, db_version, db_type):
         return "./driver/config/cloudwatch_metrics/rds_postgres-13.json"
 
@@ -218,19 +236,24 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         metric_names = []
-        with open(self._get_cloudwatch_metrics_file(db_version, db_type)) as metrics_file:
+        with open(
+            self._get_cloudwatch_metrics_file(db_version, db_type)
+        ) as metrics_file:
             metrics = json.load(metrics_file)
             for metric in metrics:
-                metric_names.append(metric['name'])
-        
-        self.config.update({"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}})
+                metric_names.append(metric["name"])
+
+        self.config.update(
+            {"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}}
+        )
         return self
 
     def from_overrides(self, overrides) -> DriverConfigBuilder:
-        supplied_overrides = {k: v for k, v in overrides._asdict().items() if v is not None}
+        supplied_overrides = {
+            k: v for k, v in overrides._asdict().items() if v is not None
+        }
         self.config.update(supplied_overrides)
         return self
-
 
     def get_config(self) -> OnPremDriverConfig:
         """Get driver configuration for on-prem deployment.
