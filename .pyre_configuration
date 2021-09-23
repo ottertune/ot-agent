@@ -1,6 +1,7 @@
 {
-  "source_directories": ["."],
-  "strict": true,
+  "source_directories": [
+    "."
+  ],
   "ignore_all_errors": [
     "env/",
     ".env/",
