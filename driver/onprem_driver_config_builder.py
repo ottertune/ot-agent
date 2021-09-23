@@ -21,7 +21,9 @@ from driver.driver_config_builder import DriverConfigBuilder
 from driver.exceptions import DriverConfigException
 
 
-class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninitialized variables
+class PartialOnPremConfigFromFile(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from local file for on-prem deployment.
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
@@ -53,7 +55,7 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
     monitor_interval: StrictInt
 
     @validator("db_enable_ssl")
-    def check_db_ssl( # pylint: disable=no-self-argument, no-self-use
+    def check_db_ssl(  # pylint: disable=no-self-argument, no-self-use
         cls, val: bool, values: Dict[str, Any]
     ) -> bool:
         """Validate that database ssl.
@@ -89,12 +91,15 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
         return val
 
 
-class PartialOnPremConfigFromServer(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialOnPremConfigFromServer(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from OtterTune server for on-prem deployment.
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     It validates that options do not have missing values, wrong types or invalid values.
     """
+
     db_provider: StrictStr
     enable_tuning: StrictBool
     enable_restart: StrictBool
@@ -126,7 +131,7 @@ class PartialOnPremConfigFromServer(BaseModel):  # pyre-ignore[13]: pydantic uni
 
 
 @dataclass
-class OnPremDriverConfig: # pylint: disable=too-many-instance-attributes
+class OnPremDriverConfig:  # pylint: disable=too-many-instance-attributes
     """Driver Config for on-prem deployment."""
 
     server_url: str  # OtterTune server url, required
@@ -155,9 +160,9 @@ class OnPremDriverConfig: # pylint: disable=too-many-instance-attributes
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
-    organization_id: str # Org id handed to agent proxy to identify database
+    organization_id: str  # Org id handed to agent proxy to identify database
 
-    monitor_interval: int # how frequently to query database for metrics
+    monitor_interval: int  # how frequently to query database for metrics
 
 
 class OnPremDriverConfigBuilder(DriverConfigBuilder):

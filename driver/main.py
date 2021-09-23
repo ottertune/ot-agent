@@ -31,7 +31,7 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--monitor-interval",
         type=int,
-        default=1,
+        default=60,
         help="How often to collect new data (in seconds)",
     )
     parser.add_argument(

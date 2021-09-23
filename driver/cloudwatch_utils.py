@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from mypy_boto3_cloudwatch.client import CloudWatchClient
+
 # from driver_lib.aws import AwsWrapper, get_sts_credentials
 from driver.exceptions import CloudWatchException
 

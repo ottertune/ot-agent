@@ -63,7 +63,7 @@ def _get_driver_conf(
         "db_type": db_type,
         "db_provider": "on_premise",
         "db_key": "test_key",
-        "organization_id": "test_organization"
+        "organization_id": "test_organization",
     }
     return conf
 

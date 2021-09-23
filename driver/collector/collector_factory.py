@@ -240,8 +240,8 @@ def get_collector(
             os.environ.get("STUB_COLLECTOR", "false").lower() == "true"
         )
         if driver_conf["db_type"] == "mock" or should_stub_collector:
-            from tests.mocks.mock_collector import ( # pylint: disable=import-outside-toplevel
-                MockCollector
+            from tests.mocks.mock_collector import (  # pylint: disable=import-outside-toplevel
+                MockCollector,
             )
 
             collector = MockCollector()
