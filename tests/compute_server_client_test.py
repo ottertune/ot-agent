@@ -7,7 +7,6 @@ import responses
 import requests
 
 from driver.exceptions import ComputeServerClientException
-from driver.request import build_request_session
 
 # Code under test
 from driver.compute_server_client import ComputeServerClient
@@ -56,11 +55,6 @@ def _test_response_data() -> Dict[str, Any]:
         api_key=api_key,
         observation=observation,
     )
-
-
-def test_build_request_session_success() -> None:
-    session = build_request_session()
-    assert session is not None
 
 
 @responses.activate
