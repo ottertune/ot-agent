@@ -1,0 +1,185 @@
+[{
+    "name": "AbortedClients",
+    "description": "The number of client connections that have not been closed properly."
+},
+{
+    "name": "ActiveTransactions",
+    "description": "The average number of current transactions executing on an Aurora database instance per second.\n\nBy default, Aurora doesn't enable this metric. To begin measuring this value, set innodb_monitor_enable='all' in the DB parameter group for a specific DB instance."
+},
+{
+    "name": "AuroraBinlogReplicaLag",
+    "description": "The amount of time a replica DB cluster running on Aurora MySQL-Compatible Edition lags behind the source DB cluster.\n\nThis metric reports the value of the Seconds_Behind_Master field of the MySQL SHOW SLAVE STATUS command. This metric is useful for monitoring replica lag between Aurora DB clusters that are replicating across different AWS Regions. For more information, see Replicating Amazon Aurora MySQL DB clusters across AWS Regions."
+},
+{
+    "name": "AuroraReplicaLag",
+    "description": "For an Aurora replica, the amount of lag when replicating updates from the primary instance."
+},
+{
+    "name": "AuroraReplicaLagMaximum",
+    "description": "The maximum amount of lag between the primary instance and each Aurora DB instance in the DB cluster."
+},
+{
+    "name": "AuroraReplicaLagMinimum",
+    "description": "The minimum amount of lag between the primary instance and each Aurora DB instance in the DB cluster."
+},
+{
+    "name": "BacktrackWindowActual",
+    "description": "The difference between the target backtrack window and the actual backtrack window."
+},
+{
+    "name": "BacktrackWindowAlert",
+    "description": "The number of times that the actual backtrack window is smaller than the target backtrack window for a given period of time."
+},
+{
+    "name": "BinLogDiskUsage",
+    "description": "The amount of disk space occupied by binary logs on the primary instance."
+},
+{
+    "name": "BlockedTransactions",
+    "description": "The average number of transactions in the database that are blocked per second."
+},
+{
+    "name": "BufferCacheHitRatio",
+    "description": "The percentage of requests that are served by the buffer cache."
+},
+{
+    "name": "CPUCreditBalance",
+    "description": "The number of CPU credits that an instance has accumulated, reported at 5-minute intervals. You can use this metric to determine how long a DB instance can burst beyond its baseline performance level at a given rate.\n\nThis metric applies only to db.t2.small and db.t2.medium instances for Aurora MySQL, and to db.t3 instances for Aurora PostgreSQL."
+},
+{
+    "name": "CPUCreditUsage",
+    "description": "The number of CPU credits consumed during the specified period, reported at 5-minute intervals. This metric measures the amount of time during which physical CPUs have been used for processing instructions by virtual CPUs allocated to the DB instance.\n\nThis metric applies only to db.t2.small and db.t2.medium instances for Aurora MySQL, and to db.t3 instances for Aurora PostgreSQL."
+},
+{
+    "name": "CPUUtilization",
+    "description": "The percentage of CPU used by an Aurora DB instance."
+},
+{
+    "name": "CommitLatency",
+    "description": "The average duration of commit operations."
+},
+{
+    "name": "CommitThroughput",
+    "description": "The average number of commit operations per second."
+},
+{
+    "name": "DDLLatency",
+    "description": "The average duration of requests such as example, create, alter, and drop requests."
+},
+{
+    "name": "DDLThroughput",
+    "description": "The average number of DDL requests per second."
+},
+{
+    "name": "DMLLatency",
+    "description": "The average duration of inserts, updates, and deletes."
+},
+{
+    "name": "DMLThroughput",
+    "description": "The average number of inserts, updates, and deletes per second."
+},
+{
+    "name": "DatabaseConnections",
+    "description": "The current number of connections to an Aurora DB instance."
+},
+{
+    "name": "Deadlocks",
+    "description": "The average number of deadlocks in the database per second."
+},
+{
+    "name": "DeleteLatency",
+    "description": "The average duration of delete operations."
+},
+{
+    "name": "DeleteThroughput",
+    "description": "The average number of delete queries per second."
+},
+{
+    "name": "EngineUptime",
+    "description": "The amount of time that the instance has been running."
+},
+{
+    "name": "FreeLocalStorage",
+    "description": "The amount of local storage available.\n\nUnlike for other DB engines, for Aurora DB instances this metric reports the amount of storage available to each DB instance. This value depends on the DB instance class (for pricing information, see the Amazon RDS product page). You can increase the amount of free storage space for an instance by choosing a larger DB instance class for your instance."
+},
+{
+    "name": "FreeableMemory",
+    "description": "The amount of available random access memory."
+},
+{
+    "name": "InsertLatency",
+    "description": "The average duration of insert operations."
+},
+{
+    "name": "InsertThroughput",
+    "description": "The average number of insert operations per second."
+},
+{
+    "name": "LoginFailures",
+    "description": "The average number of failed login attempts per second."
+},
+{
+    "name": "NetworkReceiveThroughput",
+    "description": "The amount of network throughput received from clients by each instance in the Aurora MySQL DB cluster. This throughput doesn't include network traffic between instances in the Aurora DB cluster and the cluster volume."
+},
+{
+    "name": "NetworkThroughput",
+    "description": "The amount of network throughput both received from and transmitted to clients by each instance in the Aurora MySQL DB cluster. This throughput doesn't include network traffic between instances in the DB cluster and the cluster volume."
+},
+{
+    "name": "NetworkTransmitThroughput",
+    "description": "The amount of network throughput sent to clients by each instance in the Aurora DB cluster. This throughput doesn't include network traffic between instances in the DB cluster and the cluster volume."
+},
+{
+    "name": "NumBinaryLogFiles",
+    "description": "The number of binlog files generated."
+},
+{
+    "name": "Queries",
+    "description": "The average number of queries executed per second."
+},
+{
+    "name": "ReadLatency",
+    "description": "The average amount of time taken per disk I/O operation."
+},
+{
+    "name": "ResultSetCacheHitRatio",
+    "description": "The percentage of requests that are served by the Resultset cache."
+},
+{
+    "name": "RollbackSegmentHistoryListLength",
+    "description": "The undo logs that record committed transactions with delete-marked records. These records are scheduled to be processed by the InnoDB purge operation."
+},
+{
+    "name": "RowLockTime",
+    "description": "The total time spent acquiring row locks for InnoDB tables."
+},
+{
+    "name": "SelectLatency",
+    "description": "The average amount of time for select operations."
+},
+{
+    "name": "SelectThroughput",
+    "description": "The average number of select queries per second."
+},
+{
+    "name": "SumBinaryLogSize",
+    "description": "The total size of the binlog files."
+},
+{
+    "name": "SwapUsage",
+    "description": "The amount of swap space used. This metric is available for the Aurora PostgreSQL instance classes db.t3.medium, db.r5.large, db.r5.xlarge, db.r4.large, and db.r4.xlarge. For Aurora MySQL, this metric applies only to db.t* instances."
+},
+{
+    "name": "UpdateLatency",
+    "description": "The average amount of taken taken for update operations."
+},
+{
+    "name": "UpdateThroughput",
+    "description": "The average number of updates per second."
+},
+{
+    "name": "WriteLatency",
+    "description": "The average amount of time taken per disk I/O operation."
+}
+]

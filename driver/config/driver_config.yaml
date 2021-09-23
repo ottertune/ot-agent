@@ -64,6 +64,8 @@ db_ssl_key: ''
 # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 db_conn_extend: null
 
+metric_source: ["cloudwatch"]
+
 # ====================================================================
 #  DRIVER OPTIONS
 # ====================================================================

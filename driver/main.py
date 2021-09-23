@@ -50,6 +50,12 @@ def _get_args() -> argparse.Namespace:
         " Required for on-prem deployment",
     )
     parser.add_argument(
+        "--aws-region",
+        type=str,
+        default="INFO",
+        help="aws region, eg: us-east-2",
+    )
+    parser.add_argument(
         "--override-db-identifier",
         type=str,
         help="override aws rds database identifier",
@@ -101,6 +107,31 @@ def schedule_monitor_job(config) -> None:
     schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
 
 
+def get_config(args):
+    """
+    Build configuration from file, command line overrides, rds info, 
+    """    
+    driver_config_builder = OnPremDriverConfigBuilder(args.aws_region)
+    overrides = Overrides(
+        db_username=args.override_db_username,
+        db_password=args.override_db_password,
+        api_key=args.override_api_key,
+        db_key=args.override_db_key,
+        organization_id=args.override_organization_id,
+        db_type=args.override_db_type,
+        db_identifier=args.override_db_identifier
+        monitor_interval=args.monitor_interval,
+    )
+
+    # build partial config to get db_identifier
+    driver_config_builder.from_file(args.config).from_overrides(overrides)
+    db_identifier = driver_config_builder.get_config()["db_identifier"]
+
+    # finish building config
+    driver_config_builder.from_rds(db_identifier).from_cloudwatch_metrics(db_identifier)
+    config = driver_config_builder.from_overrides(overrides).get_config()
+
+
 def run() -> None:
     """
     The main entrypoint for the driver
@@ -113,20 +144,6 @@ def run() -> None:
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
     logging.basicConfig(level=numeric_level)
-
-    driver_config_builder = OnPremDriverConfigBuilder()
-    overrides = Overrides(
-        db_username=args.override_db_username,
-        db_password=args.override_db_password,
-        api_key=args.override_api_key,
-        db_key=args.override_db_key,
-        organization_id=args.override_organization_id,
-        db_type=args.override_db_type,
-        db_identifier=args.override_db_identifier
-        monitor_interval=args.monitor_interval,
-    )
-    driver_config_builder.from_file(args.config).from_rds().from_overrides(overrides)
-    config = driver_config_builder.get_config()
 
     scheduler.add_job(
         schedule_monitor_job,

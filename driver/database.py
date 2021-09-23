@@ -28,9 +28,8 @@ def collect_observation_for_on_prem(config: OnPremDriverConfig) -> Observation:
         PostgresCollectorException: unable to connect to Postgres database or get version.
     """
     observation = collect_data_from_database(asdict(config))
-    # TODO do we need the agent to collect cloudwatch data too?
-    # metrics_from_sources = collect_data_from_metric_sources(config._asdict())
-    # observation['metrics_data']['global'].update(metrics_from_sources)
+    metrics_from_sources = collect_data_from_metric_sources(config._asdict())
+    observation['metrics_data']['global'].update(metrics_from_sources)
     return observation
 
 

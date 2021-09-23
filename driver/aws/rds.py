@@ -82,4 +82,11 @@ def get_db_version(db_instance_identifier: str, client: RDSClient) -> String:
     Get's database version information 
     """
     instance_info = get_db_instance_info(db_instance_identifier, client)
-    return instance_info["Endpoint"]["EngineVersion"]
+    return instance_info["EngineVersion"]
+
+def get_db_version(db_instance_identifier: str, client: RDSClient) -> String:
+    """
+    Get's database type information 
+    """
+    instance_info = get_db_instance_info(db_instance_identifier, client)
+    return instance_info["Engine"]

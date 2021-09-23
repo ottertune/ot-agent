@@ -5,6 +5,7 @@ It fetches the necessary information to run the driver pipeline from the local f
 
 from typing import Dict, Any, Optional, NamedTuple
 import yaml
+import json
 
 from pydantic import (
     BaseModel,
@@ -18,6 +19,7 @@ from pydantic import (
 from aws.rds import get_db_version, get_db_port, get_db_hostname
 from driver.driver_config_builder import DriverConfigBuilder
 from driver.exceptions import DriverConfigException
+from aws.wrapper import rds_client
 
 
 class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninitialized variables
@@ -50,6 +52,8 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
     organization_id: StrictStr
 
     monitor_interval: StrictInt
+
+    metric_source: List[str]
 
     @validator("db_enable_ssl")
     def check_db_ssl( # pylint: disable=no-self-argument, no-self-use
@@ -108,6 +112,12 @@ class PartialOnPremConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninit
     db_port: StrictInt
     db_version: StrictStr
 
+class PartialOnPremConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+    """Driver options fetched from RDS for agent deployment.
+
+    Such options are part of the complete driver options (defined in OnPremDriverConfig).
+    """
+    metrics_to_retrieve_from_source: Dict[StrictStr, List[StrictStr]]
 
 class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attributes
     """Driver Config for on-prem deployment."""
@@ -145,12 +155,16 @@ class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attrib
 
     monitor_interval: int # how frequently to query database for metrics
 
+    metric_source: List[str]  # Extra metric sources where we want to collect metric data
+    metrics_to_retrieve_from_source: Dict[str, List[str]]  # A list of target metric names
+
 
 class OnPremDriverConfigBuilder(DriverConfigBuilder):
     """Defines the builder to build driver config for on-prem deployment."""
 
-    def __init__(self) -> None:
+    def __init__(self, aws_region) -> None:
         self.config = {}
+        self.rds_client = rds_client(aws_region)
 
     def from_file(config_path: str) -> OnPremDriverConfigBuilder:
         with open(config_path, "r") as config_file:
@@ -173,9 +187,9 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         return self
     
     def from_rds(db_instance_identifier) -> OnPremDriverConfigBuilder:
-        config_from_rds = {"db_host": get_db_hostname(),
-                           "db_port": get_db_port(),
-                           "db_version": get_db_version()}
+        config_from_rds = {"db_host": get_db_hostname(db_instance_identifier),
+                           "db_port": get_db_port(db_instance_identifier),
+                           "db_version": get_db_version(db_instance_identifier)}
 
         try:
             partial_config_from_rds: PartialOnPremConfigFromRDS = (
@@ -192,7 +206,24 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         return self
 
 
+    def _get_cloudwatch_metrics_file(db_version, db_type):
+        return "config/cloudwatch_metrics/rds_auroa_mysql-5_6.json"
+
+    def from_cloudwatch_metrics(db_instance_identifier):
+        db_version = get_db_version(db_instance_identifier)
+        db_type = get_db_type(db_instance_identifier)
+
+        metric_names = []
+        with open _get_cloudwatch_metrics_file(db_version, db_type) as metrics_file:
+            metrics = json.load(metrics_file)
+            for metric in metrics:
+                metric_named.append(metric['name'])
+        
+        self.config.update{"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}}
+        return self
+
     def from_overrides(overrides) -> OnPremDriverConfigBuilder:
+        # todo make sure null values don't come over
         self.config.update(overrides)
         return self
 

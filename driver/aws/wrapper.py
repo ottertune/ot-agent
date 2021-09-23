@@ -39,14 +39,11 @@ class AwsWrapper:
         return boto3.client('sts')
 
     @staticmethod
-    def rds_client(access_key_id: str,
-                   secret_access_key: str,
-                   region_name: str,
-                   session_token: str) -> RDSClient:
+    def rds_client(region_name: str) -> RDSClient:
         """
         Wrapper for RDS client
         """
-        return boto3.client('rds', region_name=region_name
+        return boto3.client('rds', region_name=region_name)
 
     @staticmethod
     def iam_client() -> IAMClient:
