@@ -157,7 +157,7 @@ def run() -> None:
     loglevel = args.log
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % loglevel)
+        raise ValueError(f"Invalid log level: {loglevel}")
     logging.basicConfig(level=numeric_level)
 
     driver_config_builder = create_onprem_driver_config_builder(args.config)

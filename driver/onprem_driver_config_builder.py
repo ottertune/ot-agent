@@ -198,7 +198,7 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
 def _load_file_config(config_path: str) -> Dict[str, Any]:
     """Load the config from a local file for on-prem deployment."""
 
-    with open(config_path, "r") as config_file:
+    with open(config_path, "r", encoding='UTF-8') as config_file:
         data = yaml.safe_load(config_file)
         if not isinstance(data, dict):
             raise ValueError("Invalid data in the driver configuration YAML file")

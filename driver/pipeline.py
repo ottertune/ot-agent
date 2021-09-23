@@ -7,7 +7,6 @@ from requests import Session
 from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.onprem_driver_config_builder import OnPremDriverConfig
-from driver.request import build_request_session
 from driver.compute_server_client import ComputeServerClient
 from driver.database import collect_observation_for_on_prem
 
