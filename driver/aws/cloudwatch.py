@@ -7,7 +7,7 @@ from mypy_boto3_cloudwatch.client import CloudWatchClient
 from driver.aws.wrapper import AwsWrapper
 from driver.exceptions import CloudWatchException
 
-# TODO make cloudwatch work locally
+
 def cloudwatch_collector(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     preparations = _prepare_for_cloudwatch(driver_conf)
     return _get_metrics_from_cloudwatch(**preparations)
