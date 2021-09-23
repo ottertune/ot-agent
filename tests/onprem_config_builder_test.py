@@ -93,23 +93,23 @@ def test_create_onprem_driver_config_builder_invalid_config(test_onprem_config_d
         with tempfile.NamedTemporaryFile("w") as temp:
             test_onprem_config_data["file"]["database_id"] = "15213"
             yaml.safe_dump(test_onprem_config_data["file"], temp)
-            config_builder = OnPremDriverConfigBuilder('us-east-2') 
+            config_builder = OnPremDriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)
     assert "database_id" in ex.value.message
 
 
 def test_create_onprem_driver_config_builder_invalid_config_path() -> None:
     # Invalid config file path
-    with pytest.raises(FileNotFoundError) as ex:
-            config_builder = OnPremDriverConfigBuilder('us-east-2') 
-            config_builder.from_file("invalid_name")
+    with pytest.raises(FileNotFoundError):
+        config_builder = OnPremDriverConfigBuilder('us-east-2')
+        config_builder.from_file("invalid_name")
 
 
 def test_create_onprem_driver_config_builder_invalid_yaml() -> None:
     # Invalid yaml config file
     with tempfile.NamedTemporaryFile("w") as temp:
-        with pytest.raises(ValueError) as ex:
+        with pytest.raises(ValueError):
             temp.write("bad_format")
             temp.seek(0)
-            config_builder = OnPremDriverConfigBuilder('us-east-2') 
+            config_builder = OnPremDriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)
