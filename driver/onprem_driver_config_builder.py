@@ -3,7 +3,7 @@ Defines the OnPremDriverConfigBuilder to build the driver configuraton for on-pr
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 
-from typing import Dict, Any, Optional, NamedTuple
+from typing import Dict, Any, Optional, NamedTuple, List
 import yaml
 import json
 
@@ -16,10 +16,10 @@ from pydantic import (
     ValidationError,
 )
 
-from aws.rds import get_db_version, get_db_port, get_db_hostname
+from driver.aws.rds import get_db_version, get_db_port, get_db_hostname, get_db_type
+from driver.aws.wrapper import AwsWrapper
 from driver.driver_config_builder import DriverConfigBuilder
 from driver.exceptions import DriverConfigException
-from aws.wrapper import rds_client
 
 
 class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninitialized variables
@@ -54,6 +54,7 @@ class PartialOnPremConfigFromFile(BaseModel): # pyre-ignore[13]: pydantic uninit
     monitor_interval: StrictInt
 
     metric_source: List[str]
+    aws_region: StrictStr
 
     @validator("db_enable_ssl")
     def check_db_ssl( # pylint: disable=no-self-argument, no-self-use
@@ -102,6 +103,7 @@ class Overrides(NamedTuple):
     organization_id: str
     db_type: str
     monitor_interval: int
+    db_identifier: str
 
 class PartialOnPremConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
@@ -158,15 +160,17 @@ class OnPremDriverConfig(NamedTuple): # pylint: disable=too-many-instance-attrib
     metric_source: List[str]  # Extra metric sources where we want to collect metric data
     metrics_to_retrieve_from_source: Dict[str, List[str]]  # A list of target metric names
 
+    aws_region: str
+
 
 class OnPremDriverConfigBuilder(DriverConfigBuilder):
     """Defines the builder to build driver config for on-prem deployment."""
 
     def __init__(self, aws_region) -> None:
         self.config = {}
-        self.rds_client = rds_client(aws_region)
+        self.rds_client = AwsWrapper.rds_client(aws_region)
 
-    def from_file(config_path: str) -> OnPremDriverConfigBuilder:
+    def from_file(self, config_path: str) -> DriverConfigBuilder:
         with open(config_path, "r") as config_file:
             data = yaml.safe_load(config_file)
             if not isinstance(data, dict):
@@ -186,10 +190,10 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
             self.config.update(data)
         return self
     
-    def from_rds(db_instance_identifier) -> OnPremDriverConfigBuilder:
-        config_from_rds = {"db_host": get_db_hostname(db_instance_identifier),
-                           "db_port": get_db_port(db_instance_identifier),
-                           "db_version": get_db_version(db_instance_identifier)}
+    def from_rds(self, db_instance_identifier) -> DriverConfigBuilder:
+        config_from_rds = {"db_host": get_db_hostname(db_instance_identifier, self.rds_client),
+                           "db_port": get_db_port(db_instance_identifier, self.rds_client),
+                           "db_version": get_db_version(db_instance_identifier, self.rds_client)}
 
         try:
             partial_config_from_rds: PartialOnPremConfigFromRDS = (
@@ -206,25 +210,25 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
         return self
 
 
-    def _get_cloudwatch_metrics_file(db_version, db_type):
-        return "config/cloudwatch_metrics/rds_auroa_mysql-5_6.json"
+    def _get_cloudwatch_metrics_file(self, db_version, db_type):
+        return "./driver/config/cloudwatch_metrics/rds_postgres-13.json"
 
-    def from_cloudwatch_metrics(db_instance_identifier):
-        db_version = get_db_version(db_instance_identifier)
-        db_type = get_db_type(db_instance_identifier)
+    def from_cloudwatch_metrics(self, db_instance_identifier) -> DriverConfigBuilder:
+        db_version = get_db_version(db_instance_identifier, self.rds_client)
+        db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         metric_names = []
-        with open _get_cloudwatch_metrics_file(db_version, db_type) as metrics_file:
+        with open(self._get_cloudwatch_metrics_file(db_version, db_type)) as metrics_file:
             metrics = json.load(metrics_file)
             for metric in metrics:
-                metric_named.append(metric['name'])
+                metric_names.append(metric['name'])
         
-        self.config.update{"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}}
+        self.config.update({"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}})
         return self
 
-    def from_overrides(overrides) -> OnPremDriverConfigBuilder:
-        # todo make sure null values don't come over
-        self.config.update(overrides)
+    def from_overrides(self, overrides) -> DriverConfigBuilder:
+        supplied_overrides = {k: v for k, v in overrides._asdict().items() if v is not None}
+        self.config.update(supplied_overrides)
         return self
 
 

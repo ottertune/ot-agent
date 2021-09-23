@@ -1,7 +1,7 @@
 """Library for aws Relational Database Service (sts) methods"""
 
 from typing import List, Optional
-from functools import cache
+from functools import lru_cache
 
 import boto3
 import botocore
@@ -15,10 +15,7 @@ from mypy_boto3_sts.client import STSClient
 from mypy_boto3_sts.type_defs import CredentialsTypeDef
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 
-from driver_lib import exception
-from driver_lib.secret_redaction import ErrorMessage, ErrorCode, remove_sensitive_info_in_error_msg
-
-@cache
+@lru_cache
 def get_db_instance_info(db_instance_identifier: str, client: RDSClient) -> DBInstanceTypeDef:
     """
     Ensures that we can connect to the target AWS RDS instance by calling describe_db_instances.
@@ -30,17 +27,7 @@ def get_db_instance_info(db_instance_identifier: str, client: RDSClient) -> DBIn
         InvalidPermissionError: If it's not allowed to describe db instances
         DBInstanceNotFound: If the database instance is not found
     """
-    try:
-        resp = client.describe_db_instances(DBInstanceIdentifier=db_instance_identifier)
-    except client.exceptions.DBInstanceNotFoundFault as ex:
-        # This should be placed before ClientError, since it's a subclass of ClientError
-        msg = "DBInstance {rds_identifier} not found"
-        raise DBInstanceNotFound(msg, ErrorCode.DB_INSTANCE_NOT_FOUND.value) from None
-    except botocore.exceptions.ClientError as ex:
-        msg = str(ex)
-        if ErrorMessage.DESCRIBE_DB_NOT_ALLOWED.value in msg:
-            raise InvalidPermissionError(msg, ErrorCode.DESCRIBE_DB_NOT_ALLOWED.value) from None
-        raise ex
+    resp = client.describe_db_instances(DBInstanceIdentifier=db_instance_identifier)
 
     if len(resp['DBInstances']) == 0:
         raise InvalidCustomerSettingsError("No instance was found for provided db identifier")
@@ -49,7 +36,7 @@ def get_db_instance_info(db_instance_identifier: str, client: RDSClient) -> DBIn
                                            "provided db identifier. Expected only one")
     return resp['DBInstances'][0]
 
-def get_db_hostname(db_instance_identifier: str, client: RDSClient) -> String:
+def get_db_hostname(db_instance_identifier: str, client: RDSClient) -> str:
     """
     Ensures that we can connect to the target AWS RDS instance by calling describe_db_instances.
     Returns:
@@ -63,7 +50,7 @@ def get_db_hostname(db_instance_identifier: str, client: RDSClient) -> String:
     instance_info = get_db_instance_info(db_instance_identifier, client)
     return instance_info["Endpoint"]["Address"]
 
-def get_db_port(db_instance_identifier: str, client: RDSClient) -> String:
+def get_db_port(db_instance_identifier: str, client: RDSClient) -> str:
     """
     Ensures that we can connect to the target AWS RDS instance by calling describe_db_instances.
     Returns:
@@ -77,14 +64,14 @@ def get_db_port(db_instance_identifier: str, client: RDSClient) -> String:
     instance_info = get_db_instance_info(db_instance_identifier, client)
     return instance_info["Endpoint"]["Port"]
 
-def get_db_version(db_instance_identifier: str, client: RDSClient) -> String:
+def get_db_version(db_instance_identifier: str, client: RDSClient) -> str:
     """
     Get's database version information 
     """
     instance_info = get_db_instance_info(db_instance_identifier, client)
     return instance_info["EngineVersion"]
 
-def get_db_version(db_instance_identifier: str, client: RDSClient) -> String:
+def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
     """
     Get's database type information 
     """

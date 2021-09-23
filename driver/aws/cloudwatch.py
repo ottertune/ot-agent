@@ -4,7 +4,7 @@ import logging
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from mypy_boto3_cloudwatch.client import CloudWatchClient
-# from driver_lib.aws import AwsWrapper, get_sts_credentials
+from driver.aws.wrapper import AwsWrapper
 from driver.exceptions import CloudWatchException
 
 # TODO make cloudwatch work locally
@@ -17,12 +17,9 @@ def _prepare_for_cloudwatch(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     """Prepare db_id, client, and list of metrics info so that we
     can collect data from cloudwatch"""
     preparations: Dict[str, Any] = {}
-    preparations["db_identifier"] = rds_identifier
+    preparations["db_identifier"] = driver_conf["db_identifier"]
     preparations["client"] = AwsWrapper.cloudwatch_client(
-        access_key_id=creds["AccessKeyId"],
-        secret_access_key=creds["SecretAccessKey"],
-        region_name=driver_conf["db_region"],
-        session_token=creds["SessionToken"],
+        region_name=driver_conf["aws_region"]
     )
     preparations["metrics_to_retrieve"] = driver_conf[
         "metrics_to_retrieve_from_source"

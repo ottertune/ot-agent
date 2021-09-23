@@ -11,8 +11,6 @@ from mypy_boto3_rds.type_defs import DBInstanceTypeDef
 from mypy_boto3_sts.client import STSClient
 from mypy_boto3_sts.type_defs import CredentialsTypeDef
 from mypy_boto3_cloudwatch.client import CloudWatchClient
-from driver_lib import exception
-from driver_lib.secret_redaction import ErrorMessage, ErrorCode, remove_sensitive_info_in_error_msg
 
 PARAMETER_GROUP_ACTIONS = ['rds:ModifyDBParameterGroup', ]
 CLUSTER_PARAMETER_GROUP_ACTIONS = ['rds:ModifyDBClusterParameterGroup', ]
@@ -25,14 +23,14 @@ class AwsWrapper:
     """
 
     @staticmethod
-    def ec2_client() -> EC2Client:
+    def ec2_client(region_name: str) -> EC2Client:
         """
         Wrapper for EC2 client
         """
         return boto3.client('ec2')
 
     @staticmethod
-    def sts_client() -> STSClient:
+    def sts_client(region_name: str) -> STSClient:
         """
         Wrapper for STS client
         """
@@ -46,11 +44,11 @@ class AwsWrapper:
         return boto3.client('rds', region_name=region_name)
 
     @staticmethod
-    def iam_client() -> IAMClient:
+    def iam_client(region_name: str) -> IAMClient:
         """
         Wrapper for IAM client
         """
-        return boto3.client('iam')
+        return boto3.client('iam', region_name=region_name)
 
     @staticmethod
     def cloudwatch_client(region_name: str) -> CloudWatchClient:
