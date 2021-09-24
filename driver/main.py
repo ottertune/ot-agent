@@ -18,29 +18,10 @@ scheduler = BlockingScheduler()
 def _get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Provide driver configuration")
     parser.add_argument(
-        "--polling-interval",
-        type=int,
-        default=10,
-        help="How often to check for new driver configuration (in seconds)",
-    )
-    parser.add_argument(
-        "--monitor-interval",
-        type=int,
-        default=60,
-        help="How often to collect new data (in seconds)",
-    )
-    parser.add_argument(
-        "--log",
+        "--log-verbosity",
         type=str,
         default="INFO",
         help="Logging level, DEBUG,INFO,WARNING, etc.",
-    )
-    parser.add_argument(
-        "--deployment",
-        type=str,
-        choices=["cloud", "onprem"],
-        help="Cloud deployment (SaaS) or On-Prem deployment",
-        required=True,
     )
     parser.add_argument(
         "--config",
@@ -53,48 +34,53 @@ def _get_args() -> argparse.Namespace:
         type=str,
         default="INFO",
         help="aws region, eg: us-east-2",
+        required=True
     )
     parser.add_argument(
-        "--override-db-identifier",
+        "--db-identifier",
         type=str,
-        help="override aws rds database identifier",
-        default=None,
+        help="AWS rds database identifier",
+        required=True
     )
     parser.add_argument(
-        "--override-db-username",
+        "--db-username",
         type=str,
-        help="override username used for db",
-        default=None,
+        help="Username used for db connection",
+        required=True
     )
     parser.add_argument(
-        "--override-db-password",
+        "--db-password",
         type=str,
-        help="override password used for db",
-        default=None,
+        help="Password used for db connection",
+        required=True
     )
     parser.add_argument(
-        "--override-api-key",
+        "--api-key",
         type=str,
-        help="override api key used to identify user",
-        default=None,
+        help="API key used to identify OtterTune user",
+        required=True
     )
     parser.add_argument(
-        "--override-db-key",
+        "--db-key",
         type=str,
-        help="override key used to identify database",
-        default=None,
+        help="Key used to identify database to OtterTune",
+        required=True
     )
     parser.add_argument(
-        "--override-db-type",
+        "--organization-id",
         type=str,
-        help="override db type (postgres or mysql)",
-        default=None,
+        help="Organization Id in Ottertune",
+        required=True
     )
     parser.add_argument(
-        "--override-organization-id",
+        "--override-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect new data (in seconds)",
+    )
+    parser.add_argument(
+        "--override-server-url",
         type=str,
-        help="override organization-id",
-        default=None,
+        help="Override file setting for endpoint to post observation data",
     )
     return parser.parse_args()
 
@@ -110,25 +96,19 @@ def get_config(args):
     """
     Build configuration from file, command line overrides, rds info,
     """
-    driver_config_builder = OnPremDriverConfigBuilder(args.aws_region)
-    overrides = Overrides(
-        db_user=args.override_db_username,
-        db_password=args.override_db_password,
-        api_key=args.override_api_key,
-        db_key=args.override_db_key,
-        organization_id=args.override_organization_id,
-        db_type=args.override_db_type,
-        db_identifier=args.override_db_identifier,
-        monitor_interval=args.monitor_interval,
+    config_builder = OnPremDriverConfigBuilder(args.aws_region)
+    overrides = Overrides(monitor_interval=args.override_monitor_interval,
+                          server_url=args.override_server_url,
     )
 
-    # build partial config to get db_identifier
-    driver_config_builder.from_file(args.config).from_overrides(overrides)
-    db_identifier = driver_config_builder.config["db_identifier"]
+    config_builder.from_file(args.config)\
+                  .from_overrides(overrides)\
+                  .from_rds(args.db_identifier)\
+                  .from_cloudwatch_metrics(args.db_identifier)\
+                  .from_command_line(args)\
+                  .from_overrides(overrides)
 
-    # finish building config
-    driver_config_builder.from_rds(db_identifier).from_cloudwatch_metrics(db_identifier)
-    config = driver_config_builder.from_overrides(overrides).get_config()
+    config = config_builder.get_config()
 
     return config
 
@@ -140,7 +120,7 @@ def run() -> None:
 
     args = _get_args()
 
-    loglevel = args.log
+    loglevel = args.log_verbosity
     numeric_level = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"Invalid log level: {loglevel}")
