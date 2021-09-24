@@ -30,57 +30,9 @@ class PartialOnPremConfigFromFile(
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     It validates that options do not have missing values, wrong types or invalid values.
     """
-
     server_url: StrictStr
-    server_http_proxy: StrictStr
-    server_https_proxy: StrictStr
-    database_id: StrictInt
-
-    db_identifier: StrictStr
-
-    db_type: StrictStr
-    db_user: StrictStr
-    db_password: StrictStr
-
-    db_ssl_ca: StrictStr
-    db_ssl_cert: StrictStr
-    db_ssl_key: StrictStr
-    db_enable_ssl: StrictBool
-
-    db_conn_extend: Optional[Dict[str, Any]]
-
-    api_key: StrictStr
-    db_key: StrictStr
-    organization_id: StrictStr
-
     monitor_interval: StrictInt
-
     metric_source: List[str]
-    aws_region: StrictStr
-
-    @validator("db_enable_ssl")
-    def check_db_ssl(  # pylint: disable=no-self-argument, no-self-use
-        cls, val: bool, values: Dict[str, Any]
-    ) -> bool:
-        """Validate that database ssl.
-
-        When database ssl is enabled, db_ssl_ca, db_ssl_cert and db_ssl_key should not be empty
-        strings at the same time. We should specify at least one of these options. Such options
-        will be further validated when connecting to the database.
-        """
-
-        if (
-            val is True
-            and values["db_ssl_ca"] == ""
-            and values["db_ssl_cert"] == ""
-            and values["db_ssl_key"] == ""
-        ):
-            raise ValueError(
-                "Invalid driver options for database ssl. When database ssl is "
-                "enabled, options 'db_ssl_ca', 'db_ssl_cert' or 'db_ssl_key' must be "
-                "specified. But all of these options are empty strings"
-            )
-        return val
 
     @validator("monitor_interval")
     def check_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
@@ -99,16 +51,26 @@ class Overrides(NamedTuple):
     """
     Runtime overrides for configurations in files, useful for when running in container
     """
-
-    db_user: str
-    db_password: str
-    api_key: str
-    db_key: str
-    organization_id: str
-    db_type: str
     monitor_interval: int
-    db_identifier: str
+    server_url: str
 
+
+class PartialOnPremConfigFromCommandline(
+    BaseModel
+):  # pyre-ignore[13]: pydantic uninitialized variables
+    """Driver options fetched from RDS for agent deployment.
+
+    Such options are part of the complete driver options (defined in OnPremDriverConfig).
+    """
+    api_key: StrictStr
+    db_key: StrictStr
+    organization_id: StrictStr
+
+    aws_region: StrictStr
+    db_identifier: StrictStr
+
+    db_user: StrictStr
+    db_password: StrictStr
 
 class PartialOnPremConfigFromRDS(
     BaseModel
@@ -117,10 +79,10 @@ class PartialOnPremConfigFromRDS(
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     """
-
     db_host: StrictStr
     db_port: StrictInt
     db_version: StrictStr
+    db_type: StrictStr
 
 
 class PartialOnPremConfigFromCloudwatchMetrics(
@@ -130,39 +92,22 @@ class PartialOnPremConfigFromCloudwatchMetrics(
 
     Such options are part of the complete driver options (defined in OnPremDriverConfig).
     """
-
     metrics_to_retrieve_from_source: Dict[StrictStr, List[StrictStr]]
 
 
 class OnPremDriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     """Driver Config for on-prem deployment."""
-
     server_url: str  # OtterTune server url, required
-    server_http_proxy: str  # HTTP proxy to connect to the server
-    server_https_proxy: str  # HTTPS proxy to connect to the server
-    database_id: int  # Database primary key in the server model, required
 
-    db_identifier: str  # AWS RDS Database identifier
+    db_identifier: str  # AWS RDS Database identifier, required
+    aws_region: str # AWS Region of Database and cloudwatch logs, required
 
     db_type: str  # Database type (mysql or postgres), required
     db_host: str  # Database host address, required
     db_port: int  # Database port, required
-    db_version: str  # Database version number, key for what metrics to fetch
+    db_version: str  # Database version number, key for what metrics to fetch, required
     db_user: str  # Database username, required
     db_password: str  # Database password, required
-
-    db_enable_ssl: bool  # Enable SSL connection to the database
-    db_ssl_ca: str  # File containing the SSL certificate authority
-    db_ssl_cert: str  # File containing the SSL certificate file
-    db_ssl_key: str  # File containing the SSL key
-
-    # If you need more parameters to connect to the database besides to the above ones, you can
-    # add options in db_conn_extend, e.g., db_conn_extend = {"pool_size":10, "autocommit":False}
-    # For MySQL, we use mysql-connector-python, supported connection parameters can be found in:
-    # https://dev.mysql.com/doc/connector-python/en/connector-python-connectargs.html
-    # For Postgres, we use psycopg2, supported parameters can be found here:
-    # https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-    db_conn_extend: Optional[Dict[str, Any]]
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
@@ -177,7 +122,6 @@ class OnPremDriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attri
         str, List[str]
     ]  # A list of target metric names
 
-    aws_region: str
 
 
 class OnPremDriverConfigBuilder(DriverConfigBuilder):
@@ -207,12 +151,32 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
             self.config.update(partial_config_from_file)
         return self
 
+    def from_command_line(self, args) -> DriverConfigBuilder:
+        """build config options from command line arguments that aren't overriding other builders"""
+        try:
+            from_cli = PartialOnPremConfigFromCommandline(aws_region=args.aws_region,
+                                                          db_identifier=args.db_identifier,
+                                                          db_user=args.db_username,
+                                                          db_password=args.db_password,
+                                                          api_key=args.api_key,
+                                                          db_key=args.db_key,
+                                                          organization_id=args.organization_id)
+        except ValidationError as ex:
+            msg = (
+                "Invalid driver configuration for On-Prem deployment: "
+                "the driver option from commandline is missing or invalid"
+            )
+            raise DriverConfigException(msg, ex) from ex
+        self.config.update(from_cli)
+        return self
+
     def from_rds(self, db_instance_identifier) -> DriverConfigBuilder:
         """build config options from rds description of database"""
         config_from_rds = {
             "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
             "db_port": get_db_port(db_instance_identifier, self.rds_client),
             "db_version": get_db_version(db_instance_identifier, self.rds_client),
+            "db_type": get_db_type(db_instance_identifier, self.rds_client)
         }
 
         try:
