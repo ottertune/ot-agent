@@ -132,7 +132,7 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
 
     def from_file(self, config_path: str) -> DriverConfigBuilder:
         """build config options from config file"""
-        with open(config_path, "r") as config_file:
+        with open(config_path, "r", encoding="utf-8") as config_file:
             data = yaml.safe_load(config_file)
             if not isinstance(data, dict):
                 raise ValueError("Invalid data in the driver configuration YAML file")
@@ -218,9 +218,8 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
     def from_cloudwatch_metrics(self, db_instance_identifier) -> DriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""
         metric_names = []
-        with open(
-            self._get_cloudwatch_metrics_file(db_instance_identifier)
-        ) as metrics_file:
+        file_path = self._get_cloudwatch_metrics_file(db_instance_identifier)
+        with open(file_path, "r", encoding="utf-8") as metrics_file:
             metrics = json.load(metrics_file)
             for metric in metrics:
                 metric_names.append(metric["name"])
