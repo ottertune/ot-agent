@@ -6,7 +6,7 @@ from requests import Session
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.onprem_driver_config_builder import OnPremDriverConfig
+from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
 from driver.database import collect_observation_for_on_prem
 
@@ -15,8 +15,8 @@ MONITOR_JOB_ID = "monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 
 
-def driver_pipeline_for_onprem(
-    config: OnPremDriverConfig,
+def driver_pipeline_for(
+    config: DriverConfig,
     job_id: str,  # pylint: disable=unused-argument
 ) -> None:
     """
@@ -36,7 +36,7 @@ def driver_pipeline_for_onprem(
     compute_server_client.post_observation(observation)
 
 
-def _get_interval(config: OnPremDriverConfig, job_id: str) -> int:
+def _get_interval(config: DriverConfig, job_id: str) -> int:
     """Get the scheduled time interval (sec) based on job id."""
 
     if job_id == MONITOR_JOB_ID:
@@ -47,11 +47,11 @@ def _get_interval(config: OnPremDriverConfig, job_id: str) -> int:
 
 
 def _start_job(
-    scheduler: BlockingScheduler, config: OnPremDriverConfig, job_id: str, interval: int
+    scheduler: BlockingScheduler, config: DriverConfig, job_id: str, interval: int
 ) -> None:
     "Helper to start new job"
     logging.info("Initializing driver pipeline (job %s)...", job_id)
-    driver_pipeline = driver_pipeline_for_onprem
+    driver_pipeline = driver_pipeline_for
 
     kwargs = {}
     if job_id == MONITOR_JOB_ID:
@@ -70,8 +70,8 @@ def _start_job(
 
 def _update_job(
     scheduler: BlockingScheduler,
-    old_config: OnPremDriverConfig,
-    new_config: OnPremDriverConfig,
+    old_config: DriverConfig,
+    new_config: DriverConfig,
     job_id: str,
     interval: int,
 ) -> None:
@@ -88,7 +88,7 @@ def _update_job(
 
 
 def schedule_or_update_job(
-    scheduler: BlockingScheduler, config: OnPremDriverConfig, job_id: str
+    scheduler: BlockingScheduler, config: DriverConfig, job_id: str
 ) -> None:
     """
     Apply configuration change to the job. If the configuration does not change, it will do nothing.
