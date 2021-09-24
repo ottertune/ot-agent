@@ -3,12 +3,11 @@ Defines the OnPremDriverConfigBuilder to build the driver configuraton for on-pr
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 
-from typing import Dict, Any, Optional, NamedTuple, List
+from typing import Dict, NamedTuple, List
 import json
 
 from pydantic import (
     BaseModel,
-    StrictBool,
     StrictInt,
     StrictStr,
     validator,
@@ -213,8 +212,8 @@ class OnPremDriverConfigBuilder(DriverConfigBuilder):
             release, major, _ = db_version_formatted.split("_")
             db_version_formatted = f"{release}_{major}"
 
-
-        return f"./driver/config/cloudwatch_metrics/rds_{db_type_formatted}-{db_version_formatted}.json"
+        folder_path = "./driver/config/cloudwatch_metrics"
+        return f"{folder_path}/rds_{db_type_formatted}-{db_version_formatted}.json"
 
     def from_cloudwatch_metrics(self, db_instance_identifier) -> DriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""

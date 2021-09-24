@@ -89,13 +89,12 @@ def test_partial_onprem_config_from_file_missing_value(
 
 def test_create_onprem_driver_config_builder_invalid_config(test_onprem_config_data: Dict[str, Any]
 ) -> None:
-    with pytest.raises(DriverConfigException) as ex:
+    with pytest.raises(DriverConfigException):
         with tempfile.NamedTemporaryFile("w") as temp:
             test_onprem_config_data["file"]["database_id"] = "15213"
             yaml.safe_dump(test_onprem_config_data["file"], temp)
             config_builder = OnPremDriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)
-    assert "database_id" in ex.value.message
 
 
 def test_create_onprem_driver_config_builder_invalid_config_path() -> None:

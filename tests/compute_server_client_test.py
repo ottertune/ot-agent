@@ -48,6 +48,7 @@ def _test_response_data() -> Dict[str, Any]:
         knobs_data=observation_knobs_data,
         metrics_data=observation_metrics_data,
         summary=observation_summary,
+        organization_id="test_org"
     )
 
     return dict(
