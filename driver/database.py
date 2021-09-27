@@ -7,11 +7,11 @@ from typing import Dict, Any
 
 from driver.compute_server_client import Observation
 from driver.collector.collector_factory import get_collector
-from driver.onprem_driver_config_builder import OnPremDriverConfig
+from driver.driver_config_builder import DriverConfig
 from driver.metric_source_utils import METRIC_SOURCE_COLLECTOR
 
 
-def collect_observation_for_on_prem(config: OnPremDriverConfig) -> Observation:
+def collect_observation_for_on_prem(config: DriverConfig) -> Observation:
     """
     Get the observation data for the target cloud database. It may have multiple sources,
     e.g., runtime knobs/metrics data from the database, metrics from cloudwatch, etc.

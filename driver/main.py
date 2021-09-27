@@ -8,7 +8,7 @@ import logging
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.onprem_driver_config_builder import OnPremDriverConfigBuilder, Overrides
+from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import schedule_or_update_job, MONITOR_JOB_ID
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
@@ -26,8 +26,8 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        help="Currently required path to configuration file."
-        " Required for on-prem deployment",
+        help="Path to configuration file.",
+        required=True
     )
     parser.add_argument(
         "--aws-region",
@@ -96,7 +96,7 @@ def get_config(args):
     """
     Build configuration from file, command line overrides, rds info,
     """
-    config_builder = OnPremDriverConfigBuilder(args.aws_region)
+    config_builder = DriverConfigBuilder(args.aws_region)
     overrides = Overrides(monitor_interval=args.override_monitor_interval,
                           server_url=args.override_server_url,
     )

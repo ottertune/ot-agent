@@ -22,12 +22,7 @@ class PostgresCollector(BaseDbCollector):
         "index": "indexrelid",
     }
 
-    def __init__(
-        self,
-        # pyre-ignore[2] no postgres type for conn
-        conn,
-        version: str,
-    ) -> None:
+    def __init__(self, conn, version: str) -> None:
         """
         Callers should make sure that the connection object is closed after using
         the collector. This likely means that callers should not instantiate this class
@@ -37,7 +32,7 @@ class PostgresCollector(BaseDbCollector):
             conn: The connection to the database
             options: Options used to define which tables to use for metric collection
         """
-        self._conn = conn  # pyre-ignore[4] no postgres type for conn
+        self._conn = conn
         self._version_str = version
         if float(".".join(version.split(".")[:2])) >= 9.4:
             # pylint: disable=invalid-name

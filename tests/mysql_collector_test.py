@@ -92,7 +92,6 @@ class SqlData:
 
 class Result:
     def __init__(self) -> None:
-        # pyre-ignore[4] sql result can be multiple types
         self.value: Optional[List[Any]] = None
         self.meta: List[List[str]] = []
 

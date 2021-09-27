@@ -10,18 +10,18 @@ from pydantic import ValidationError
 import pytest
 
 from driver.exceptions import DriverConfigException
-from driver.onprem_driver_config_builder import (
-    PartialOnPremConfigFromFile,
-    OnPremDriverConfigBuilder
+from driver.driver_config_builder import (
+    PartialConfigFromFile,
+    DriverConfigBuilder
 )
 
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
 
-@pytest.fixture(name="test_onprem_config_data")
-def _test_onprem_config_data() -> Dict[str, Any]:
-    partial_onprem_config_from_file: Dict[str, Any] = {
+@pytest.fixture(name="test_config_data")
+def _test_config_data() -> Dict[str, Any]:
+    partial_config_from_file: Dict[str, Any] = {
         "server_url": "test_server_url",
         "api_key": "test_api_key",
         "db_key": "test_db_key",
@@ -42,7 +42,7 @@ def _test_onprem_config_data() -> Dict[str, Any]:
         "monitor_interval": 60
     }
 
-    partial_onprem_config_from_server: Dict[str, Any] = {
+    partial_config_from_server: Dict[str, Any] = {
         "db_provider": "on_premise",
         "api_key": "test_api_key",
         "db_key": "test_db_key",
@@ -53,62 +53,61 @@ def _test_onprem_config_data() -> Dict[str, Any]:
         "tune_interval": 600,
     }
 
-    onprem_config: Dict[str, Any] = {}
-    onprem_config.update(partial_onprem_config_from_file)
-    onprem_config.update(partial_onprem_config_from_server)
+    config: Dict[str, Any] = {}
+    config.update(partial_config_from_file)
+    config.update(partial_config_from_server)
 
     return dict(
-        file=partial_onprem_config_from_file,
-        server=partial_onprem_config_from_server,
-        onprem=onprem_config,
+        file=partial_config_from_file,
+        server=partial_config_from_server,
     )
 
 
-# Test PartialOnPremConfigFromFile
-def test_partial_onprem_config_from_file_invalid_type(
-    test_onprem_config_data: Dict[str, Any]
+# Test PartialConfigFromFile
+def test_partial_config_from_file_invalid_type(
+    test_config_data: Dict[str, Any]
 ) -> None:
     # wrong type server_url fetched from env, string is expected, but int found
-    test_data_from_file = test_onprem_config_data["file"]
+    test_data_from_file = test_config_data["file"]
     test_data_from_file["server_url"] = 15213
     with pytest.raises(ValidationError) as ex:
-        PartialOnPremConfigFromFile(**test_data_from_file)
+        PartialConfigFromFile(**test_data_from_file)
     assert "server_url" in str(ex.value)
 
 
-def test_partial_onprem_config_from_file_missing_value(
-    test_onprem_config_data: Dict[str, Any]
+def test_partial_config_from_file_missing_value(
+    test_config_data: Dict[str, Any]
 ) -> None:
     # missing option server_url fetched from file
-    test_data_from_file = test_onprem_config_data["file"]
+    test_data_from_file = test_config_data["file"]
     test_data_from_file.pop("server_url")
     with pytest.raises(ValidationError) as ex:
-        PartialOnPremConfigFromFile(**test_data_from_file)
+        PartialConfigFromFile(**test_data_from_file)
     assert "server_url" in str(ex.value)
 
 
-def test_create_onprem_driver_config_builder_invalid_config(test_onprem_config_data: Dict[str, Any]
+def test_create_driver_config_builder_invalid_config(test_config_data: Dict[str, Any]
 ) -> None:
     with pytest.raises(DriverConfigException):
         with tempfile.NamedTemporaryFile("w") as temp:
-            test_onprem_config_data["file"]["database_id"] = "15213"
-            yaml.safe_dump(test_onprem_config_data["file"], temp)
-            config_builder = OnPremDriverConfigBuilder('us-east-2')
+            test_config_data["file"]["database_id"] = "15213"
+            yaml.safe_dump(test_config_data["file"], temp)
+            config_builder = DriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)
 
 
-def test_create_onprem_driver_config_builder_invalid_config_path() -> None:
+def test_create_driver_config_builder_invalid_config_path() -> None:
     # Invalid config file path
     with pytest.raises(FileNotFoundError):
-        config_builder = OnPremDriverConfigBuilder('us-east-2')
+        config_builder = DriverConfigBuilder('us-east-2')
         config_builder.from_file("invalid_name")
 
 
-def test_create_onprem_driver_config_builder_invalid_yaml() -> None:
+def test_create_driver_config_builder_invalid_yaml() -> None:
     # Invalid yaml config file
     with tempfile.NamedTemporaryFile("w") as temp:
         with pytest.raises(ValueError):
             temp.write("bad_format")
             temp.seek(0)
-            config_builder = OnPremDriverConfigBuilder('us-east-2')
+            config_builder = DriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)

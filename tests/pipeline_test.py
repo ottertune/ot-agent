@@ -29,7 +29,7 @@ class MockConfig:
         self.enable_tuning = True
 
 
-@mock.patch("driver.pipeline.driver_pipeline_for_onprem")
+@mock.patch("driver.pipeline.driver_pipeline")
 def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> None:
     scheduler = BlockingScheduler()
     config = MockConfig()
@@ -39,7 +39,7 @@ def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> Non
     module_under_test.schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
 
 
-@mock.patch("driver.pipeline.driver_pipeline_for_onprem")
+@mock.patch("driver.pipeline.driver_pipeline")
 def test_schedule_or_update_job_same_job_twice(
     pipeline_function_patch: mock.Mock,
 ) -> None:
