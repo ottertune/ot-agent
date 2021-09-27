@@ -26,8 +26,8 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        help="Currently required path to configuration file."
-        " Required for on-prem deployment",
+        help="Path to configuration file.",
+        required=True
     )
     parser.add_argument(
         "--aws-region",
