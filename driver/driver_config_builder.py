@@ -30,9 +30,7 @@ class BaseDriverConfigBuilder(ABC):
         """Returns a dictionary containing everything necessary to run the driver pipeline."""
         return {}
 
-class PartialConfigFromFile(
-    BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from local file for on-prem deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -43,9 +41,7 @@ class PartialConfigFromFile(
     metric_source: List[str]
 
     @validator("monitor_interval")
-    def check_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
-        cls, val: int
-    ) -> int:
+    def check_monitor_interval(cls, val: int) -> int: # pylint: disable=no-self-argument, no-self-use
         """Validate that monitor_interval is positive and at least 60 seconds."""
         if val < 60:
             raise ValueError(
@@ -63,9 +59,7 @@ class Overrides(NamedTuple):
     server_url: str
 
 
-class PartialConfigFromCommandline(
-    BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -80,9 +74,7 @@ class PartialConfigFromCommandline(
     db_user: StrictStr
     db_password: StrictStr
 
-class PartialConfigFromRDS(
-    BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -93,9 +85,7 @@ class PartialConfigFromRDS(
     db_type: StrictStr
 
 
-class PartialConfigFromCloudwatchMetrics(
-    BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).

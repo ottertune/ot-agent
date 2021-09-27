@@ -51,7 +51,6 @@ def _start_job(
 ) -> None:
     "Helper to start new job"
     logging.info("Initializing driver pipeline (job %s)...", job_id)
-    driver_pipeline = driver_pipeline
 
     kwargs = {}
     if job_id == MONITOR_JOB_ID:
