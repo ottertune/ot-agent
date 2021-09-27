@@ -18,6 +18,8 @@ from mypy_boto3_sts.client import STSClient
 from mypy_boto3_sts.type_defs import CredentialsTypeDef
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 
+from driver.aws.exceptions import InvalidCustomerSettingsError
+
 
 @lru_cache
 def get_db_instance_info(

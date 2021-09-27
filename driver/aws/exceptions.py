@@ -22,14 +22,6 @@ class DriverAwsLibException(Exception):
     format errors (e.g. HTTP response for driver API)
     """
 
-    def __init__(
-        self, message: str, error_code: Optional[str] = None
-    ) -> None:  # pylint: disable=super-init-not-called
-        super().__init__(remove_sensitive_info_in_error_msg(message), error_code)
-
-    def __str__(self) -> str:
-        return self.message
-
 
 class InvalidCustomerSettingsError(DriverAwsLibException):
     pass

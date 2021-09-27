@@ -156,7 +156,7 @@ def connect_mysql(mysql_conf: Dict[str, Any]) -> mysql.connector.MySQLConnection
         raise MysqlCollectorException("Failed to connect to MySQL", ex) from ex
 
 
-def connect_postgres(postgres_conf: Dict[str, Any]):  # pyre-ignore[3] no conn type stub
+def connect_postgres(postgres_conf: Dict[str, Any]):
     """
     Connects to target postres database
     Args:
@@ -192,7 +192,7 @@ def get_mysql_version(conn: mysql_conn.MySQLConnection) -> str:
         raise MysqlCollectorException("Failed to get MySQL version", ex) from ex
 
 
-def get_postgres_version(conn) -> str:  # pyre-ignore[2] lack of postgres annotations
+def get_postgres_version(conn) -> str:
     """
     Args:
         conn: The postgres connection

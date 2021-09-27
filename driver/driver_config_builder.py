@@ -24,9 +24,7 @@ class BaseDriverConfigBuilder(ABC):
     """Defines the driver config builder."""
 
     @abstractmethod
-    def get_config(
-        self,
-    ) -> Any:  # pyre-ignore[3]: dataclasses and typing not happy together
+    def get_config(self) -> Any:
         """Returns a dictionary containing everything necessary to run the driver pipeline."""
         return {}
 

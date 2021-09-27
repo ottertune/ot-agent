@@ -19,8 +19,6 @@ class SqlData:
     data doesn't reflect the real columns and rows we'd see in postgres. It is
     mainly used to validate that we are getting the appropriate response back.
     """
-
-    # pyre-ignore[4] sql result can be of multiple types
     views: Dict[str, List[List[Any]]]
     metas: Dict[str, List[List[str]]]
 
@@ -94,7 +92,6 @@ class SqlData:
 
 class Result:
     def __init__(self) -> None:
-        # pyre-ignore[4] sql result can be multiple types
         self.value: Optional[List[Any]] = None
         self.meta: List[List[str]] = []
 
