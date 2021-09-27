@@ -15,7 +15,7 @@ MONITOR_JOB_ID = "monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 
 
-def driver_pipeline_for(
+def driver_pipeline(
     config: DriverConfig,
     job_id: str,  # pylint: disable=unused-argument
 ) -> None:
@@ -51,7 +51,7 @@ def _start_job(
 ) -> None:
     "Helper to start new job"
     logging.info("Initializing driver pipeline (job %s)...", job_id)
-    driver_pipeline = driver_pipeline_for
+    driver_pipeline = driver_pipeline
 
     kwargs = {}
     if job_id == MONITOR_JOB_ID:

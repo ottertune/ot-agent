@@ -14,15 +14,9 @@ from mypy_boto3_rds.type_defs import DBInstanceTypeDef
 from mypy_boto3_sts.client import STSClient
 from mypy_boto3_sts.type_defs import CredentialsTypeDef
 from mypy_boto3_cloudwatch.client import CloudWatchClient
-from driver_lib import exception
-from driver_lib.secret_redaction import (
-    ErrorMessage,
-    ErrorCode,
-    remove_sensitive_info_in_error_msg,
-)
 
 
-class DriverAwsLibException(exception.DriverLibException):
+class DriverAwsLibException(Exception):
     """
     Custom exception for driver library. It is up to callers to appropriately
     format errors (e.g. HTTP response for driver API)
