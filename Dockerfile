@@ -13,7 +13,7 @@
 
 FROM python:3.8
 
-ENV POSTGRES_OTTERTUNE_DB_NAME=""
+ENV POSTGRES_OTTERTUNE_DB_NAME="default"
 
 RUN mkdir -p /ottertune/driver
 COPY . /ottertune/driver

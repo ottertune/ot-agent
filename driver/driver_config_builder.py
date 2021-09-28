@@ -175,8 +175,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             raise DriverConfigException(msg)
 
         if self.config["db_type"] == "postgres":
-            if from_cli.db_name == "":
-                msg = "Must supply non-empty-string database name for Postgres. " \
+            if from_cli.db_name == "default":
+                msg = "Must supply non-default database name for Postgres. " \
                       "(--db-name / POSTGRES_OTTERTUNE_DB_NAME)"
                 raise DriverConfigException(msg)
 

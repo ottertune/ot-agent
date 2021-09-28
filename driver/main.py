@@ -76,7 +76,7 @@ def _get_args() -> argparse.Namespace:
         "--db-name",
         type=str,
         help="Specific database in DBMS to monitor",
-        default=""
+        default="default"
     )
     parser.add_argument(
         "--override-monitor-interval",
