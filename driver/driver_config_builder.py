@@ -209,26 +209,27 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
 
     def _get_cloudwatch_metrics_file(self, db_instance_identifier):
         db_version = get_db_version(db_instance_identifier, self.rds_client)
-        db_version_formatted = db_version.replace(".", "_").replace("-", "_")
         db_type = get_db_type(db_instance_identifier, self.rds_client)
-        db_type_formatted = db_type.replace(".", "_").replace("-", "_")
 
-        if db_type_formatted == "aurora_mysql":
-            db_version_formatted, _ = db_version_formatted.split("_mysql")
-        if db_type_formatted == "aurora_postgres":
-            db_version_formatted, _ = db_version_formatted.split("_postgres")
+        if db_type == "aurora_mysql":
+            db_version_formatted, _ = db_version.split("_mysql")
+        if db_type == "aurora_postgres":
+            db_version_formatted, _ = db_version.split("_postgres")
 
-        if "postgres" in db_type_formatted:
+        if "postgres" in db_type:
             # drop minor version except for 9_6
             if db_version_formatted != "9_6":
                 db_version_formatted, _ = db_version_formatted.split("_")
-        if "mysql" in db_type_formatted:
-            # drop minor version
-            release, major, _ = db_version_formatted.split("_")
+        if "mysql" in db_type:
+            # drop minor version if present
+            try:
+                release, major, _ = db_version_formatted.split("_")
+            except ValueError:
+                release, major = db_version_formatted.split("_")
             db_version_formatted = f"{release}_{major}"
 
         folder_path = "./driver/config/cloudwatch_metrics"
-        return f"{folder_path}/rds_{db_type_formatted}-{db_version_formatted}.json"
+        return f"{folder_path}/rds_{db_type}-{db_version_formatted}.json"
 
     def from_cloudwatch_metrics(self, db_instance_identifier) -> BaseDriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""

@@ -83,7 +83,7 @@ def get_db_version(db_instance_identifier: str, client: RDSClient) -> str:
     Get's database version information
     """
     instance_info = get_db_instance_info(db_instance_identifier, client)
-    return instance_info["EngineVersion"]
+    return instance_info["EngineVersion"].replace(".", "_").replace("-", "_")
 
 
 def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
@@ -91,4 +91,4 @@ def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
     Get's database type information
     """
     instance_info = get_db_instance_info(db_instance_identifier, client)
-    return instance_info["Engine"]
+    return instance_info["Engine"].replace(".", "_").replace("-", "_")
