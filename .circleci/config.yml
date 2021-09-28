@@ -137,28 +137,3 @@ workflows:
       - postgres_test:
           name: "Test Postgres"
           context: "AWS CLI"
-      - ot/docker-push:
-          name: "Build Development Image"
-          repo-name: "ottertune-agent"
-          dockerfile: "Dockerfile"
-          context: "AWS CLI"
-          requires:
-            - "Build, Lint, and Test"
-            - "Test MySQL"
-            - "Test Postgres"
-          filters:
-            branches:
-              only: /main/
-      - ot/docker-push:
-          name: "Build Release Image"
-          repo-name: "ottertune-agent"
-          context: "AWS CLI"
-          requires:
-            - "Build, Lint, and Test"
-            - "Test MySQL"
-            - "Test Postgres"
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^release-v.*/
