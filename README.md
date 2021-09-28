@@ -26,6 +26,16 @@ to run pylint against driver/ and tests/.
 
 to run pyre on driver/ and tests/.
 
-### `make docker [TAG=your_tag:latest]`
+### `make docker [VERSION=0.1.0]`
 
-to build the docker image with tag (default: `ot-agent:latest`).
+to build the docker image with provided tag (default: `ottertune/agent:0.1.0`).
+
+### `make publish`
+
+builds the Docker image for `linux/amd64` and `linux/arm64`, then uploads the images to Dockerhub. To use, you must first run create a Docker builder using the following command:
+
+```bash
+docker buildx create --name mybuilder --use
+```
+
+`mybuilder` can be any name. You only need to run this command once; after which, you can run `make publish` whenever you want.
