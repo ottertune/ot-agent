@@ -73,6 +73,12 @@ def _get_args() -> argparse.Namespace:
         required=True
     )
     parser.add_argument(
+        "--db-name",
+        type=str,
+        help="Specific database in DBMS to monitor",
+        default=None
+    )
+    parser.add_argument(
         "--override-monitor-interval",
         type=int,
         help="Override file setting for how often to collect new data (in seconds)",

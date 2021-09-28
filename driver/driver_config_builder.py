@@ -3,7 +3,7 @@ Defines the DriverConfigBuilder to build the driver configuraton for on-prem dep
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 from abc import ABC, abstractmethod
-from typing import Any,Dict, NamedTuple, List
+from typing import Any,Dict, NamedTuple, List, Optional
 import json
 
 from pydantic import (
@@ -72,6 +72,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
+    db_name: Optional[StrictStr]
+
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
@@ -104,6 +106,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_version: str  # Database version number, key for what metrics to fetch, required
     db_user: str  # Database username, required
     db_password: str  # Database password, required
+
+    db_name: str # Database name in DBMS to focus on, optional
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
@@ -156,7 +160,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                                                           db_password=args.db_password,
                                                           api_key=args.api_key,
                                                           db_key=args.db_key,
-                                                          organization_id=args.organization_id)
+                                                          organization_id=args.organization_id,
+                                                          db_name=args.db_name)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "
