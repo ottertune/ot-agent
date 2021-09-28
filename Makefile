@@ -1,5 +1,7 @@
 VERSION := 0.1.0
-TAG := ottertune/agent:$(VERSION)
+REPO := ottertune/agent
+VERSION_TAG := $(REPO):$(VERSION)
+LATEST_TAG := $(REPO):latest
 
 .PHONY: docker
 
@@ -21,5 +23,10 @@ lint:
 test:
 	python3 -m pytest
 
+# Build a Docker image for local use.
 docker: 
-	docker build . -t $(TAG) -t latest
+	docker build . -t $(VERSION_TAG) -t $(LATEST_TAG)
+
+# Publish a new Docker image to Dockerhub.
+publish:
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(VERSION_TAG) -t $(LATEST_TAG) --push .
