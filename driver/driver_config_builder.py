@@ -3,7 +3,7 @@ Defines the DriverConfigBuilder to build the driver configuraton for on-prem dep
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 from abc import ABC, abstractmethod
-from typing import Any,Dict, NamedTuple, List
+from typing import Any,Dict, NamedTuple, List, Optional
 import json
 
 from pydantic import (
@@ -72,6 +72,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
+    db_name: Optional[StrictStr]
+
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
@@ -105,6 +107,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_user: str  # Database username, required
     db_password: str  # Database password, required
 
+    db_name: str # Database name in DBMS to focus on, optional
+
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
     organization_id: str  # Org id handed to agent proxy to identify database
@@ -126,6 +130,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def __init__(self, aws_region) -> None:
         self.config = {}
         self.rds_client = AwsWrapper.rds_client(aws_region)
+        self.has_determined_db_type = False
 
     def from_file(self, config_path: str) -> BaseDriverConfigBuilder:
         """build config options from config file"""
@@ -156,13 +161,25 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                                                           db_password=args.db_password,
                                                           api_key=args.api_key,
                                                           db_key=args.db_key,
-                                                          organization_id=args.organization_id)
+                                                          organization_id=args.organization_id,
+                                                          db_name=args.db_name)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "
                 "the driver option from commandline is missing or invalid"
             )
             raise DriverConfigException(msg, ex) from ex
+
+        if not self.has_determined_db_type:
+            msg = "Builder must know db type before from_command_line, try running from_rds first"
+            raise DriverConfigException(msg)
+
+        if self.config["db_type"] == "postgres":
+            if from_cli.db_name == "":
+                msg = "Must supply non-empty-string database name for Postgres. " \
+                      "(--db-name / POSTGRES_OTTERTUNE_DB_NAME)"
+                raise DriverConfigException(msg)
+
         self.config.update(from_cli)
         return self
 
@@ -186,6 +203,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             )
             raise DriverConfigException(msg, ex) from ex
 
+        self.has_determined_db_type = True
         self.config.update(partial_config_from_rds)
         return self
 

@@ -1,5 +1,5 @@
 """
-Tests for the on-prem config builder
+Tests for the config builder
 """
 
 from typing import Dict, Any

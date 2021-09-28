@@ -1,5 +1,4 @@
-# OtterTune Driver Configuration for On-Prem Deployment
-# On-Prem customers need to specify correct driver option values in this config file
+# OtterTune Driver Configuration for Deployment
 
 # ====================================================================
 #  SERVER OPTIONS

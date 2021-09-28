@@ -20,9 +20,9 @@ def driver_pipeline(
     job_id: str,  # pylint: disable=unused-argument
 ) -> None:
     """
-    Run the core pipeline for the driver in on-prem deployment
+    Run the core pipeline for the driver deployment
     """
-    logging.info("Running driver pipeline for on-prem deployment!")
+    logging.info("Running driver pipeline deployment!")
 
     logging.debug("Collecting observation data.")
     observation = collect_observation_for_on_prem(config)
