@@ -1,4 +1,5 @@
-TAG := ot-agent:latest
+VERSION := 0.1.0
+TAG := ottertune/agent:$(VERSION)
 
 .PHONY: docker
 
@@ -20,6 +21,5 @@ lint:
 test:
 	python3 -m pytest
 
-
 docker: 
-	docker build . -t $(TAG)
+	docker build . -t $(TAG) -t latest
