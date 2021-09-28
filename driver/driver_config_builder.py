@@ -175,8 +175,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             raise DriverConfigException(msg)
 
         if self.config["db_type"] == "postgres":
-            if from_cli.db_name == "":
-                msg = "Must supply non-empty-string database name for Postgres. " \
+            if from_cli.db_name == "default":
+                msg = "Must supply non-default database name for Postgres. " \
                       "(--db-name / POSTGRES_OTTERTUNE_DB_NAME)"
                 raise DriverConfigException(msg)
 
@@ -212,24 +212,24 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         if db_type == "aurora_mysql":
-            db_version_formatted, _ = db_version.split("_mysql")
+            db_version, _ = db_version.split("_mysql")
         if db_type == "aurora_postgres":
-            db_version_formatted, _ = db_version.split("_postgres")
+            db_version, _ = db_version.split("_postgres")
 
         if "postgres" in db_type:
             # drop minor version except for 9_6
-            if db_version_formatted != "9_6":
-                db_version_formatted, _ = db_version_formatted.split("_")
+            if db_version != "9_6":
+                db_version, _ = db_version.split("_")
         if "mysql" in db_type:
             # drop minor version if present
             try:
-                release, major, _ = db_version_formatted.split("_")
+                release, major, _ = db_version.split("_")
             except ValueError:
-                release, major = db_version_formatted.split("_")
-            db_version_formatted = f"{release}_{major}"
+                release, major = db_version.split("_")
+            db_version = f"{release}_{major}"
 
         folder_path = "./driver/config/cloudwatch_metrics"
-        return f"{folder_path}/rds_{db_type}-{db_version_formatted}.json"
+        return f"{folder_path}/rds_{db_type}-{db_version}.json"
 
     def from_cloudwatch_metrics(self, db_instance_identifier) -> BaseDriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""
