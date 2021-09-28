@@ -11,11 +11,11 @@
 # OTTERTUNE_ORG_ID - organization id from ottertune.com
 #
 # Optional:
-# OTTERTUNE_DB_NAME - Specific database in DBMS to collect metrics from
+# OPTIONAL_OTTERTUNE_DB_NAME - Specific database in DBMS to collect metrics from
 
 FROM python:3.8
 
-ENV OTTERTUNE_DB_NAME=""
+ENV OPTIONAL_OTTERTUNE_DB_NAME=""
 
 RUN mkdir -p /ottertune/driver
 COPY . /ottertune/driver
@@ -23,4 +23,4 @@ WORKDIR /ottertune/driver
 
 RUN pip install -r requirements.txt
 
-CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-region $AWS_REGION --db-identifier $OTTERTUNE_DB_IDENTIFIER  --db-username $OTTERTUNE_DB_USERNAME --db-password $OTTERTUNE_DB_PASSWORD --api-key $OTTERTUNE_API_KEY --db-key $OTTERTUNE_API_KEY --organization-id $OTTERTUNE_ORG_ID --db-name $OTTERTUNE_DB_NAME 
+CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-region $AWS_REGION --db-identifier $OTTERTUNE_DB_IDENTIFIER  --db-username $OTTERTUNE_DB_USERNAME --db-password $OTTERTUNE_DB_PASSWORD --api-key $OTTERTUNE_API_KEY --db-key $OTTERTUNE_API_KEY --organization-id $OTTERTUNE_ORG_ID --db-name $OPTIONAL_OTTERTUNE_DB_NAME 
