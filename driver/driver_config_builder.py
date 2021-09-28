@@ -130,6 +130,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def __init__(self, aws_region) -> None:
         self.config = {}
         self.rds_client = AwsWrapper.rds_client(aws_region)
+        self.has_determined_db_type = False
 
     def from_file(self, config_path: str) -> BaseDriverConfigBuilder:
         """build config options from config file"""
@@ -168,6 +169,17 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 "the driver option from commandline is missing or invalid"
             )
             raise DriverConfigException(msg, ex) from ex
+
+        if not self.has_determined_db_type:
+            msg = "Builder must know db type before from_command_line, try running from_rds first"
+            raise DriverConfigException(msg)
+
+        if self.config["db_type"] == "postgres":
+            if from_cli.db_name == "":
+                msg = "Must supply non-empty-string database name for Postgres. " \
+                      "(--db-name / POSTGRES_OTTERTUNE_DB_NAME)"
+                raise DriverConfigException(msg)
+
         self.config.update(from_cli)
         return self
 
@@ -191,6 +203,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             )
             raise DriverConfigException(msg, ex) from ex
 
+        self.has_determined_db_type = True
         self.config.update(partial_config_from_rds)
         return self
 
