@@ -218,7 +218,10 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
 
         if "postgres" in db_type:
             # drop minor version except for 9_6
-            if db_version != "9_6":
+            if "9_6" in db_version:
+                major, minor, _ = db_version.split("_")
+                db_version = f"{major}_{minor}"
+            else:
                 db_version, _ = db_version.split("_")
         if "mysql" in db_type:
             # drop minor version if present
