@@ -6,7 +6,6 @@ from requests import Session
 
 from driver.exceptions import ComputeServerClientException
 
-
 SECONDS_TO_MS = 1000
 RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.REQUEST_TIMEOUT,
@@ -15,6 +14,9 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.SERVICE_UNAVAILABLE,
     HTTPStatus.GATEWAY_TIMEOUT,
 }
+
+# TODO: move this elsewhere and have it pull from git tags as source of truth
+AGENT_VERSION = "0.1.3"
 
 
 class Observation(TypedDict):
@@ -61,6 +63,7 @@ class ComputeServerClient:
         headers = {}
         headers["ApiKey"] = self._api_key
         headers["organization_id"] = data["organization_id"]
+        headers["agent_version"] = AGENT_VERSION
         url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
