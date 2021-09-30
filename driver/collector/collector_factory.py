@@ -251,7 +251,7 @@ def get_collector(
             conn = connect_mysql(mysql_conf)
             version = get_mysql_version(conn)
             collector = MysqlCollector(conn, version)
-        elif driver_conf["db_type"] in ["postgres", "aurora_postgres"]:
+        elif driver_conf["db_type"] in ["postgres", "aurora_postgresql"]:
             pg_conf = create_db_config_postgres(driver_conf)
             conn = connect_postgres(pg_conf)
             version = get_postgres_version(conn)
