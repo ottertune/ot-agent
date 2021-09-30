@@ -211,25 +211,26 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         db_version = get_db_version(db_instance_identifier, self.rds_client)
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
-        if db_type == "aurora_mysql":
-            db_version, _ = db_version.split("_mysql")
-        if db_type == "aurora_postgres":
-            db_version, _ = db_version.split("_postgres")
-
-        if "postgres" in db_type:
-            # drop minor version except for 9_6
-            if "9_6" in db_version:
-                major, minor, _ = db_version.split("_")
-                db_version = f"{major}_{minor}"
-            else:
+        if "aurora" in db_type:
+            if db_type == "aurora_mysql":
                 db_version, _ = db_version.split("_")
-        if "mysql" in db_type:
-            # drop minor version if present
-            try:
-                release, major, _ = db_version.split("_")
-            except ValueError:
-                release, major = db_version.split("_")
-            db_version = f"{release}_{major}"
+            if db_type == "aurora_postgresql":
+                db_version, _ = db_version.split("_")
+        else:
+            if "postgres" in db_type:
+                # drop minor version except for 9_6
+                if "9_6" in db_version:
+                    major, minor, _ = db_version.split("_")
+                    db_version = f"{major}_{minor}"
+                else:
+                    db_version, _ = db_version.split("_")
+            if "mysql" in db_type:
+                # drop minor version if present
+                try:
+                    release, major, _ = db_version.split("_")
+                except ValueError:
+                    release, major = db_version.split("_")
+                db_version = f"{release}_{major}"
 
         folder_path = "./driver/config/cloudwatch_metrics"
         return f"{folder_path}/rds_{db_type}-{db_version}.json"
