@@ -108,7 +108,7 @@ jobs:
       - run:
           name: Test database collector/agent for Aurora Postgres 9.6
           command: |
-            pytest tests/db_test_postgres.py --db_type=aurora_postgres --pg_host=127.0.0.1 --pg_port=5433 --pg_user=postgres --pg_password=test_password
+            pytest tests/db_test_postgres.py --db_type=aurora_postgresql --pg_host=127.0.0.1 --pg_port=5433 --pg_user=postgres --pg_password=test_password
       - run:
       # Our primary container isn't Postgres so run a sleep command until it's ready.
           name: Waiting for Postgres 12 to be ready

@@ -1,6 +1,20 @@
+# OtterTune Agent - metric collector for external databases.
+
 [![CircleCI](https://circleci.com/gh/ottertune/driver.svg?style=svg&circle-token=a6bcd60de064fb1b0a03861f918f023685de2020)](https://app.circleci.com/pipelines/github/ottertune/driver)
-# ot-agent
-Implements the database collector for external client databases.
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/3093192/135324592-ec28dc1a-4542-45c3-b371-76e30c0e375b.png">
+</p>
+
+# Support / Documentation
+
+- Quick Start: https://docs.ottertune.com/#getting-started
+- Agent Setup: https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database/agent
+- [Reach out on Slack!](https://join.slack.com/t/ottertune-community/shared_invite/zt-wr4gztk0-Sta_86xRQ6~o3WRpMvRlgA)
+
+----
+
+# Developement
 
 ## Makefile
 
@@ -39,3 +53,9 @@ docker buildx create --name mybuilder --use
 ```
 
 `mybuilder` can be any name. You only need to run this command once; after which, you can run `make publish` whenever you want.
+
+----
+
+# License
+
+See https://github.com/ottertune/ot-agent/blob/main/LICENSE
