@@ -65,6 +65,9 @@ class ComputeServerClient:
         headers["organization_id"] = data["organization_id"]
         headers["agent_version"] = AGENT_VERSION
         url = f"{self._server_url}/observation/"
+        print(url)
+        print(headers)
+        print(data)
         try:
             response = self._req_session.post(
                 url, json=data, headers=headers, timeout=10

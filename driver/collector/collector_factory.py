@@ -42,7 +42,7 @@ def create_db_config_mysql(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
         msg = "Invalid MySQL database configuration: parameter is not defined"
         raise DriverConfigException(msg, ex) from ex
 
-    if driver_conf.get("db_name") and driver_conf.get("db_name") != "default":
+    if driver_conf.get("db_name"):
         conf["database"] = driver_conf["db_name"]
     else:
         conf[
@@ -103,7 +103,7 @@ def create_db_config_postgres(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
         msg = "Invalid Postgres database configuration: parameter is not defined"
         raise DriverConfigException(msg, ex) from ex
 
-    if driver_conf.get("db_name") and driver_conf.get("db_name") != "default":
+    if driver_conf.get("db_name"):
         conf["dbname"] = driver_conf["db_name"]
     else:
         conf["dbname"] = "postgres"  # connect to postgres database by default
