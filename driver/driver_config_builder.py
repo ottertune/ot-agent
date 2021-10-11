@@ -3,7 +3,7 @@ Defines the DriverConfigBuilder to build the driver configuraton for on-prem dep
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 from abc import ABC, abstractmethod
-from typing import Any,Dict, NamedTuple, List
+from typing import Any,Dict, NamedTuple, List, Optional
 import json
 import logging
 import os
@@ -64,7 +64,7 @@ class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic unin
 
     Such options are part of the complete driver options (defined in DriverConfig).
     """
-    db_name: StrictStr
+    db_name: Optional[StrictStr]
 
 
 class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
