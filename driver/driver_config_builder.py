@@ -200,7 +200,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 db_name = None
 
         config_from_env = {
-            "db_name": os.getenv("POSTGRES_OTTERTUNE_DB_NAME", None)
+            "db_name": db_name
         }
 
         try:
