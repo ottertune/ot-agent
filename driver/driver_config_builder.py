@@ -3,7 +3,7 @@ Defines the DriverConfigBuilder to build the driver configuraton for on-prem dep
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 from abc import ABC, abstractmethod
-from typing import Any,Dict, NamedTuple, List, Optional
+from typing import Any,Dict, NamedTuple, List
 import json
 import logging
 import os
