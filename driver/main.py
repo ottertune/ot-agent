@@ -73,12 +73,6 @@ def _get_args() -> argparse.Namespace:
         required=True
     )
     parser.add_argument(
-        "--db-name",
-        type=str,
-        help="Specific database in DBMS to monitor",
-        default="default"
-    )
-    parser.add_argument(
         "--override-monitor-interval",
         type=int,
         help="Override file setting for how often to collect new data (in seconds)",
@@ -112,6 +106,7 @@ def get_config(args):
                   .from_rds(args.db_identifier)\
                   .from_cloudwatch_metrics(args.db_identifier)\
                   .from_command_line(args)\
+                  .from_env_vars()\
                   .from_overrides(overrides)
 
     config = config_builder.get_config()

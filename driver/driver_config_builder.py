@@ -5,6 +5,8 @@ It fetches the necessary information to run the driver pipeline from the local f
 from abc import ABC, abstractmethod
 from typing import Any,Dict, NamedTuple, List, Optional
 import json
+import logging
+import os
 
 from pydantic import (
     BaseModel,
@@ -57,6 +59,14 @@ class Overrides(NamedTuple):
     server_url: str
 
 
+class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+    """Driver options fetched from RDS for agent deployment.
+
+    Such options are part of the complete driver options (defined in DriverConfig).
+    """
+    db_name: Optional[StrictStr]
+
+
 class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
@@ -71,8 +81,6 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
 
     db_user: StrictStr
     db_password: StrictStr
-
-    db_name: Optional[StrictStr]
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
@@ -161,8 +169,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                                                           db_password=args.db_password,
                                                           api_key=args.api_key,
                                                           db_key=args.db_key,
-                                                          organization_id=args.organization_id,
-                                                          db_name=args.db_name)
+                                                          organization_id=args.organization_id)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "
@@ -170,17 +177,43 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             )
             raise DriverConfigException(msg, ex) from ex
 
+        self.config.update(from_cli)
+        return self
+
+    def from_env_vars(self):
+        """build config options from environment variables"""
+        db_name = os.getenv("POSTGRES_OTTERTUNE_DB_NAME", None)
+
         if not self.has_determined_db_type:
-            msg = "Builder must know db type before from_command_line, try running from_rds first"
+            msg = "Builder must know db type before from_env_vars, try running from_rds first"
             raise DriverConfigException(msg)
 
         if self.config["db_type"] == "postgres":
-            if from_cli.db_name == "default":
-                msg = "Must supply non-default database name for Postgres. " \
-                      "(--db-name / POSTGRES_OTTERTUNE_DB_NAME)"
+            if not db_name:
+                msg = ("Must supply database name for Postgres via environment variable: "
+                      "POSTGRES_OTTERTUNE_DB_NAME")
                 raise DriverConfigException(msg)
+        elif self.config["db_type"] == "mysql":
+            if db_name:
+                msg = "Ignoring POSTGRES_OTTERTUNE_DB_NAME as this agent is connected to a MySql db"
+                logging.warning(msg)
+                db_name = None
 
-        self.config.update(from_cli)
+        config_from_env = {
+            "db_name": db_name
+        }
+
+        try:
+            partial_config_from_env: PartialConfigFromEnvironment = (
+                PartialConfigFromEnvironment(**config_from_env)
+            )
+        except ValidationError as ex:
+            msg = (
+                "Invalid driver configuration the driver option from env vars is missing or invalid"
+            )
+            raise DriverConfigException(msg, ex) from ex
+
+        self.config.update(partial_config_from_env)
         return self
 
     def from_rds(self, db_instance_identifier) -> BaseDriverConfigBuilder:

@@ -13,7 +13,6 @@
 
 FROM python:3.8
 
-ENV POSTGRES_OTTERTUNE_DB_NAME="default"
 ENV OTTERTUNE_OVERRIDE_SERVER_URL="https://api.ottertune.com"
 
 RUN mkdir -p /ottertune/driver
@@ -22,4 +21,4 @@ WORKDIR /ottertune/driver
 
 RUN pip install -r requirements.txt
 
-CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-region $AWS_REGION --db-identifier $OTTERTUNE_DB_IDENTIFIER  --db-username $OTTERTUNE_DB_USERNAME --db-password $OTTERTUNE_DB_PASSWORD --api-key $OTTERTUNE_API_KEY --db-key $OTTERTUNE_DB_KEY --organization-id $OTTERTUNE_ORG_ID --db-name $POSTGRES_OTTERTUNE_DB_NAME --override-server-url $OTTERTUNE_OVERRIDE_SERVER_URL
+CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-region $AWS_REGION --db-identifier $OTTERTUNE_DB_IDENTIFIER  --db-username $OTTERTUNE_DB_USERNAME --db-password $OTTERTUNE_DB_PASSWORD --api-key $OTTERTUNE_API_KEY --db-key $OTTERTUNE_DB_KEY --organization-id $OTTERTUNE_ORG_ID --override-server-url $OTTERTUNE_OVERRIDE_SERVER_URL
