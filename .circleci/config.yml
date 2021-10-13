@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   python: circleci/python@1.4.0
-  ot: ottertune/ot-cci-orb@0.10.7
+  ot: ottertune/ot-cci-orb@dev:0d47cfa
 
 jobs:
   build_lint_and_test:
@@ -137,3 +137,14 @@ workflows:
       - postgres_test:
           name: "Test Postgres"
           context: "AWS CLI"
+      - ot/docker-push:
+          name: "Build Release Image"
+          repo-name: "ottertune/agent"
+          context: 
+            - "AWS CLI"
+            - "Ottertune Dockerhub"
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^release-v.*/
