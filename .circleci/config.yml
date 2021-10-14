@@ -141,6 +141,7 @@ workflows:
       - ot/docker-push:
           name: "Build Release Image Dockerhub"
           container-destination: "dockerhub"
+          tag: "dev"
           repo-name: "ottertune/agent"
           context: 
             - "AWS CLI"
@@ -148,6 +149,7 @@ workflows:
       - ot/docker-push:
           name: "Build Release Image ECR"
           container-destination: "ecr"
+          tag: "dev"
           repo-name: "agent"
           context: 
             - "AWS CLI"
