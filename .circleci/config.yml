@@ -148,7 +148,7 @@ workflows:
       - ot/docker-push:
           name: "Build Release Image ECR"
           container-destination: "ecr"
-          repo-name: "ottertune/agent"
+          repo-name: "agent"
           context: 
             - "AWS CLI"
             - "Ottertune Dockerhub"
