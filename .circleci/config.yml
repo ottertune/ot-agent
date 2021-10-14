@@ -149,7 +149,7 @@ workflows:
       - ot/docker-push:
           name: "Build Release Image ECR"
           container-destination: "ecr"
-          repository-url: "public.ecr.aws/ottertune/"
+          registry-url-env-name: AWS_PUBLIC_ECR_URL
           docker-tag: "dev"
           repo-name: "agent"
           context: 
