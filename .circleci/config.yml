@@ -148,7 +148,7 @@ workflows:
             - "Ottertune Dockerhub"
       - ot/docker-push:
           name: "Build Release Image ECR"
-          container-destination: "ecr"
+          container-destination: "public-ecr"
           registry-url-env-name: AWS_PUBLIC_ECR_URL
           docker-tag: "dev"
           repo-name: "agent"
