@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   python: circleci/python@1.4.0
-  ot: ottertune/ot-cci-orb@dev:3c23a17
+  ot: ottertune/ot-cci-orb@dev:alpha
 
 jobs:
   build_lint_and_test:
