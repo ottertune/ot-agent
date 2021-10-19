@@ -1,11 +1,9 @@
 """Tests for interacting with Postgres database"""
-
-from typing import Dict, Any
 import json
-
-from driver.collector.collector_factory import get_postgres_version, connect_postgres
+from typing import Dict, Any
+from driver.collector_factory import get_postgres_version, connect_postgres
+from driver.postgres_collector import PostgresCollector
 from driver.database import collect_data_from_database
-from driver.collector.postgres_collector import PostgresCollector
 
 # pylint: disable=missing-function-docstring
 
@@ -40,8 +38,6 @@ def _get_driver_conf(
         "db_name": pg_database,
         "db_type": db_type,
         "db_provider": "on_premise",
-        "db_key": "test_key",
-        "organization_id": "test_organization",
     }
     return conf
 
@@ -93,11 +89,8 @@ def test_postgres_collector_knobs(
 def _verify_postgres_metrics(metrics: Dict[str, Any]) -> None:
     assert metrics["global"]["pg_stat_archiver"]["archived_count"] >= 0
     assert metrics["global"]["pg_stat_bgwriter"]["checkpoints_req"] >= 0
-    assert metrics["local"]["database"]["pg_stat_database"][1]["datname"] == "template1"
-    assert (
-        metrics["local"]["database"]["pg_stat_database_conflicts"][1]["datname"]
-        == "template1"
-    )
+    assert metrics["local"]["database"]["pg_stat_database"] is not None
+    assert metrics["local"]["database"]["pg_stat_database_conflicts"] is not None
     assert metrics["local"]["table"]["pg_stat_user_tables"] is not None
     assert metrics["local"]["table"]["pg_statio_user_tables"] is not None
     assert metrics["local"]["index"]["pg_stat_user_indexes"] is not None
@@ -131,7 +124,7 @@ def test_collect_data_from_database(
     driver_conf = _get_driver_conf(
         db_type, pg_user, pg_password, pg_host, pg_port, pg_database
     )
-    observation = collect_data_from_database(driver_conf)
+    observation = collect_data_from_database(driver_conf, None)
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]
