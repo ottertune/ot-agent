@@ -1,6 +1,6 @@
 # OtterTune Agent - metric collector for external databases.
 
-[![CircleCI](https://circleci.com/gh/ottertune/driver.svg?style=svg&circle-token=a6bcd60de064fb1b0a03861f918f023685de2020)](https://app.circleci.com/pipelines/github/ottertune/driver)
+[![CircleCI](https://circleci.com/gh/ottertune/ot-agent.svg?style=svg&circle-token=a6bcd60de064fb1b0a03861f918f023685de2020)](https://app.circleci.com/pipelines/github/ottertune/ot-agent)
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/3093192/135324592-ec28dc1a-4542-45c3-b371-76e30c0e375b.png">
