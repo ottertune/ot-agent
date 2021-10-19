@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, PropertyMock
 import mock
 import psycopg2
 import pytest
-from driver.postgres_collector import PostgresCollector
-from driver.postgres_collector import (
+from driver.collector.postgres_collector import PostgresCollector
+from driver.collector.postgres_collector import (
     DATABASE_STAT, DATABASE_CONFLICTS_STAT, TABLE_STAT,
     TABLE_STATIO, INDEX_STAT, INDEX_STATIO
 )

@@ -1,9 +1,11 @@
 """Tests for interacting with Postgres database"""
-import json
+
 from typing import Dict, Any
-from driver.collector_factory import get_postgres_version, connect_postgres
-from driver.postgres_collector import PostgresCollector
+import json
+
+from driver.collector.collector_factory import get_postgres_version, connect_postgres
 from driver.database import collect_data_from_database
+from driver.collector.postgres_collector import PostgresCollector
 
 # pylint: disable=missing-function-docstring
 
@@ -38,6 +40,8 @@ def _get_driver_conf(
         "db_name": pg_database,
         "db_type": db_type,
         "db_provider": "on_premise",
+        "db_key": "test_key",
+        "organization_id": "test_organization",
     }
     return conf
 
@@ -124,7 +128,7 @@ def test_collect_data_from_database(
     driver_conf = _get_driver_conf(
         db_type, pg_user, pg_password, pg_host, pg_port, pg_database
     )
-    observation = collect_data_from_database(driver_conf, None)
+    observation = collect_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]

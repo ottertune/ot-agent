@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Any, Tuple
 from driver.exceptions import PostgresCollectorException
-from driver.base_collector import BaseDbCollector, PermissionInfo
+from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
 # database-wide statistics from pg_stat_database view
 DATABASE_STAT = """
