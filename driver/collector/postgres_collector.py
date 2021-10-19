@@ -124,7 +124,6 @@ class PostgresCollector(BaseDbCollector):
 
     def __init__(
         self,
-        # pyre-ignore[2] no postgres type for conn
         conn,
         version: str,
     ) -> None:
@@ -137,7 +136,7 @@ class PostgresCollector(BaseDbCollector):
             conn: The connection to the database
             options: Options used to define which tables to use for metric collection
         """
-        self._conn = conn  # pyre-ignore[4] no postgres type for conn
+        self._conn = conn
         self._version_str = version
         if float(".".join(version.split(".")[:2])) >= 9.4:
             # pylint: disable=invalid-name

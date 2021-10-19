@@ -25,7 +25,6 @@ class SqlData:
     mainly used to validate that we are getting the appropriate response back.
     """
 
-    # pyre-ignore[4] sql result can be of multiple types
     views: Dict[str, List[List[Any]]]
     aggregated_views: Dict[str, List[List[int]]]
     metas: Dict[str, List[List[str]]]
@@ -190,7 +189,6 @@ class SqlData:
 
 class Result:
     def __init__(self) -> None:
-        # pyre-ignore[4] sql result can be multiple types
         self.value: Optional[List[Any]] = None
         self.meta: List[List[str]] = []
 
