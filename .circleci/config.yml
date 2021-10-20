@@ -150,7 +150,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^release-v.*/
+              only: /^v.*/
       - ot/docker-push:
           name: "Build Release Image ECR"
           container-destination: "public-ecr"
@@ -162,4 +162,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^release-v.*/
+              only: /^v.*/
