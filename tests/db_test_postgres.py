@@ -93,11 +93,8 @@ def test_postgres_collector_knobs(
 def _verify_postgres_metrics(metrics: Dict[str, Any]) -> None:
     assert metrics["global"]["pg_stat_archiver"]["archived_count"] >= 0
     assert metrics["global"]["pg_stat_bgwriter"]["checkpoints_req"] >= 0
-    assert metrics["local"]["database"]["pg_stat_database"][1]["datname"] == "template1"
-    assert (
-        metrics["local"]["database"]["pg_stat_database_conflicts"][1]["datname"]
-        == "template1"
-    )
+    assert metrics["local"]["database"]["pg_stat_database"] is not None
+    assert metrics["local"]["database"]["pg_stat_database_conflicts"] is not None
     assert metrics["local"]["table"]["pg_stat_user_tables"] is not None
     assert metrics["local"]["table"]["pg_statio_user_tables"] is not None
     assert metrics["local"]["index"]["pg_stat_user_indexes"] is not None
