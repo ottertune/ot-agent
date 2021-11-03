@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, PropertyMock
 import pytest
 import mysql.connector.connection
 from mysql.connector import errorcode
-from driver.collector.mysql_collector import MysqlCollector
+from driver.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
 
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,too-many-instance-attributes
 
 
 @dataclass()
@@ -22,6 +22,9 @@ class SqlData:
     innodb_metrics: List[List[Union[int, str]]]
     innodb_status: List[List[str]]
     latency_hist: List[List[float]]
+    latency_hist_meta: List[List[str]]
+    digest_time: List[List[Union[int, str, float]]]
+    digest_time_meta: List[List[str]]
     master_status: List[List[Union[int, str]]]
     master_status_meta: List[List[str]]
     replica_status: List[List[Union[int, str]]]
@@ -40,6 +43,11 @@ class SqlData:
         self.innodb_metrics = [["trx_rw_commits", 0]]
         self.innodb_status = [["ndbcluster", "connection", "cluster_node_id=7"]]
         self.latency_hist = [[2, 1, 5, 3, 1, 0.0588]]
+        self.latency_hist_meta = [["bucket_number"], ["bucket_timer_low"],
+                                  ["bucket_timer_high"], ["count_bucket"],
+                                  ["count_bucket_and_lower"], ["bucket_quantile"]]
+        self.digest_time = [["abc", 10, 1.5]]
+        self.digest_time_meta = [["queryid"], ["calls"], ["avg_time_ms"]]
         self.master_status = [[1307, "test"]]
         self.master_status_meta = [["Position"], ["Binlog_Do_DB"]]
         self.replica_status = [["localhost", 60]]
@@ -72,6 +80,15 @@ class SqlData:
                     "read_write_ratio": 0.25,
                 },
                 "performance_schema": {
+                    "events_statements_summary_by_digest": json.dumps(
+                        [
+                            {
+                                "queryid": "abc",
+                                "calls": 10,
+                                "avg_time_ms": 1.5
+                            }
+                        ]
+                    ),
                     "events_statements_histogram_global": json.dumps(
                         [
                             {
@@ -92,6 +109,7 @@ class SqlData:
 
 class Result:
     def __init__(self) -> None:
+        # pyre-ignore[4] sql result can be multiple types
         self.value: Optional[List[Any]] = None
         self.meta: List[List[str]] = []
 
@@ -115,6 +133,10 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
             result.value = data.innodb_status
         elif sql == MysqlCollector.METRICS_LATENCY_HIST_SQL:
             result.value = data.latency_hist
+            result.meta = data.latency_hist_meta
+        elif sql == MysqlCollector.QUERY_DIGEST_TIME:
+            result.value = data.digest_time
+            result.meta = data.digest_time_meta
         elif sql == MysqlCollector.ENGINE_MASTER_SQL:
             result.value = data.master_status
             result.meta = data.master_status_meta
@@ -174,7 +196,7 @@ def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> NoRetu
     collector = MysqlCollector(mock_conn, "7.9.9")
     metrics = collector.collect_metrics()
     result = data.expected_default_result()
-    result["global"]["performance_schema"] = {}
+    result["global"]["performance_schema"].pop('events_statements_histogram_global')
     assert metrics == result
 
 

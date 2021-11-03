@@ -1,25 +1,13 @@
 """MySQL database collector to get knob and metric data from the target database"""
 import json
 from decimal import Decimal
-from typing import Dict, List, Any, Tuple, NamedTuple
+from typing import Dict, List, Any, Tuple
 import mysql.connector
 import mysql.connector.connection as mysql_conn
 from mysql.connector import errorcode
 
 from driver.exceptions import MysqlCollectorException
-from driver.collector.base_collector import BaseDbCollector, PermissionInfo
-
-
-class LatencyHistogram(NamedTuple):
-    """namedtuple for latency histogram"""
-
-    bucket_number: int
-    # TODO(bohan) everything below here except bucket_quantile can be int right?
-    bucket_timer_low: float
-    bucket_timer_high: float
-    count_bucket: float
-    count_bucket_and_lower: float
-    bucket_quantile: float
+from driver.base_collector import BaseDbCollector, PermissionInfo
 
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
@@ -35,10 +23,15 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
 
     # convert the time unit from ps to us by dividing 1,000,000
     METRICS_LATENCY_HIST_SQL = (
-        "SELECT bucket_number, bucket_timer_low / 1000000, "
-        "bucket_timer_high / 1000000, count_bucket, "
+        "SELECT bucket_number, bucket_timer_low / 1000000 as bucket_timer_low, "
+        "bucket_timer_high / 1000000 as bucket_timer_high, count_bucket, "
         "count_bucket_and_lower, bucket_quantile FROM "
         "performance_schema.events_statements_histogram_global;"
+    )
+    QUERY_DIGEST_TIME = (
+        "SELECT digest as queryid, count_star as calls, "
+        "round(avg_timer_wait/1000000000, 6) as avg_time_ms "
+        "FROM performance_schema.events_statements_summary_by_digest;"
     )
 
     ENGINE_INNODB_SQL = "SHOW ENGINE INNODB STATUS;"
@@ -49,7 +42,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         Callers should make sure that the connection object is closed after using
         the collector. This likely means that callers should not insantiate this class
         directly and instead use the collector_factory.get_collector method instead.
-
         Args:
             conn: The connection to the database
             version: DB version (e.g. 5.7.3)
@@ -68,7 +60,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
 
     def _cmd(self, sql: str):  # type: ignore
         """Run the command line (sql query), and fetch the returned results.
-
         Args:
             sql: Sql query which is executed
         Returns:
@@ -94,7 +85,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
 
     def check_permission(self) -> Tuple[bool, List[PermissionInfo], str]:
         """Check the permissions of running all collector queries.
-
         Returns:
             True if the user has all expected permissions. If errors appear, return False,
             as well as the information about how to grant corresponding permissions.
@@ -155,7 +145,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
 
     def collect_knobs(self) -> Dict[str, Any]:
         """Collect database knobs information
-
         Returns:
             Database knob data
         Raises:
@@ -169,7 +158,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
 
     def collect_metrics(self) -> Dict[str, Any]:
         """Collect database metrics information
-
         Returns:
             Database metric data
         Raises:
@@ -193,7 +181,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         metrics["global"]["innodb_metrics"] = dict(
             self._cmd(self.METRICS_INNODB_SQL)[0]
         )
-        self._innodb_status = self._cmd(self.ENGINE_INNODB_SQL)[0][0][-1]
+        self._innodb_status = self._truncate_innodb_status(
+                                self._cmd(self.ENGINE_INNODB_SQL)[0][0][-1]
+                              )
         metrics["global"]["engine"]["innodb_status"] = self._innodb_status
         metrics["global"]["derived"] = self._collect_derived_metrics()
         # replica status and master status
@@ -213,28 +203,20 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         else:
             metrics["global"]["engine"]["master_status"] = ""
 
+        metrics["global"]["performance_schema"][
+            "events_statements_summary_by_digest"
+        ] = json.dumps(self._make_list(*self._cmd(self.QUERY_DIGEST_TIME)))
         if float(self._version) >= 8.0:
             # latency histogram
-            lat_hist_list = []
-            lat_hist = self._cmd(self.METRICS_LATENCY_HIST_SQL)[0]
-            for lat_row in lat_hist:
-                lat_row_new = [
-                    float(elem) if isinstance(elem, Decimal) else elem
-                    for elem in lat_row
-                ]
-                lat_elem = LatencyHistogram._make(lat_row_new)._asdict()
-                lat_hist_list.append(lat_elem)
             metrics["global"]["performance_schema"][
                 "events_statements_histogram_global"
-            ] = json.dumps(lat_hist_list)
+            ] = json.dumps(self._make_list(*self._cmd(self.METRICS_LATENCY_HIST_SQL)))
         return metrics
 
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics
-
         Calculate derived metrics from collected base metrics. We may want to move it to the server
         side to calculate derived metrics. We can revisit this when saas server is implemented
-
         Returns:
             Database calculated derived metrics
         """
@@ -271,3 +253,41 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             buffer_miss_ratio=buffer_miss_ratio, read_write_ratio=read_write_ratio
         )
         return derived_metrics
+
+    @staticmethod
+    def _truncate_innodb_status(status: str) -> str:
+        """
+        If the innodb status has too many lines, we truncate it and keep a limited number of lines.
+        Currently, we keep the first 50 lines and the last 100 lines.
+        """
+
+        lines = status.splitlines()
+        size = len(lines)
+        if size <= 150:
+            return status
+        new_lines = lines[:50]
+        new_lines.append(f"...ignore {size-150} lines here...")
+        new_lines.extend(lines[-100:])
+        truncated_status = '\n'.join(new_lines)
+        return truncated_status
+
+    @staticmethod
+    def _make_list(data, meta: List[str]) -> List[Dict[str, Any]]:  # type: ignore
+        """
+        Convert fetched data to a list.
+        Args:
+            data: row values, e.g., [(val1_1, val1_2), (val2_1, val2_2)]
+            meta: column names, e.g., [col1, col2]
+        Returns:
+            converted data, e.g., [{"col1": val1_1, "col2": val1_2},
+                                   {"col1": val2_1, "col2": val2_2}]
+        """
+
+        res = []
+        for row in data:
+            row_new = [
+                float(elem) if isinstance(elem, Decimal) else elem
+                for elem in row
+            ]
+            res.append(dict(zip(meta, row_new)))
+        return res
