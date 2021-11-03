@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, PropertyMock
 import pytest
 import mysql.connector.connection
 from mysql.connector import errorcode
-from driver.mysql_collector import MysqlCollector
+from driver.collector.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
 
 # pylint: disable=missing-function-docstring,too-many-instance-attributes

@@ -7,7 +7,7 @@ import mysql.connector.connection as mysql_conn
 from mysql.connector import errorcode
 
 from driver.exceptions import MysqlCollectorException
-from driver.base_collector import BaseDbCollector, PermissionInfo
+from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
