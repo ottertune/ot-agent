@@ -203,14 +203,17 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         else:
             metrics["global"]["engine"]["master_status"] = ""
 
+        digest_data, digest_meta = self._cmd(self.QUERY_DIGEST_TIME)
         metrics["global"]["performance_schema"][
             "events_statements_summary_by_digest"
-        ] = json.dumps(self._make_list(*self._cmd(self.QUERY_DIGEST_TIME)))
+        ] = json.dumps(self._make_list(digest_data, digest_meta))
+
         if float(self._version) >= 8.0:
             # latency histogram
+            histogram_data, histogram_meta = self._cmd(self.METRICS_LATENCY_HIST_SQL)
             metrics["global"]["performance_schema"][
                 "events_statements_histogram_global"
-            ] = json.dumps(self._make_list(*self._cmd(self.METRICS_LATENCY_HIST_SQL)))
+            ] = json.dumps(self._make_list(histogram_data, histogram_meta))
         return metrics
 
     def _collect_derived_metrics(self) -> Dict[str, Any]:
