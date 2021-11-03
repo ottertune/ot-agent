@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional, NoReturn, List, Callable
 from unittest.mock import MagicMock, PropertyMock
+import json
 import mock
 import psycopg2
 import pytest
@@ -43,6 +44,7 @@ class SqlData:
             "pg_statio_user_tables": [["tl2", datetime(2020, 1, 1, 0, 0, 0, 0), 2]],
             "pg_stat_user_indexes": [["il1", 1, 1]],
             "pg_statio_user_indexes": [["il2", 2, 2]],
+            "pg_stat_statements": [[123, 2, 1.5]],
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -62,6 +64,7 @@ class SqlData:
             "pg_statio_user_tables": [["relname"], ["table_date"], ["relid"]],
             "pg_stat_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_statio_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
+            "pg_stat_statements": [["queryid"], ["calls"], ["avg_time_ms"]],
         }
         self.aggregated_metas = {
             "pg_stat_database": [["local_count"], ["local_count2"]],
@@ -182,6 +185,7 @@ class SqlData:
             "global": {
                 "pg_stat_archiver": {"global": "g1", "global_count": 1},
                 "pg_stat_bgwriter": {"global": "g2", "global_count": 2},
+                "pg_stat_statements": json.dumps([{"queryid": 123, "calls": 2, "avg_time_ms": 1.5}])
             },
             "local": self.aggregated_local_metrics
         }
@@ -246,6 +250,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == INDEX_STATIO:
             result.value = data.aggregated_views["pg_statio_user_indexes"]
             result.meta = data.aggregated_metas["pg_statio_user_indexes"]
+        elif 'pg_stat_statements' in sql:
+            result.value = data.views["pg_stat_statements"]
+            result.meta = data.metas["pg_stat_statements"]
         else:
             raise Exception(f"Unknown sql: {sql}")
 
