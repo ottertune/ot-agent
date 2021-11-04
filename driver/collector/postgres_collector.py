@@ -2,6 +2,9 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Any, Tuple
+import logging
+import json
+
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
@@ -138,14 +141,26 @@ class PostgresCollector(BaseDbCollector):
         """
         self._conn = conn
         self._version_str = version
-        if float(".".join(version.split(".")[:2])) >= 9.4:
-            # pylint: disable=invalid-name
+        version_float = float(".".join(version.split(".")[:2]))
+        # pylint: disable=invalid-name
+        if version_float >= 9.4:
             self.PG_STAT_VIEWS: List[str] = [
                 "pg_stat_archiver",
                 "pg_stat_bgwriter",
             ]
         else:
             self.PG_STAT_VIEWS: List[str] = ["pg_stat_bgwriter"]
+
+        if version_float >= 13:
+            self.PG_STAT_STATEMENTS_SQL: str = (
+                "SELECT queryid, calls, mean_exec_time as avg_time_ms "
+                "FROM pg_stat_statements;"
+            )
+        else:
+            self.PG_STAT_STATEMENTS_SQL: str = (
+                "SELECT queryid, calls, mean_time as avg_time_ms "
+                "FROM pg_stat_statements;"
+            )
 
     def _cmd(self, sql: str):  # type: ignore
         """Run the command line (sql query), and fetch the returned results
@@ -233,6 +248,7 @@ class PostgresCollector(BaseDbCollector):
             # A global view can only have one row
             assert len(rows) == 1
             metrics["global"][view] = rows[0]
+        metrics['global']['pg_stat_statements'] = json.dumps(self._get_stat_statements())
         # local
         self._aggregated_local_stats(metrics['local'])
 
@@ -266,7 +282,6 @@ class PostgresCollector(BaseDbCollector):
                     data[view][key] = row
         return local_metric
 
-
     def _get_metrics(self, query: str):  # type: ignore
         """Get data given a query
 
@@ -294,3 +309,38 @@ class PostgresCollector(BaseDbCollector):
                         row[col[idx]] = val
                 metrics.append(row)
         return metrics
+
+    def _load_stat_statements(self) -> bool:
+        """
+        Load pg_stat_statements module if it does not exist.
+        Returns:
+            True if module is loaded successfully, otherwise return False.
+        """
+
+        check_module_sql = "SELECT count(*) FROM pg_extension where extname='pg_stat_statements';"
+        load_module_sql = "CREATE EXTENSION pg_stat_statements;"
+        module_exists = self._cmd(check_module_sql)[0][0][0] == 1
+        if not module_exists:
+            try:
+                self._conn.cursor().execute(load_module_sql)
+                self._conn.commit()
+            except Exception as ex:  # pylint: disable=broad-except
+                logging.error("Failed to load pg_stat_statements module: %s", ex)
+                self._conn.rollback()
+                return False
+        return True
+
+    def _get_stat_statements(self) -> List[Dict[str, Any]]:
+        """
+        Get statement statistics from pg_stat_statements module.
+        """
+
+        res = []
+        success = self._load_stat_statements()
+        if success:
+            try:
+                res = self._get_metrics(self.PG_STAT_STATEMENTS_SQL)
+            except PostgresCollectorException as ex:
+                logging.error("Failed to load pg_stat_statements module, you need to add "
+                              "pg_stat_statements in parameter shared_preload_libraries: %s", ex)
+        return res
