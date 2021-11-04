@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, List, Any, Tuple
 import logging
 import json
+
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
