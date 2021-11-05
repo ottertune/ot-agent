@@ -248,7 +248,9 @@ class PostgresCollector(BaseDbCollector):
             # A global view can only have one row
             assert len(rows) == 1
             metrics["global"][view] = rows[0]
-        metrics['global']['pg_stat_statements'] = json.dumps(self._get_stat_statements())
+        metrics['global']['pg_stat_statements'] = {
+            'statements': json.dumps(self._get_stat_statements())
+        }
         # local
         self._aggregated_local_stats(metrics['local'])
 
