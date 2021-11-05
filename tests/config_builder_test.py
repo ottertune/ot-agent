@@ -4,11 +4,11 @@ Tests for the config builder
 
 from typing import Dict, Any
 import tempfile
+from unittest.mock import patch
 import yaml
 
 from pydantic import ValidationError
 import pytest
-from unittest.mock import patch
 
 from driver.exceptions import DriverConfigException
 from driver.driver_config_builder import (
@@ -119,6 +119,7 @@ def test_get_cloudwatch_metric_file_aurora_mysql56() -> None:
         with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
             mocked_db_type.return_value = "aurora"
             mocked_db_version.return_value = "5_6_mysql_aurora_1_22_2"
+            # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
                 "./driver/config/cloudwatch_metrics/"
@@ -131,6 +132,7 @@ def test_get_cloudwatch_metric_file_aurora_mysql57() -> None:
         with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
             mocked_db_type.return_value = "aurora_mysql"
             mocked_db_version.return_value = "5_7_mysql_aurora_2_10_1"
+            # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
                 "./driver/config/cloudwatch_metrics/"
@@ -143,6 +145,7 @@ def test_get_cloudwatch_metric_file_aurora_postgres12() -> None:
         with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
             mocked_db_type.return_value = "aurora_postgresql"
             mocked_db_version.return_value = "12_6"
+            # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
                 "./driver/config/cloudwatch_metrics/"
