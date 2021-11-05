@@ -257,8 +257,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         if "aurora" in db_type:
-            if db_type == "aurora_mysql":
-                db_version_breakdown = db_version.split("_")
+            db_version_breakdown = db_version.split("_")
             if db_type == "aurora_postgresql":
                 db_version = db_version_breakdown[0]
             else:
