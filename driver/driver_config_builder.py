@@ -241,7 +241,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         return self
 
     def _get_cloudwatch_metrics_file(self, db_instance_identifier):
-        """ 
+        """
          For aurora mysql 5.6:
            db_version = 5_6_mysql_aurora_1_22_2
            db_type = aurora
