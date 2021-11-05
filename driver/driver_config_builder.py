@@ -241,14 +241,29 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         return self
 
     def _get_cloudwatch_metrics_file(self, db_instance_identifier):
+        """
+         For aurora mysql 5.6:
+           db_version = 5_6_mysql_aurora_1_22_2
+           db_type = aurora
+         For aurora mysql 5.7:
+           db_version = 5_7_mysql_aurora_2_10_1
+           db_type = aurora_mysql
+         For aurora postgres
+           db_version = 10_x / 11_x / 12_x
+           db_type = aurora_postgresql
+        """
         db_version = get_db_version(db_instance_identifier, self.rds_client)
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         if "aurora" in db_type:
-            if db_type == "aurora_mysql":
-                db_version, _ = db_version.split("_")
+            if db_type == "aurora":
+                db_type = "aurora_mysql"
+
+            db_version_breakdown = db_version.split("_")
             if db_type == "aurora_postgresql":
-                db_version, _ = db_version.split("_")
+                db_version = db_version_breakdown[0]
+            else:
+                db_version = f"{db_version_breakdown[0]}_{db_version_breakdown[1]}"
         else:
             if "postgres" in db_type:
                 # drop minor version except for 9_6
