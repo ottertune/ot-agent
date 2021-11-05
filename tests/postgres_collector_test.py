@@ -185,7 +185,9 @@ class SqlData:
             "global": {
                 "pg_stat_archiver": {"global": "g1", "global_count": 1},
                 "pg_stat_bgwriter": {"global": "g2", "global_count": 2},
-                "pg_stat_statements": json.dumps([{"queryid": 123, "calls": 2, "avg_time_ms": 1.5}])
+                "pg_stat_statements": {
+                    "statements": json.dumps([{"queryid": 123, "calls": 2, "avg_time_ms": 1.5}])
+                }
             },
             "local": self.aggregated_local_metrics
         }
