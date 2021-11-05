@@ -117,7 +117,7 @@ def test_get_cloudwatch_metric_file_aurora_mysql56() -> None:
     config_builder = DriverConfigBuilder('us-east-2')
     with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
         with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
-            mocked_db_type.return_value = "aurora"
+            mocked_db_type.return_value = "aurora_mysql"
             mocked_db_version.return_value = "5_6_mysql_aurora_1_22_2"
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
