@@ -8,11 +8,12 @@ import yaml
 
 from pydantic import ValidationError
 import pytest
+from unittest.mock import patch
 
 from driver.exceptions import DriverConfigException
 from driver.driver_config_builder import (
     PartialConfigFromFile,
-    DriverConfigBuilder
+    DriverConfigBuilder,
 )
 
 # pylint: disable=missing-class-docstring
@@ -111,3 +112,39 @@ def test_create_driver_config_builder_invalid_yaml() -> None:
             temp.seek(0)
             config_builder = DriverConfigBuilder('us-east-2')
             config_builder.from_file(temp.name)
+
+def test_get_cloudwatch_metric_file_aurora_mysql56() -> None:
+    config_builder = DriverConfigBuilder('us-east-2')
+    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
+        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+            mocked_db_type.return_value = "aurora"
+            mocked_db_version.return_value = "5_6_mysql_aurora_1_22_2"
+            file_path = config_builder._get_cloudwatch_metrics_file("")
+            assert file_path == (
+                "./driver/config/cloudwatch_metrics/"
+                "rds_aurora_mysql-5_6.json"
+            )
+
+def test_get_cloudwatch_metric_file_aurora_mysql57() -> None:
+    config_builder = DriverConfigBuilder('us-east-2')
+    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
+        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+            mocked_db_type.return_value = "aurora_mysql"
+            mocked_db_version.return_value = "5_7_mysql_aurora_2_10_1"
+            file_path = config_builder._get_cloudwatch_metrics_file("")
+            assert file_path == (
+                "./driver/config/cloudwatch_metrics/"
+                "rds_aurora_mysql-5_7.json"
+            )
+
+def test_get_cloudwatch_metric_file_aurora_postgres12() -> None:
+    config_builder = DriverConfigBuilder('us-east-2')
+    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
+        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+            mocked_db_type.return_value = "aurora_postgresql"
+            mocked_db_version.return_value = "12_6"
+            file_path = config_builder._get_cloudwatch_metrics_file("")
+            assert file_path == (
+                "./driver/config/cloudwatch_metrics/"
+                "rds_aurora_postgresql-12.json"
+            )
