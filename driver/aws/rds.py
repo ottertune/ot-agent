@@ -91,4 +91,7 @@ def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
     Get's database type information
     """
     instance_info = get_db_instance_info(db_instance_identifier, client)
-    return instance_info["Engine"].replace(".", "_").replace("-", "_")
+    db_type = instance_info["Engine"].replace(".", "_").replace("-", "_")
+    if db_type == "aurora":  # for aurora mysql 5.6
+        db_type = "aurora_mysql"
+    return db_type

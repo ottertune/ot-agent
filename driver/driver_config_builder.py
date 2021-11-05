@@ -3,7 +3,7 @@ Defines the DriverConfigBuilder to build the driver configuraton for on-prem dep
 It fetches the necessary information to run the driver pipeline from the local file and server.
 """
 from abc import ABC, abstractmethod
-from typing import Any,Dict, NamedTuple, List, Optional
+from typing import Any, Dict, NamedTuple, List, Optional
 import json
 import logging
 import os
@@ -30,6 +30,7 @@ class BaseDriverConfigBuilder(ABC):
         """Returns a dictionary containing everything necessary to run the driver pipeline."""
         return {}
 
+
 class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from local file for on-prem deployment.
 
@@ -41,7 +42,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     metric_source: List[str]
 
     @validator("monitor_interval")
-    def check_monitor_interval(cls, val: int) -> int: # pylint: disable=no-self-argument, no-self-use
+    def check_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
         """Validate that monitor_interval is positive and at least 60 seconds."""
         if val < 60:
             raise ValueError(
@@ -82,6 +83,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
+
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
     """Driver options fetched from RDS for agent deployment.
 
@@ -106,7 +108,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     server_url: str  # OtterTune server url, required
 
     db_identifier: str  # AWS RDS Database identifier, required
-    aws_region: str # AWS Region of Database and cloudwatch logs, required
+    aws_region: str  # AWS Region of Database and cloudwatch logs, required
 
     db_type: str  # Database type (mysql or postgres), required
     db_host: str  # Database host address, required
@@ -115,7 +117,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_user: str  # Database username, required
     db_password: str  # Database password, required
 
-    db_name: str # Database name in DBMS to focus on, optional
+    db_name: str  # Database name in DBMS to focus on, optional
 
     api_key: str  # API key handed to agent proxy to identify user
     db_key: str  # DB key handed to agent proxy to identify database
@@ -129,7 +131,6 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     metrics_to_retrieve_from_source: Dict[
         str, List[str]
     ]  # A list of target metric names
-
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -164,12 +165,12 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """build config options from command line arguments that aren't overriding other builders"""
         try:
             from_cli = PartialConfigFromCommandline(aws_region=args.aws_region,
-                                                          db_identifier=args.db_identifier,
-                                                          db_user=args.db_username,
-                                                          db_password=args.db_password,
-                                                          api_key=args.api_key,
-                                                          db_key=args.db_key,
-                                                          organization_id=args.organization_id)
+                                                    db_identifier=args.db_identifier,
+                                                    db_user=args.db_username,
+                                                    db_password=args.db_password,
+                                                    api_key=args.api_key,
+                                                    db_key=args.db_key,
+                                                    organization_id=args.organization_id)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "
@@ -191,7 +192,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         if self.config["db_type"] == "postgres":
             if not db_name:
                 msg = ("Must supply database name for Postgres via environment variable: "
-                      "POSTGRES_OTTERTUNE_DB_NAME")
+                       "POSTGRES_OTTERTUNE_DB_NAME")
                 raise DriverConfigException(msg)
         elif self.config["db_type"] == "mysql":
             if db_name:
@@ -244,7 +245,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """
          For aurora mysql 5.6:
            db_version = 5_6_mysql_aurora_1_22_2
-           db_type = aurora
+           db_type = aurora_mysql
          For aurora mysql 5.7:
            db_version = 5_7_mysql_aurora_2_10_1
            db_type = aurora_mysql
@@ -256,10 +257,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         db_type = get_db_type(db_instance_identifier, self.rds_client)
 
         if "aurora" in db_type:
-            if db_type == "aurora":
-                db_type = "aurora_mysql"
-
-            db_version_breakdown = db_version.split("_")
+            if db_type == "aurora_mysql":
+                db_version_breakdown = db_version.split("_")
             if db_type == "aurora_postgresql":
                 db_version = db_version_breakdown[0]
             else:
