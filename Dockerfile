@@ -18,6 +18,8 @@ ENV OTTERTUNE_OVERRIDE_SERVER_URL="https://api.ottertune.com"
 RUN mkdir -p /ottertune/driver
 COPY . /ottertune/driver
 WORKDIR /ottertune/driver
+RUN cp /usr/lib/ssl/openssl.cnf /usr/lib/ssl/openssl_cipher1.cnf && \
+    sed -i "s/\(CipherString *= *\).*/\1DEFAULT@SECLEVEL=1 /" "/usr/lib/ssl/openssl_cipher1.cnf"
 
 RUN pip install -r requirements.txt
 
