@@ -18,7 +18,9 @@
 
 ## Setup
 
-To build the Agent, you need `Python 3.8+`. Install python dependencies:
+To run the Agent, you will need an enviorment with `Python 3.8+`.
+
+Install python dependencies:
 ```
 pip install -r requirements.txt
 ```
