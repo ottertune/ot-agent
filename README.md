@@ -18,7 +18,7 @@
 
 ## Setup
 
-To run the Agent, you will need an enviorment with `Python 3.8+`.
+To run the Agent, you will need an environment with `Python 3.8+`.
 
 Install python dependencies:
 ```
