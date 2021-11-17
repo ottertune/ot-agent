@@ -18,7 +18,9 @@
 
 ## Setup
 
-To install python dependencies:
+To run the Agent, you will need an enviorment with `Python 3.8+`.
+
+Install python dependencies:
 ```
 pip install -r requirements.txt
 ```
@@ -40,6 +42,9 @@ python3 -m driver.main --aws-region <region> --db-identifier <db-identifier-with
 ```
 
 If you are using postgres you will need to set the `POSTGRES_OTTERTUNE_DB_NAME` env variable if you are using a postgres database.
+
+## Permissions
+To collect metrics from the database, you need to [configure database settings](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database#configure-database-settings), and [grant permissions](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database/guarded-public-access#create-the-database-user-and-grant-permissions-1) to the database user.
 
 ## Makefile
 
