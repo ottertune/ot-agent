@@ -2,6 +2,7 @@
 import json
 from decimal import Decimal
 from typing import Dict, List, Any, Tuple
+import logging
 import mysql.connector
 import mysql.connector.connection as mysql_conn
 from mysql.connector import errorcode
@@ -203,12 +204,18 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         else:
             metrics["global"]["engine"]["master_status"] = ""
 
-        digest_data, digest_meta = self._cmd(self.QUERY_DIGEST_TIME)
+        try:
+            digest_data, digest_meta = self._cmd(self.QUERY_DIGEST_TIME)
+            summary_by_digest = self._make_list(digest_data, digest_meta)
+        except Exception as ex:  # pylint: disable=broad-except
+            logging.error("Failed to collect query latency metrics: %s", ex)
+            summary_by_digest = []
+
         metrics["global"]["performance_schema"][
             "events_statements_summary_by_digest"
-        ] = json.dumps(self._make_list(digest_data, digest_meta))
+        ] = json.dumps(summary_by_digest)
 
-        if float(self._version) >= 8.0:
+        if self._version >= 8.0:
             # latency histogram
             histogram_data, histogram_meta = self._cmd(self.METRICS_LATENCY_HIST_SQL)
             metrics["global"]["performance_schema"][
