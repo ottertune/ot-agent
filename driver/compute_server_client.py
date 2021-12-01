@@ -16,7 +16,7 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
 }
 
 # TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.2.0"
+AGENT_VERSION = "0.2.1"
 
 
 class Observation(TypedDict):
@@ -63,7 +63,7 @@ class ComputeServerClient:
         headers = {}
         headers["ApiKey"] = self._api_key
         headers["organization_id"] = data["organization_id"]
-        headers["agent_version"] = AGENT_VERSION
+        headers["AgentVersion"] = AGENT_VERSION
         url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
