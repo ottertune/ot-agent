@@ -22,10 +22,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         "WHERE subsystem = 'transaction';"
     )
 
-    # convert the time unit from ps to us by dividing 1,000,000
+    # convert the time unit from ps to ms by dividing 1,000,000,000
     METRICS_LATENCY_HIST_SQL = (
-        "SELECT bucket_number, bucket_timer_low / 1000000 as bucket_timer_low, "
-        "bucket_timer_high / 1000000 as bucket_timer_high, count_bucket, "
+        "SELECT bucket_number, bucket_timer_low / 1000000000 as bucket_timer_low, "
+        "bucket_timer_high / 1000000000 as bucket_timer_high, count_bucket, "
         "count_bucket_and_lower, bucket_quantile FROM "
         "performance_schema.events_statements_histogram_global;"
     )
