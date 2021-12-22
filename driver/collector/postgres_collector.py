@@ -153,12 +153,14 @@ class PostgresCollector(BaseDbCollector):
 
         if version_float >= 13:
             self.PG_STAT_STATEMENTS_SQL: str = (
-                "SELECT CONCAT(userid, '_', dbid, '_', queryid) as queryid, calls, mean_exec_time as avg_time_ms "
+                "SELECT CONCAT(userid, '_', dbid, '_', queryid) as queryid, "
+                "calls, mean_exec_time as avg_time_ms "
                 "FROM pg_stat_statements;"
             )
         else:
             self.PG_STAT_STATEMENTS_SQL: str = (
-                "SELECT CONCAT(userid, '_', dbid, '_', queryid) as queryid, calls, mean_time as avg_time_ms "
+                "SELECT CONCAT(userid, '_', dbid, '_', queryid) as queryid, "
+                "calls, mean_time as avg_time_ms "
                 "FROM pg_stat_statements;"
             )
 
