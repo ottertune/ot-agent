@@ -30,7 +30,8 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         "performance_schema.events_statements_histogram_global;"
     )
     QUERY_DIGEST_TIME = (
-        "SELECT digest as queryid, count_star as calls, "
+        "SELECT CONCAT(IFNULL(schema_name, 'NULL'), '_', digest) as queryid, "
+        "count_star as calls, "
         "round(avg_timer_wait/1000000000, 6) as avg_time_ms "
         "FROM performance_schema.events_statements_summary_by_digest;"
     )
