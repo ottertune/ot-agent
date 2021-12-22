@@ -182,9 +182,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         metrics["global"]["innodb_metrics"] = dict(
             self._cmd(self.METRICS_INNODB_SQL)[0]
         )
-        self._innodb_status = self._truncate_innodb_status(
-                                self._cmd(self.ENGINE_INNODB_SQL)[0][0][-1]
-                              )
+        status_raw = self._cmd(self.ENGINE_INNODB_SQL)[0]
+        if len(status_raw) > 0:
+            self._innodb_status = self._truncate_innodb_status(status_raw[0][-1])
+
         metrics["global"]["engine"]["innodb_status"] = self._innodb_status
         metrics["global"]["derived"] = self._collect_derived_metrics()
         # replica status and master status
