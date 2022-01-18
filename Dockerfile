@@ -11,13 +11,16 @@
 # Postgres only:
 # POSTGRES_OTTERTUNE_DB_NAME - Specific database in DBMS to collect metrics from
 
-FROM python:3.8
+FROM python:3.10.1-slim-bullseye
 
 ENV OTTERTUNE_OVERRIDE_SERVER_URL="https://api.ottertune.com"
 
 RUN mkdir -p /ottertune/driver
 COPY . /ottertune/driver
 WORKDIR /ottertune/driver
+RUN   apt-get clean \
+   && apt-get update \
+   && apt-get install -yq gcc musl-dev python3-dev libpq-dev g++
 RUN cp /usr/lib/ssl/openssl.cnf /usr/lib/ssl/openssl_cipher1.cnf && \
     sed -i "s/\(CipherString *= *\).*/\1DEFAULT@SECLEVEL=1 /" "/usr/lib/ssl/openssl_cipher1.cnf" && \
     sed -i "s/\(MinProtocol *= *\).*/\1TLSv1 /" "/usr/lib/ssl/openssl_cipher1.cnf"
