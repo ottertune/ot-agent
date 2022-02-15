@@ -57,6 +57,7 @@ SELECT
   sum(n_tup_hot_upd) as n_tup_hot_upd,
   sum(n_live_tup) as n_live_tup,
   sum(n_dead_tup) as n_dead_tup,
+  sum(n_mod_since_analyze) as n_mod_since_analyze,
   sum(vacuum_count) as vacuum_count,
   sum(autovacuum_count) as autovacuum_count,
   sum(analyze_count) as analyze_count,
