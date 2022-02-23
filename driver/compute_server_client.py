@@ -16,7 +16,7 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
 }
 
 # TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.3.1"
+AGENT_VERSION = "0.3.2"
 
 
 class Observation(TypedDict):
