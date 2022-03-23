@@ -62,6 +62,7 @@ def collect_data_from_database(driver_conf: Dict[str, Any]) -> Observation:
         observation_time = int(time.time())
         knobs = collector.collect_knobs()
         metrics = collector.collect_metrics()
+        row_num_stats = collector.collect_table_row_number_stats()
         version = collector.get_version()
         summary: Dict[str, Any] = {
             "version": version,
@@ -72,6 +73,7 @@ def collect_data_from_database(driver_conf: Dict[str, Any]) -> Observation:
         "knobs_data": knobs,
         "metrics_data": metrics,
         "summary": summary,
+        "row_num_stats": row_num_stats,
         "db_key": driver_conf["db_key"],
         "organization_id": driver_conf["organization_id"],
     }

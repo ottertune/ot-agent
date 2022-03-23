@@ -16,7 +16,7 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
 }
 
 # TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.3.3"
+AGENT_VERSION = "0.3.4"
 
 
 class Observation(TypedDict):
@@ -24,6 +24,7 @@ class Observation(TypedDict):
 
     knobs_data: Dict[str, Any]  # collected knobs data
     metrics_data: Dict[str, Any]  # collected metrics data
+    row_num_stats: Dict[str, Any]
     summary: Dict[
         str, Any
     ]  # summary information like observation time, database version, etc

@@ -100,6 +100,23 @@ FROM
   pg_statio_user_indexes;
 """
 
+# row number distribution collecting from pg_stat_user_tables
+ROW_NUM_STAT = """
+SELECT
+  count(*) as num_tables,
+  count(nullif(n_live_tup = 0, false)) as num_empty_tables,
+  count(nullif(n_live_tup > 0 and n_live_tup <= 1e4, false)) as num_tables_row_count_0_10k,
+  count(nullif(n_live_tup > 1e4 and n_live_tup <= 1e5, false)) as num_tables_row_count_10k_100k,
+  count(nullif(n_live_tup > 1e5 and n_live_tup <= 1e6, false)) as num_tables_row_count_100k_1m,
+  count(nullif(n_live_tup > 1e6 and n_live_tup <= 1e7, false)) as num_tables_row_count_1m_10m,
+  count(nullif(n_live_tup > 1e7 and n_live_tup <= 1e8,false)) as num_tables_row_count_10m_100m,
+  count(nullif(n_live_tup > 1e8, false)) as num_tables_row_count_100m_inf,
+  max(n_live_tup) as max_row_num,
+  min(n_live_tup) as min_row_num
+FROM
+  pg_stat_user_tables;
+"""
+
 
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
@@ -107,6 +124,7 @@ class PostgresCollector(BaseDbCollector):
     # Getting knobs from pg_settings does not contain the units, e.g.,
     # it will be 2 instead of 2min
     KNOBS_SQL = "SELECT name, setting From pg_settings;"
+    ROW_NUMS_SQL: str = ROW_NUM_STAT
     PG_STAT_VIEWS_LOCAL = {
         "database": ["pg_stat_database", "pg_stat_database_conflicts"],
         "table": ["pg_stat_user_tables", "pg_statio_user_tables"],
@@ -251,13 +269,34 @@ class PostgresCollector(BaseDbCollector):
             # A global view can only have one row
             assert len(rows) == 1
             metrics["global"][view] = rows[0]
-        metrics['global']['pg_stat_statements'] = {
-            'statements': json.dumps(self._get_stat_statements())
+        metrics["global"]["pg_stat_statements"] = {
+            "statements": json.dumps(self._get_stat_statements())
         }
         # local
-        self._aggregated_local_stats(metrics['local'])
+        self._aggregated_local_stats(metrics["local"])
 
         return metrics
+
+    def collect_table_row_number_stats(self) -> Dict[str, Any]:
+        """Collect statistics about the number of rows of different tables
+        Returns:
+            {
+                "num_tables": <int>,
+                "num_empty_tables": <int>,
+                "num_tables_row_count_0_10k": <int>,
+                "num_tables_row_count_10k_100k": <int>,
+                "num_tables_row_count_100k_1m": <int>,
+                "num_tables_row_count_1m_10m": <int>,
+                "num_tables_row_count_10m_100m: <int>,
+                "num_tables_row_count_100m_inf": <int>,
+                "min_row_num": <int>,
+                "max_row_num": <int>,
+            }
+        Raises:
+            PostgresCollectorException: Failed to execute the sql query to get row stats data
+        """
+        raw_stats = self._cmd(self.ROW_NUMS_SQL)
+        return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
     def _aggregated_local_stats(self, local_metric: Dict[str, Any]) -> Dict[str, Any]:
         """Get Aggregated local metrics by summing all values"""
@@ -269,7 +308,7 @@ class PostgresCollector(BaseDbCollector):
                 rows = self._get_metrics(query)
                 data[view] = {}
                 if len(rows) > 0:
-                    data[view]['aggregated'] = rows[0]
+                    data[view]["aggregated"] = rows[0]
         return local_metric
 
     def _raw_local_stats(self, local_metric: Dict[str, Any]) -> Dict[str, Any]:
@@ -322,7 +361,9 @@ class PostgresCollector(BaseDbCollector):
             True if module is loaded successfully, otherwise return False.
         """
 
-        check_module_sql = "SELECT count(*) FROM pg_extension where extname='pg_stat_statements';"
+        check_module_sql = (
+            "SELECT count(*) FROM pg_extension where extname='pg_stat_statements';"
+        )
         load_module_sql = "CREATE EXTENSION pg_stat_statements;"
         module_exists = self._cmd(check_module_sql)[0][0][0] == 1
         if not module_exists:
@@ -346,6 +387,9 @@ class PostgresCollector(BaseDbCollector):
             try:
                 res = self._get_metrics(self.PG_STAT_STATEMENTS_SQL)
             except PostgresCollectorException as ex:
-                logging.error("Failed to load pg_stat_statements module, you need to add "
-                              "pg_stat_statements in parameter shared_preload_libraries: %s", ex)
+                logging.error(
+                    "Failed to load pg_stat_statements module, you need to add "
+                    "pg_stat_statements in parameter shared_preload_libraries: %s",
+                    ex,
+                )
         return res

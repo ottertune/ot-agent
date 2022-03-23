@@ -25,5 +25,9 @@ class BaseDbCollector(ABC):
         """Collect database metrics information"""
 
     @abstractmethod
+    def collect_table_row_number_stats(self) -> Dict[str, Any]:
+        """Collect statistics about the number of rows of different tables"""
+
+    @abstractmethod
     def get_version(self) -> str:
         """Get database version"""

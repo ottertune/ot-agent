@@ -1,7 +1,7 @@
 """Tests for interacting with Postgres database locally"""
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional, NoReturn, List, Callable
+from typing import Any, Dict, Optional, NoReturn, List, Callable, Tuple
 from unittest.mock import MagicMock, PropertyMock
 import json
 import mock
@@ -9,8 +9,13 @@ import psycopg2
 import pytest
 from driver.collector.postgres_collector import PostgresCollector
 from driver.collector.postgres_collector import (
-    DATABASE_STAT, DATABASE_CONFLICTS_STAT, TABLE_STAT,
-    TABLE_STATIO, INDEX_STAT, INDEX_STATIO
+    DATABASE_STAT,
+    DATABASE_CONFLICTS_STAT,
+    TABLE_STAT,
+    TABLE_STATIO,
+    INDEX_STAT,
+    INDEX_STATIO,
+    ROW_NUM_STAT,
 )
 
 from driver.exceptions import PostgresCollectorException
@@ -33,7 +38,6 @@ class SqlData:
     local_metrics: Dict[str, Any]
     aggregated_local_metrics: Dict[str, Any]
 
-
     def __init__(self) -> None:
         self.views = {
             "pg_stat_archiver": [["g1", 1]],
@@ -53,7 +57,6 @@ class SqlData:
             "pg_statio_user_tables": [[4, 4]],
             "pg_stat_user_indexes": [[5, 5]],
             "pg_statio_user_indexes": [[6, 6]],
-
         }
         self.metas = {
             "pg_stat_archiver": [["global"], ["global_count"]],
@@ -77,28 +80,12 @@ class SqlData:
         self.local_metrics = {
             "database": {
                 "pg_stat_database": {
-                    1: {
-                        "datname": "dl1",
-                        "local_count": 1,
-                        "datid": 1
-                    },
-                    2: {
-                        "datname": "dl2",
-                        "local_count": 2,
-                        "datid": 2
-                    },
+                    1: {"datname": "dl1", "local_count": 1, "datid": 1},
+                    2: {"datname": "dl2", "local_count": 2, "datid": 2},
                 },
                 "pg_stat_database_conflicts": {
-                    3: {
-                        "datname": "dl3",
-                        "local_count": 3,
-                        "datid": 3
-                    },
-                    4: {
-                        "datname": "dl4",
-                        "local_count": 4,
-                        "datid": 4
-                    },
+                    3: {"datname": "dl3", "local_count": 3, "datid": 3},
+                    4: {"datname": "dl4", "local_count": 4, "datid": 4},
                 },
             },
             "table": {
@@ -106,78 +93,67 @@ class SqlData:
                     1: {
                         "relname": "tl1",
                         "table_date": "2020-01-01T00:00:00",
-                        "relid": 1
+                        "relid": 1,
                     }
                 },
                 "pg_statio_user_tables": {
                     2: {
                         "relname": "tl2",
                         "table_date": "2020-01-01T00:00:00",
-                        "relid": 2
+                        "relid": 2,
                     }
                 },
             },
             "index": {
                 "pg_stat_user_indexes": {
-                    1: {
-                        "relname": "il1",
-                        "local_count": 1,
-                        "indexrelid": 1
-                    }
+                    1: {"relname": "il1", "local_count": 1, "indexrelid": 1}
                 },
                 "pg_statio_user_indexes": {
-                    2: {
-                        "relname": "il2",
-                        "local_count": 2,
-                        "indexrelid": 2
-                    }
+                    2: {"relname": "il2", "local_count": 2, "indexrelid": 2}
                 },
-            }
+            },
         }
         self.aggregated_local_metrics = {
             "database": {
                 "pg_stat_database": {
-                    "aggregated": {
-                        "local_count": 1,
-                        "local_count2": 1
-                    },
+                    "aggregated": {"local_count": 1, "local_count2": 1},
                 },
                 "pg_stat_database_conflicts": {
-                    "aggregated": {
-                        "local_count": 2,
-                        "local_count2": 2
-                    }
-                }
+                    "aggregated": {"local_count": 2, "local_count2": 2}
+                },
             },
             "table": {
                 "pg_stat_user_tables": {
-                    "aggregated": {
-                        "local_count": 3,
-                        "local_count2": 3
-                    }
+                    "aggregated": {"local_count": 3, "local_count2": 3}
                 },
                 "pg_statio_user_tables": {
-                    "aggregated": {
-                        "local_count": 4,
-                        "local_count2": 4
-                    }
-                }
+                    "aggregated": {"local_count": 4, "local_count2": 4}
+                },
             },
             "index": {
                 "pg_stat_user_indexes": {
-                    "aggregated": {
-                        "local_count": 5,
-                        "local_count2": 5
-                    }
+                    "aggregated": {"local_count": 5, "local_count2": 5}
                 },
                 "pg_statio_user_indexes": {
-                    "aggregated": {
-                        "local_count": 6,
-                        "local_count2": 6
-                    }
-                }
-            }
+                    "aggregated": {"local_count": 6, "local_count2": 6}
+                },
+            },
         }
+        self.row_stats_value: List[
+            Tuple[int, int, int, int, int, int, int, int, int, int]
+        ] = [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)]
+        self.row_stats_meta: List[List[str]] = [
+            ["num_tables"],
+            ["num_empty_tables"],
+            ["num_tables_row_count_0_10k"],
+            ["num_tables_row_count_10k_100k"],
+            ["num_tables_row_count_100k_1m"],
+            ["num_tables_row_count_1m_10m"],
+            ["num_tables_row_count_10m_100m"],
+            ["num_tables_row_count_100m_inf"],
+            ["max_row_num"],
+            ["min_row_num"],
+        ]
 
     # @staticmethod
     def expected_default_result(self) -> Dict[str, Any]:
@@ -186,10 +162,12 @@ class SqlData:
                 "pg_stat_archiver": {"global": "g1", "global_count": 1},
                 "pg_stat_bgwriter": {"global": "g2", "global_count": 2},
                 "pg_stat_statements": {
-                    "statements": json.dumps([{"queryid": 123, "calls": 2, "avg_time_ms": 1.5}])
-                }
+                    "statements": json.dumps(
+                        [{"queryid": 123, "calls": 2, "avg_time_ms": 1.5}]
+                    )
+                },
             },
-            "local": self.aggregated_local_metrics
+            "local": self.aggregated_local_metrics,
         }
 
 
@@ -252,9 +230,12 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == INDEX_STATIO:
             result.value = data.aggregated_views["pg_statio_user_indexes"]
             result.meta = data.aggregated_metas["pg_statio_user_indexes"]
-        elif 'pg_stat_statements' in sql:
+        elif "pg_stat_statements" in sql:
             result.value = data.views["pg_stat_statements"]
             result.meta = data.metas["pg_stat_statements"]
+        elif sql == ROW_NUM_STAT:
+            result.value = data.row_stats_value
+            result.meta = data.row_stats_meta
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -324,4 +305,35 @@ def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
     collector = PostgresCollector(mock_conn, "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_metrics()
+    assert "Failed to execute sql" in ex.value.message
+
+
+def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    assert collector.collect_table_row_number_stats() == {
+        "num_tables": 2111,
+        "num_empty_tables": 1925,
+        "num_tables_row_count_0_10k": 72,
+        "num_tables_row_count_10k_100k": 13,
+        "num_tables_row_count_100k_1m": 30,
+        "num_tables_row_count_1m_10m": 41,
+        "num_tables_row_count_10m_100m": 30,
+        "num_tables_row_count_100m_inf": 0,
+        "max_row_num": 42817478,
+        "min_row_num": 0,
+    }
+
+
+def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    with pytest.raises(PostgresCollectorException) as ex:
+        collector.collect_table_row_number_stats()
     assert "Failed to execute sql" in ex.value.message

@@ -225,6 +225,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             ] = json.dumps(self._make_list(histogram_data, histogram_meta))
         return metrics
 
+    def collect_table_row_number_stats(self) -> Dict[str, Any]:
+        """Collect statistics about the number of rows of different tables"""
+        return {}
+
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics
         Calculate derived metrics from collected base metrics. We may want to move it to the server
@@ -280,7 +284,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         new_lines = lines[:50]
         new_lines.append(f"...ignore {size-150} lines here...")
         new_lines.extend(lines[-100:])
-        truncated_status = '\n'.join(new_lines)
+        truncated_status = "\n".join(new_lines)
         return truncated_status
 
     @staticmethod
@@ -298,8 +302,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         res = []
         for row in data:
             row_new = [
-                float(elem) if isinstance(elem, Decimal) else elem
-                for elem in row
+                float(elem) if isinstance(elem, Decimal) else elem for elem in row
             ]
             res.append(dict(zip(meta, row_new)))
         return res
