@@ -132,8 +132,48 @@ def test_collect_data_from_database(
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]
+    row_num_stats = observation["row_num_stats"]
     version_str = summary["version"]
     _verify_postgres_knobs(knobs)
     _verify_postgres_metrics(metrics)
     assert summary["observation_time"] > 0
     assert len(version_str) > 0
+    assert len(row_num_stats) == 10
+
+
+def test_postgres_collect_row_stats(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    row_stats = collector.collect_table_row_number_stats()
+    conn.close()
+    # the metric json should not contain any field that cannot be converted to a string,
+    # like decimal type and datetime type
+    json.dumps(row_stats)
+    assert row_stats["num_tables"] >= 0
+    assert row_stats["num_empty_tables"] >= 0
+    assert row_stats["num_tables_row_count_0_10k"] >= 0
+    assert row_stats["num_tables_row_count_10k_100k"] >= 0
+    assert row_stats["num_tables_row_count_100k_1m"] >= 0
+    assert row_stats["num_tables_row_count_1m_10m"] >= 0
+    assert row_stats["num_tables_row_count_10m_100m"] >= 0
+    assert row_stats["num_tables_row_count_100m_inf"] >= 0
+    assert (
+        row_stats["num_tables"]
+        == row_stats["num_empty_tables"]
+        + row_stats["num_tables_row_count_0_10k"]
+        + row_stats["num_tables_row_count_10k_100k"]
+        + row_stats["num_tables_row_count_100k_1m"]
+        + row_stats["num_tables_row_count_1m_10m"]
+        + row_stats["num_tables_row_count_10m_100m"]
+        + row_stats["num_tables_row_count_100m_inf"]
+    )
+    if row_stats["num_tables"] == 0:
+        assert row_stats["min_row_num"] is None
+        assert row_stats["max_row_num"] is None
+    else:
+        assert row_stats["min_row_num"] >= 0
+        assert row_stats["max_row_num"] >= 0

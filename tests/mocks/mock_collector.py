@@ -39,6 +39,9 @@ class MockCollector(BaseDbCollector):
         }
         return metrics
 
+    def collect_table_row_number_stats(self) -> Dict[str, Any]:
+        return {}
+
     def get_version(self) -> str:
         """Get database version"""
         return "0.0"

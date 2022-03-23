@@ -203,8 +203,27 @@ def test_collect_data_from_database(
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]
+    row_num_stats = observation["row_num_stats"]
     version_str = summary["version"]
     _verify_mysql_knobs(knobs)
     _verify_mysql_metrics(metrics, version_str)
     assert summary["observation_time"] > 0
     assert len(version_str) > 0
+    # mysql not implemented
+    assert row_num_stats == {}
+
+
+def test_mysql_collect_row_stats(
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+    version = get_mysql_version(conn)
+    collector = MysqlCollector(conn, version)
+    row_stats = collector.collect_table_row_number_stats()
+    conn.close()
+    assert row_stats == {}
