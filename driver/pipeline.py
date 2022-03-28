@@ -34,7 +34,7 @@ def driver_pipeline(
         config.server_url, Session(), config.api_key
     )
 
-    if job_id == DB_LEVEL_MONITOR_JOB_ID: 
+    if job_id == DB_LEVEL_MONITOR_JOB_ID:
         _db_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         _table_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
@@ -74,7 +74,7 @@ def _table_level_monitor_driver_pipeline_for_cloud(
         Exception: Other unknown exceptions that are not caught as DriverException.
     """
     logging.debug("Collecting table level observation data")
-    table_level_observation = collect_table_level_observation_for_on_prem(config) 
+    table_level_observation = collect_table_level_observation_for_on_prem(config)
 
     logging.debug("Posting table level observation data to the server.")
     compute_server_client.post_table_level_observation(table_level_observation)
@@ -98,7 +98,7 @@ def _start_job(
     logging.info("Initializing driver pipeline (job %s)...", job_id)
 
     kwargs = {}
-    if job_id == DB_LEVEL_MONITOR_JOB_ID or job_id == TABLE_LEVEL_MONITOR_JOB_ID:
+    if job_id in (DB_LEVEL_MONITOR_JOB_ID, TABLE_LEVEL_MONITOR_JOB_ID):
         kwargs["next_run_time"] = datetime.now()
 
     scheduler.add_job(

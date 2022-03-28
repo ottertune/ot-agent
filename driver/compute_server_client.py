@@ -89,7 +89,7 @@ class ComputeServerClient:
         except Exception as ex:
             msg = "Failed to post the observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
-    
+
     def post_table_level_observation(self, data: TableLevelObservation) -> None:
         """Post the observation to the server.
 
@@ -98,15 +98,15 @@ class ComputeServerClient:
         Raises:
             ComputeServerClientException: Failed to post the observation.
         """
+        # pylint: disable=unused-variable
         headers = self._generate_headers(data["organization_id"])
                 # TODO: Remove this when compute-service has the endpoint
 
         for key in data["data"].keys():
             data["data"][key]["rows"] = data["data"][key]["rows"][:10]
         logging.info(
-            (
-                f"Ready to send data to compute-service. Data sample={data}"
-            )
+            "Ready to send data to compute-service. Data sample=%s",
+            data,
         )
         """url = f"{self._server_url}/observation/"
         try:

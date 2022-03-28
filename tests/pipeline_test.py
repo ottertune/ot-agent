@@ -39,7 +39,6 @@ def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> Non
     module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
-    
 
 
 @mock.patch("driver.pipeline.driver_pipeline")

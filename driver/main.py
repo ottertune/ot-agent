@@ -9,7 +9,11 @@ import logging
 from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
-from driver.pipeline import TABLE_LEVEL_MONITOR_JOB_ID, schedule_or_update_job, DB_LEVEL_MONITOR_JOB_ID
+from driver.pipeline import (
+    schedule_or_update_job,
+    DB_LEVEL_MONITOR_JOB_ID,
+    TABLE_LEVEL_MONITOR_JOB_ID,
+)
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
 scheduler = BlockingScheduler()

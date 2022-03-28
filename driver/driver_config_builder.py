@@ -52,7 +52,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
-    
+
     @validator("num_table_to_collect_stats")
     def check_num_table_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
         """Validate that num_table_to_collect_stats is not negative"""
