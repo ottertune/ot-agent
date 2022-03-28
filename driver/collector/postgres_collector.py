@@ -298,6 +298,23 @@ class PostgresCollector(BaseDbCollector):
         raw_stats = self._cmd(self.ROW_NUMS_SQL)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
+    def collect_table_level_metrics(self, num_table_to_collect_stas: int) -> Dict[str, Any]:
+        """Collect table level statistics"""
+        return {
+            "data": {
+                "pg_stat_user_tables": {
+                    "columns": [
+                        "to_do",
+                    ],
+                    "rows": [
+                        [1, 2, 3],
+                        [1, 4, 9],
+                        [1, 8, 27],
+                    ]
+                }
+            }
+        }
+
     def _aggregated_local_stats(self, local_metric: Dict[str, Any]) -> Dict[str, Any]:
         """Get Aggregated local metrics by summing all values"""
 

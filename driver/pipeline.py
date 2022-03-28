@@ -8,11 +8,16 @@ from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
-from driver.database import collect_observation_for_on_prem
+from driver.database import (
+    collect_db_level_observation_for_on_prem,
+    collect_table_level_observation_for_on_prem,
+)
+
 
 TUNE_JOB_ID = "tune_job"
-MONITOR_JOB_ID = "monitor_job"
+DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
+TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
 
 
 def driver_pipeline(
@@ -24,23 +29,63 @@ def driver_pipeline(
     """
     logging.info("Running driver pipeline deployment!")
 
-    logging.debug("Collecting observation data.")
-    observation = collect_observation_for_on_prem(config)
-
-    logging.debug("Posting observation data to the server.")
 
     compute_server_client = ComputeServerClient(
         config.server_url, Session(), config.api_key
     )
 
-    compute_server_client.post_observation(observation)
+    if job_id == DB_LEVEL_MONITOR_JOB_ID: 
+        _db_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
+    elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
+        _table_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
 
+def _db_level_monitor_driver_pipeline_for_cloud(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects database level metrics and configs every minute
+
+    Args:
+        config: Driver configuration.
+        comppute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    logging.debug("Collecting db level observation data.")
+    db_level_observation = collect_db_level_observation_for_on_prem(config)
+
+    logging.debug("Posting db level observation data to the server.")
+    compute_server_client.post_db_level_observation(db_level_observation)
+
+def _table_level_monitor_driver_pipeline_for_cloud(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects table level metrics every hour
+
+    Args:
+        config: Driver configuration.
+        comppute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    logging.debug("Collecting table level observation data")
+    table_level_observation = collect_table_level_observation_for_on_prem(config) 
+
+    logging.debug("Posting table level observation data to the server.")
+    compute_server_client.post_table_level_observation(table_level_observation)
 
 def _get_interval(config: DriverConfig, job_id: str) -> int:
     """Get the scheduled time interval (sec) based on job id."""
 
-    if job_id == MONITOR_JOB_ID:
+    if job_id == DB_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.monitor_interval)
+    elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
+        interval_s = 3600
     else:
         raise ValueError(f"Job {job_id} is not supported")
     return interval_s
@@ -53,7 +98,7 @@ def _start_job(
     logging.info("Initializing driver pipeline (job %s)...", job_id)
 
     kwargs = {}
-    if job_id == MONITOR_JOB_ID:
+    if job_id == DB_LEVEL_MONITOR_JOB_ID or job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         kwargs["next_run_time"] = datetime.now()
 
     scheduler.add_job(

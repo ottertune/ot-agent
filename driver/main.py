@@ -9,7 +9,7 @@ import logging
 from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
-from driver.pipeline import schedule_or_update_job, MONITOR_JOB_ID
+from driver.pipeline import TABLE_LEVEL_MONITOR_JOB_ID, schedule_or_update_job, DB_LEVEL_MONITOR_JOB_ID
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
 scheduler = BlockingScheduler()
@@ -73,6 +73,11 @@ def _get_args() -> argparse.Namespace:
         required=True
     )
     parser.add_argument(
+        "--disable-table-level-stats",
+        action="store_true",
+        help="Whether to collect stats for table level analysis or not. Default to true.",
+    )
+    parser.add_argument(
         "--override-monitor-interval",
         type=int,
         help="Override file setting for how often to collect new data (in seconds)",
@@ -82,14 +87,25 @@ def _get_args() -> argparse.Namespace:
         type=str,
         help="Override file setting for endpoint to post observation data",
     )
+    parser.add_argument(
+        "--override-num-table-to-collect-stats",
+        type=str,
+        help="Override file setting for how many tables to collect table level stats",
+    )
     return parser.parse_args()
 
 
-def schedule_monitor_job(config) -> None:
+def schedule_db_level_monitor_job(config) -> None:
     """
     The outer polling loop for the driver
     """
-    schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
+    schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
+
+def schedule_table_level_monitor_job(config) -> None:
+    """
+    The polling loop for table level statistics
+    """
+    schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
 
 
 def get_config(args):
@@ -129,7 +145,9 @@ def run() -> None:
 
     config = get_config(args)
 
-    schedule_monitor_job(config)
+    schedule_db_level_monitor_job(config)
+    if not config.disable_table_level_stats:
+        schedule_table_level_monitor_job(config)
     scheduler.start()
 
 

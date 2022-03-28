@@ -10,6 +10,7 @@ import os
 
 from pydantic import (
     BaseModel,
+    StrictBool,
     StrictInt,
     StrictStr,
     validator,
@@ -39,6 +40,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     """
     server_url: StrictStr
     monitor_interval: StrictInt
+    num_table_to_collect_stats: StrictInt
     metric_source: List[str]
 
     @validator("monitor_interval")
@@ -50,7 +52,16 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
-
+    
+    @validator("num_table_to_collect_stats")
+    def check_num_table_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that num_table_to_collect_stats is not negative"""
+        if val < 0:
+            raise ValueError(
+                "Invalid driver option num_table_to_collect_stats, non-negative value"
+                f" is expected, but {val} is found"
+            )
+        return val
 
 class Overrides(NamedTuple):
     """
@@ -58,6 +69,7 @@ class Overrides(NamedTuple):
     """
     monitor_interval: int
     server_url: str
+    num_table_to_collect_stats: int
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -82,6 +94,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
 
     db_user: StrictStr
     db_password: StrictStr
+
+    disable_table_level_stats: StrictBool
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -131,6 +145,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     metrics_to_retrieve_from_source: Dict[
         str, List[str]
     ]  # A list of target metric names
+    disable_table_level_stats: bool
+    num_table_to_collect_stats: int
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -170,7 +186,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                                                     db_password=args.db_password,
                                                     api_key=args.api_key,
                                                     db_key=args.db_key,
-                                                    organization_id=args.organization_id)
+                                                    organization_id=args.organization_id,
+                                                    disable=args.disable_table_level_stats)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "

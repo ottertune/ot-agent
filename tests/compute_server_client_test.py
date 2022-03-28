@@ -59,7 +59,7 @@ def _test_response_data() -> Dict[str, Any]:
 
 
 @responses.activate
-def test_post_observation_success(test_data: Dict[str, Any]) -> None:
+def test_post_db_level_observation_success(test_data: Dict[str, Any]) -> None:
     responses.add(
         responses.POST,
         f"{test_data['server_url']}/observation/",
@@ -71,11 +71,11 @@ def test_post_observation_success(test_data: Dict[str, Any]) -> None:
         req_session=session,
         api_key=test_data["api_key"],
     )
-    client.post_observation(test_data["observation"])
+    client.post_db_level_observation(test_data["observation"])
 
 
 @responses.activate
-def test_post_observation_session_not_found(test_data: Dict[str, Any]) -> None:
+def test_post_db_level_observation_session_not_found(test_data: Dict[str, Any]) -> None:
     responses.add(
         responses.POST,
         f"{test_data['server_url']}/observation/",
@@ -88,12 +88,12 @@ def test_post_observation_session_not_found(test_data: Dict[str, Any]) -> None:
         api_key=test_data["api_key"],
     )
     with pytest.raises(ComputeServerClientException) as ex:
-        client.post_observation(test_data["observation"])
+        client.post_db_level_observation(test_data["observation"])
     assert "404" in str(ex.value)
 
 
 @responses.activate
-def test_post_observation_connection_error(test_data: Dict[str, Any]) -> None:
+def test_post_db_level_observation_connection_error(test_data: Dict[str, Any]) -> None:
     responses.add(
         responses.POST,
         f"{test_data['server_url']}/observation/",
@@ -106,5 +106,5 @@ def test_post_observation_connection_error(test_data: Dict[str, Any]) -> None:
         api_key=test_data["api_key"],
     )
     with pytest.raises(ComputeServerClientException) as ex:
-        client.post_observation(test_data["observation"])
+        client.post_db_level_observation(test_data["observation"])
     assert "Connection Error" in str(ex.value)

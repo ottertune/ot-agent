@@ -229,6 +229,23 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         """Collect statistics about the number of rows of different tables"""
         return {}
 
+    def collect_table_level_metrics(self, num_table_to_collect_stas: int) -> Dict[str, Any]:
+        """Collect table level statistics"""
+        return {
+            "data": {
+                "mysql_to_implement": {
+                    "columns": [
+                        "mysql_to_implement",
+                    ],
+                    "rows": [
+                        [1, 2, 3],
+                        [1, 4, 9],
+                        [1, 8, 27],
+                    ]
+                }
+            }
+        }
+
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics
         Calculate derived metrics from collected base metrics. We may want to move it to the server

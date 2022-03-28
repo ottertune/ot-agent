@@ -1,5 +1,6 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
+import logging
 from typing import Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
@@ -19,12 +20,22 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
 AGENT_VERSION = "0.3.4"
 
 
-class Observation(TypedDict):
-    """Observation data collected from the target database."""
+class DBLevelObservation(TypedDict):
+    """DB level observation data collected from the target database."""
 
     knobs_data: Dict[str, Any]  # collected knobs data
     metrics_data: Dict[str, Any]  # collected metrics data
     row_num_stats: Dict[str, Any]
+    summary: Dict[
+        str, Any
+    ]  # summary information like observation time, database version, etc
+    db_key: str
+    organization_id: str
+
+class TableLevelObservation(TypedDict):
+    """Table level observation data collected from the target database."""
+
+    data: Dict[str, Any]
     summary: Dict[
         str, Any
     ]  # summary information like observation time, database version, etc
@@ -53,7 +64,14 @@ class ComputeServerClient:
         self._req_session: Session = req_session
         self._api_key = api_key
 
-    def post_observation(self, data: Observation) -> None:
+    def _generate_headers(self, org_id) -> Dict[str, Any]:
+        headers = {}
+        headers["ApiKey"] = self._api_key
+        headers["organization_id"] = org_id
+        headers["AgentVersion"] = AGENT_VERSION
+        return headers
+
+    def post_db_level_observation(self, data: DBLevelObservation) -> None:
         """Post the observation to the server.
 
         Args:
@@ -61,10 +79,7 @@ class ComputeServerClient:
         Raises:
             ComputeServerClientException: Failed to post the observation.
         """
-        headers = {}
-        headers["ApiKey"] = self._api_key
-        headers["organization_id"] = data["organization_id"]
-        headers["AgentVersion"] = AGENT_VERSION
+        headers = self._generate_headers(data["organization_id"])
         url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
@@ -74,3 +89,32 @@ class ComputeServerClient:
         except Exception as ex:
             msg = "Failed to post the observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
+    
+    def post_table_level_observation(self, data: TableLevelObservation) -> None:
+        """Post the observation to the server.
+
+        Args:
+            data: Collected data from the target database.
+        Raises:
+            ComputeServerClientException: Failed to post the observation.
+        """
+        headers = self._generate_headers(data["organization_id"])
+                # TODO: Remove this when compute-service has the endpoint
+
+        for key in data["data"].keys():
+            data["data"][key]["rows"] = data["data"][key]["rows"][:10]
+        logging.info(
+            (
+                f"Ready to send data to compute-service. Data sample={data}"
+            )
+        )
+        """url = f"{self._server_url}/observation/"
+        try:
+            response = self._req_session.post(
+                url, json=data, headers=headers, timeout=10
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+        """
