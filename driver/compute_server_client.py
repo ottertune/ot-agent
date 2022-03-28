@@ -108,6 +108,7 @@ class ComputeServerClient:
             "Ready to send data to compute-service. Data sample=%s",
             data,
         )
+        # pylint: disable=pointless-string-statement
         """url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
