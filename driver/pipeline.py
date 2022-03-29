@@ -35,11 +35,11 @@ def driver_pipeline(
     )
 
     if job_id == DB_LEVEL_MONITOR_JOB_ID:
-        _db_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
+        _db_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
-        _table_level_monitor_driver_pipeline_for_cloud(config, compute_server_client)
+        _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
 
-def _db_level_monitor_driver_pipeline_for_cloud(
+def _db_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
 ) -> None:
@@ -59,7 +59,7 @@ def _db_level_monitor_driver_pipeline_for_cloud(
     logging.debug("Posting db level observation data to the server.")
     compute_server_client.post_db_level_observation(db_level_observation)
 
-def _table_level_monitor_driver_pipeline_for_cloud(
+def _table_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
 ) -> None:
