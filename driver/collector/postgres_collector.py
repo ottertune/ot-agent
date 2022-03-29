@@ -304,7 +304,7 @@ class PostgresCollector(BaseDbCollector):
             "data": {
                 "pg_stat_user_tables": {
                     "columns": [
-                        "to_do",
+                        "a", "b", "c",
                     ],
                     "rows": [
                         [1, 2, 3],
