@@ -298,7 +298,7 @@ class PostgresCollector(BaseDbCollector):
         raw_stats = self._cmd(self.ROW_NUMS_SQL)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
-    def collect_table_level_metrics(self, num_table_to_collect_stas: int) -> Dict[str, Any]:
+    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
         """Collect table level statistics"""
         return {
             "data": {

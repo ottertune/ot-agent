@@ -229,7 +229,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         """Collect statistics about the number of rows of different tables"""
         return {}
 
-    def collect_table_level_metrics(self, num_table_to_collect_stas: int) -> Dict[str, Any]:
+    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
         """Collect table level statistics"""
         return {
             "data": {
