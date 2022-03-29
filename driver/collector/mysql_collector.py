@@ -235,7 +235,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "data": {
                 "mysql_to_implement": {
                     "columns": [
-                        "mysql_to_implement",
+                        "a", "b", "c",
                     ],
                     "rows": [
                         [1, 2, 3],
