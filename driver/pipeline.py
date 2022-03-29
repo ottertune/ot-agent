@@ -48,7 +48,7 @@ def _db_level_monitor_driver_pipeline_for_on_prem(
 
     Args:
         config: Driver configuration.
-        comppute_server_client: Client interacting with server in Ottertune.
+        compute_server_client: Client interacting with server in Ottertune.
     Raises:
         DriverException: Driver error.
         Exception: Other unknown exceptions that are not caught as DriverException.
