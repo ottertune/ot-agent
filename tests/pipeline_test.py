@@ -27,6 +27,7 @@ class MockConfig:
         self.enable_restart = True
         self.db_provider = "amazon"
         self.enable_tuning = True
+        self.table_level_monitor_interval = 3600
 
 
 @mock.patch("driver.pipeline.driver_pipeline")

@@ -1,6 +1,5 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
-import logging
 from typing import Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
@@ -102,20 +101,12 @@ class ComputeServerClient:
         headers = self._generate_headers(data["organization_id"])
                 # TODO: Remove this when compute-service has the endpoint
 
-        for key in data["data"].keys():
-            data["data"][key]["rows"] = data["data"][key]["rows"][:10]
-        logging.info(
-            "Ready to send data to compute-service. Data sample=%s",
-            data,
-        )
-        # pylint: disable=pointless-string-statement
-        """url = f"{self._server_url}/observation/"
+        url = f"{self._server_url}/table_level_observation/"
         try:
             response = self._req_session.post(
                 url, json=data, headers=headers, timeout=10
             )
             response.raise_for_status()
         except Exception as ex:
-            msg = "Failed to post the observation to the server"
+            msg = "Failed to post the table level observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
-        """

@@ -41,7 +41,18 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     server_url: StrictStr
     monitor_interval: StrictInt
     num_table_to_collect_stats: StrictInt
+    table_level_monitor_interval: StrictInt
     metric_source: List[str]
+
+    @validator("table_level_monitor_interval")
+    def check_table_level_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that table_level_monitor_interval is greater than 5 minutes"""
+        if val < 300:
+            raise ValueError(
+                "Invalid driver option table_level_monitor_interval, value >= 300"
+                f" is expected, but {val} is found"
+            )
+        return val
 
     @validator("monitor_interval")
     def check_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
@@ -70,6 +81,7 @@ class Overrides(NamedTuple):
     monitor_interval: int
     server_url: str
     num_table_to_collect_stats: int
+    table_level_monitor_interval: int
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -147,6 +159,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     ]  # A list of target metric names
     disable_table_level_stats: bool
     num_table_to_collect_stats: int
+    table_level_monitor_interval: int
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -161,6 +174,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """build config options from config file"""
         with open(config_path, "r", encoding="utf-8") as config_file:
             data = yaml.safe_load(config_file)
+            print(f"??? data is {data}")
             if not isinstance(data, dict):
                 raise ValueError("Invalid data in the driver configuration YAML file")
 

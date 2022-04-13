@@ -85,7 +85,7 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
     if job_id == DB_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.monitor_interval)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
-        interval_s = 3600
+        interval_s = int(config.table_level_monitor_interval)
     else:
         raise ValueError(f"Job {job_id} is not supported")
     return interval_s

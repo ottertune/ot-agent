@@ -93,8 +93,13 @@ def _get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--override-num-table-to-collect-stats",
-        type=str,
+        type=int,
         help="Override file setting for how many tables to collect table level stats",
+    )
+    parser.add_argument(
+        "--override-table-level-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect table level data (in seconds)",
     )
     return parser.parse_args()
 
@@ -117,8 +122,11 @@ def get_config(args):
     Build configuration from file, command line overrides, rds info,
     """
     config_builder = DriverConfigBuilder(args.aws_region)
-    overrides = Overrides(monitor_interval=args.override_monitor_interval,
-                          server_url=args.override_server_url,
+    overrides = Overrides(
+        monitor_interval=args.override_monitor_interval,
+        server_url=args.override_server_url,
+        num_table_to_collect_stats=args.override_num_table_to_collect_stats,
+        table_level_monitor_interval=args.override_table_level_monitor_interval,
     )
 
     config_builder.from_file(args.config)\
