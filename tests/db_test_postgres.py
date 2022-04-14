@@ -35,7 +35,7 @@ def _get_driver_conf(
     pg_port: str,
     pg_database: str,
     num_table_to_collect_stats: int,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     # pylint: disable=too-many-arguments
     conf = {
         "db_user": pg_user,
