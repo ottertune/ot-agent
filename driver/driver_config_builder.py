@@ -194,14 +194,16 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def from_command_line(self, args) -> BaseDriverConfigBuilder:
         """build config options from command line arguments that aren't overriding other builders"""
         try:
-            from_cli = PartialConfigFromCommandline(aws_region=args.aws_region,
-                                                    db_identifier=args.db_identifier,
-                                                    db_user=args.db_username,
-                                                    db_password=args.db_password,
-                                                    api_key=args.api_key,
-                                                    db_key=args.db_key,
-                                                    organization_id=args.organization_id,
-                                                    disable_table_level_stats=args.disable_table_level_stats)
+            from_cli = PartialConfigFromCommandline(
+                aws_region=args.aws_region,
+                db_identifier=args.db_identifier,
+                db_user=args.db_username,
+                db_password=args.db_password,
+                api_key=args.api_key,
+                db_key=args.db_key,
+                organization_id=args.organization_id,
+                disable_table_level_stats=args.disable_table_level_stats,
+            )
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "
