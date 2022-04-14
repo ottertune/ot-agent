@@ -388,9 +388,12 @@ class PostgresCollector(BaseDbCollector):
         )[0]
         # pyre-ignore[9]
         target_tables: Tuple[int] = tuple(table[0] for table in target_tables_tuple)
+        target_tables_str = str(target_tables) if len(target_tables) > 1 else (
+            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)",
+        )
         for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
             rows, columns = self._cmd(
-                sql_template.format(table_list=(target_tables if target_tables else "(0)")),
+                sql_template.format(table_list=target_tables_str),
             )
             metrics[field] = {
                 "columns": columns,
@@ -405,11 +408,11 @@ class PostgresCollector(BaseDbCollector):
         if target_tables:
             raw_padding_info, _ = self._cmd(
                 PADDING_HELPER_TEMPLATE.format(
-                    table_list=(target_tables if target_tables else "(0)"),
+                    table_list=target_tables_str,
                 )
             )
             padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
-            bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(target_tables)
+            bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(target_tables_str)
             metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
                 padding_size_dict, bloat_ratio_factors_dict,
             )
@@ -460,11 +463,11 @@ class PostgresCollector(BaseDbCollector):
 
     def _retrive_bloat_ratio_factors_for_tables(
         self,
-        table_list: Tuple[int],
+        target_tables_str: str,
     ) -> Dict[int, Dict[str, Any]]:
         factors, columns = self._cmd(
             TABLE_BLOAT_RATIO_FACTOR_TEMPLATE.format(
-                table_list=table_list,
+                table_list=target_tables_str,
             )
         )
         return {
