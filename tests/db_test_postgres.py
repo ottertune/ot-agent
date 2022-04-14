@@ -266,7 +266,7 @@ def test_collect_table_level_data_from_database(
         num_table_to_collect_stats,
     )
     # pylint: disable=too-many-function-args
-    observation = collect_table_level_data_from_database(driver_conf, None)
+    observation = collect_table_level_data_from_database(driver_conf)
     data = observation["data"]
     summary = observation["summary"]
     version_str = summary["version"]
