@@ -107,7 +107,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
-    disable_table_level_stats: StrictBool
+    disable_table_level_stats: StrictBool = False
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -201,7 +201,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                                                     api_key=args.api_key,
                                                     db_key=args.db_key,
                                                     organization_id=args.organization_id,
-                                                    disable=args.disable_table_level_stats)
+                                                    disable_table_level_stats=args.disable_table_level_stats)
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "

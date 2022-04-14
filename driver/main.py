@@ -79,7 +79,7 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--disable-table-level-stats",
         action="store_true",
-        help="Whether to collect stats for table level analysis or not. Default to true.",
+        help="Whether to collect stats for table level analysis or not.",
     )
     parser.add_argument(
         "--override-monitor-interval",
