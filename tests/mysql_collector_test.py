@@ -8,6 +8,7 @@ import mysql.connector.connection
 from mysql.connector import errorcode
 from driver.collector.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
+from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
 
 # pylint: disable=missing-function-docstring,too-many-instance-attributes
 
@@ -29,6 +30,8 @@ class SqlData:
     master_status_meta: List[List[str]]
     replica_status: List[List[Union[int, str]]]
     replica_status_meta: List[List[str]]
+    table_level_stats: List[List[Union[int, str]]]
+    table_level_stats_meta: List[List[str]]
 
     def __init__(self) -> None:
         self.global_status = [
@@ -52,6 +55,30 @@ class SqlData:
         self.master_status_meta = [["Position"], ["Binlog_Do_DB"]]
         self.replica_status = [["localhost", 60]]
         self.replica_status_meta = [["Source_Host"], ["Connect_Retry"]]
+        self.table_level_stats = [[
+            'mysql',
+            'time_zone_transition',
+            'BASE TABLE',
+            'InnoDB',
+            'Dynamic',
+            119074,
+            39,
+            4734976,
+            0,
+            4194304,
+        ]]
+        self.table_level_stats_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+            ["TABLE_TYPE"],
+            ["ENGINE"],
+            ["ROW_FORMAT"],
+            ["TABLE_ROWS"],
+            ["AVG_ROW_LENGTH"],
+            ["DATA_LENGTH"],
+            ["INDEX_LENGTH"],
+            ["DATA_FREE"],
+        ]
 
     def expected_default_result(self) -> Dict[str, Any]:
         """
@@ -142,6 +169,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql in ("SHOW REPLICA STATUS;", "SHOW SLAVE STATUS;"):
             result.value = data.replica_status
             result.meta = data.replica_status_meta
+        elif "information_schema.TABLES" in sql:
+            result.value = data.table_level_stats
+            result.meta = data.table_level_stats_meta
 
     return sql_fn
 
@@ -271,3 +301,39 @@ def test_check_permissions_specific_access_denied(
             assert "GRANT" in info["example"]
         else:
             assert "unknown" in info["example"]
+
+def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    res = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, res)
+    mock_cursor.fetchall.side_effect = lambda: res.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
+    collector = MysqlCollector(mock_conn, "7.9.9")
+    assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+        "information_schema_TABLES": {
+            "columns":TABLE_LEVEL_MYSQL_COLUMNS,
+            "rows": [
+                [
+                    'mysql',
+                    'time_zone_transition',
+                    'BASE TABLE',
+                    'InnoDB',
+                    'Dynamic',
+                    119074,
+                    39,
+                    4734976,
+                    0,
+                    4194304,
+                ],
+            ],
+        },
+    }
+
+def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
+    collector = MysqlCollector(mock_conn, "5.7.3")
+    with pytest.raises(MysqlCollectorException) as ex:
+        collector.collect_table_level_metrics(10)
+    assert "Failed to execute sql" in ex.value.message

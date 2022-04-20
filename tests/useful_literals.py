@@ -24,3 +24,16 @@ TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS = [
     "analyze_count",
     "autoanalyze_count",
 ]
+
+TABLE_LEVEL_MYSQL_COLUMNS = [
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "TABLE_TYPE",
+    "ENGINE",
+    "ROW_FORMAT",
+    "TABLE_ROWS",
+    "AVG_ROW_LENGTH",
+    "DATA_LENGTH",
+    "INDEX_LENGTH",
+    "DATA_FREE",
+]
