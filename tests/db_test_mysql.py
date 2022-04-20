@@ -1,6 +1,6 @@
 """Tests for interacting with MySQL database"""
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import json
 
 import mysql.connector
@@ -58,7 +58,7 @@ def _get_driver_conf(
     mysql_port: str,
     mysql_database: str,
     num_table_to_collect_stats: int,
-) -> Dict[str, str]:
+) -> Dict[str, Union[int, str]]:
     # pylint: disable=too-many-arguments
     conf = {
         "db_user": mysql_user,
