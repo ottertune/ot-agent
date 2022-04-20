@@ -10,7 +10,7 @@ import json
 
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
-from driver.collector.table_level_stats_sqls import (
+from driver.collector.pg_table_level_stats_sqls import (
     TABLE_SIZE_TABLE_STATS_TEMPLATE,
     TABLE_BLOAT_RATIO_FACTOR_TEMPLATE,
     PADDING_HELPER_TEMPLATE,

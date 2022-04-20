@@ -17,7 +17,7 @@ from driver.collector.postgres_collector import (
     INDEX_STATIO,
     ROW_NUM_STAT,
 )
-from driver.collector.table_level_stats_sqls import (
+from driver.collector.pg_table_level_stats_sqls import (
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
     PG_STAT_TABLE_STATS_TEMPLATE,
     PG_STATIO_TABLE_STATS_TEMPLATE,
