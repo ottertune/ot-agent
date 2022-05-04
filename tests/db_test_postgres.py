@@ -4,8 +4,12 @@ from typing import Dict, Any
 import json
 
 from driver.collector.collector_factory import get_postgres_version, connect_postgres
-from driver.database import collect_data_from_database
+from driver.database import (
+    collect_db_level_data_from_database,
+    collect_table_level_data_from_database,
+)
 from driver.collector.postgres_collector import PostgresCollector
+from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
 
 # pylint: disable=missing-function-docstring
 
@@ -30,7 +34,8 @@ def _get_driver_conf(
     pg_host: str,
     pg_port: str,
     pg_database: str,
-) -> Dict[str, str]:
+    num_table_to_collect_stats: int,
+) -> Dict[str, Any]:
     # pylint: disable=too-many-arguments
     conf = {
         "db_user": pg_user,
@@ -42,6 +47,7 @@ def _get_driver_conf(
         "db_provider": "on_premise",
         "db_key": "test_key",
         "organization_id": "test_organization",
+        "num_table_to_collect_stats": num_table_to_collect_stats,
     }
     return conf
 
@@ -126,9 +132,9 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, pg_user, pg_password, pg_host, pg_port, pg_database
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10,
     )
-    observation = collect_data_from_database(driver_conf)
+    observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]
@@ -177,3 +183,122 @@ def test_postgres_collect_row_stats(
     else:
         assert row_stats["min_row_num"] >= 0
         assert row_stats["max_row_num"] >= 0
+
+def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> None:
+    # pg_stat_user_tables_all_fields
+    assert data[
+        "pg_stat_user_tables_all_fields"
+    ]["columns"] == TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+    assert len(data["pg_stat_user_tables_all_fields"]["rows"]) == table_nums
+    for row in data["pg_stat_user_tables_all_fields"]["rows"]:
+        assert len(row) == 22
+
+    # pg_statio_user_tables_all_fields
+    assert data["pg_statio_user_tables_all_fields"]["columns"] == [
+        "relid",
+        "schemaname",
+        "relname",
+        "heap_blks_read",
+        "heap_blks_hit",
+        "idx_blks_read",
+        "idx_blks_hit",
+        "toast_blks_read",
+        "toast_blks_hit",
+        "tidx_blks_read",
+        "tidx_blks_hit",
+    ]
+    assert len(data["pg_statio_user_tables_all_fields"]["rows"]) == table_nums
+    for row in data["pg_statio_user_tables_all_fields"]["rows"]:
+        assert len(row) == 11
+
+    # pg_stat_user_tables_table_sizes
+    assert data["pg_stat_user_tables_table_sizes"]["columns"] == [
+        "relid",
+        "indexes_size",
+        "relation_size",
+        "toast_size",
+    ]
+    assert len(data["pg_stat_user_tables_table_sizes"]["rows"]) == table_nums
+    for row in data["pg_stat_user_tables_table_sizes"]["rows"]:
+        assert len(row) == 4
+
+    # table_bloat_ratios
+    assert data["table_bloat_ratios"]["columns"] == [
+        "relid",
+        "bloat_ratio",
+    ]
+    assert len(data["table_bloat_ratios"]["rows"]) == table_nums
+    for row in data["table_bloat_ratios"]["rows"]:
+        assert len(row) == 2
+
+def test_collect_table_level_data_from_database(
+    db_type: str,
+    pg_user: str,
+    pg_password: str,
+    pg_host: str,
+    pg_port: str,
+    pg_database: str,
+) -> None:
+    # pylint: disable=too-many-arguments
+    num_table_to_collect_stats = 10
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+
+    # create three tables
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test1 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test2 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+
+    driver_conf = _get_driver_conf(
+        db_type,
+        pg_user,
+        pg_password,
+        pg_host,
+        pg_port,
+        pg_database,
+        num_table_to_collect_stats,
+    )
+    # pylint: disable=too-many-function-args
+    observation = collect_table_level_data_from_database(driver_conf)
+    data = observation["data"]
+    summary = observation["summary"]
+    version_str = summary["version"]
+    assert summary["observation_time"] > 0
+    assert len(version_str) > 0
+    # 0 as the database is empty
+    _verify_postgres_table_level_data(data, 3)
+
+def test_postgres_collect_table_level_metrics(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    num_table_to_collect_stats = 10
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+
+    # create three tables
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test1 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test2 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
+    # the metric json should not contain any field that cannot be converted to a string,
+    # like decimal type and datetime type
+    json.dumps(metrics)
+
+    _verify_postgres_table_level_data(metrics, 3)

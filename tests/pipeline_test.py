@@ -4,7 +4,7 @@
 from apscheduler.schedulers.background import BlockingScheduler
 import mock
 
-from driver.pipeline import MONITOR_JOB_ID
+from driver.pipeline import DB_LEVEL_MONITOR_JOB_ID, TABLE_LEVEL_MONITOR_JOB_ID
 
 
 import driver.pipeline as module_under_test
@@ -27,6 +27,7 @@ class MockConfig:
         self.enable_restart = True
         self.db_provider = "amazon"
         self.enable_tuning = True
+        self.table_level_monitor_interval = 3600
 
 
 @mock.patch("driver.pipeline.driver_pipeline")
@@ -36,7 +37,9 @@ def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> Non
     config.db_provider = "amazon"
 
     # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
+    module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
+    # pyre-ignore - mocks used
+    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
 
 
 @mock.patch("driver.pipeline.driver_pipeline")
@@ -48,6 +51,11 @@ def test_schedule_or_update_job_same_job_twice(
     config.db_provider = "amazon"
 
     # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
+    module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
     # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, MONITOR_JOB_ID)
+    module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
+
+    # pyre-ignore - mocks used
+    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
+    # pyre-ignore - mocks used
+    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)

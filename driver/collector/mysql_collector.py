@@ -10,6 +10,24 @@ from mysql.connector import errorcode
 from driver.exceptions import MysqlCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
+TABLE_LEVEL_STATS_SQL_TEMPLATE = """
+SELECT
+  TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE,
+  ENGINE, ROW_FORMAT, TABLE_ROWS,
+  AVG_ROW_LENGTH, DATA_LENGTH, INDEX_LENGTH,
+  DATA_FREE
+FROM
+  information_schema.TABLES
+WHERE 
+  TABLE_SCHEMA
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY 
+  TABLE_ROWS
+DESC LIMIT 
+  {n};
+"""
+
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -228,6 +246,40 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
     def collect_table_row_number_stats(self) -> Dict[str, Any]:
         """Collect statistics about the number of rows of different tables"""
         return {}
+
+    def collect_table_level_metrics(
+        self, num_table_to_collect_stats: int
+    ) -> Dict[str, Any]:
+        """Collect table level statistics
+
+        Returns:
+        {
+            "information_schema_TABLES": {
+                "columns": [
+                    "TABLE_SCHEMA",
+                    "TABLE_NAME",
+                    "TABLE_TYPE",
+                    "ENGINE",
+                    "ROW_FORMAT",
+                    "TABLE_ROWS",
+                    "AVG_ROW_LENGTH",
+                    "DATA_LENGTH",
+                    "INDEX_LENGTH",
+                    "DATA_FREE",
+                ],
+                "rows": List[List[Any]],
+            }
+        }
+        """
+        values, columns = self._cmd(
+            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
+        )
+        return {
+            "information_schema_TABLES": {
+                "columns": columns,
+                "rows": [list(row) for row in values],
+            }
+        }
 
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics

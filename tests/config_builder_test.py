@@ -5,12 +5,10 @@ Tests for the config builder
 from typing import Dict, Any
 import tempfile
 from unittest.mock import patch
-import yaml
 
 from pydantic import ValidationError
 import pytest
 
-from driver.exceptions import DriverConfigException
 from driver.driver_config_builder import (
     PartialConfigFromFile,
     DriverConfigBuilder,
@@ -40,7 +38,12 @@ def _test_config_data() -> Dict[str, Any]:
         "db_ssl_key": "",
         "db_enable_ssl": False,
         "db_conn_extend": {"pool_size": 10},
-        "monitor_interval": 60
+        "monitor_interval": 60,
+        "num_table_to_collect_stats": 100,
+        "table_level_monitor_interval": 300,
+        "metric_source": [
+            "cloudwatch",
+        ]
     }
 
     partial_config_from_server: Dict[str, Any] = {
@@ -63,6 +66,35 @@ def _test_config_data() -> Dict[str, Any]:
         server=partial_config_from_server,
     )
 
+def test_partial_config_from_file_success(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # wrong type server_url fetched from env, string is expected, but int found
+    test_data_from_file = test_config_data["file"]
+    partial_config = PartialConfigFromFile(**test_data_from_file)
+    assert partial_config.monitor_interval == 60
+    assert partial_config.num_table_to_collect_stats == 100
+    assert partial_config.table_level_monitor_interval == 300
+
+def test_partial_config_from_file_invalid_table_level_monitor_interval(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # wrong type server_url fetched from env, string is expected, but int found
+    test_data_from_file = test_config_data["file"]
+    test_data_from_file["table_level_monitor_interval"] = 60
+    with pytest.raises(ValidationError) as ex:
+        PartialConfigFromFile(**test_data_from_file)
+    assert "table_level_monitor_interval" in str(ex.value)
+
+def test_partial_config_from_file_invalid_num_table_to_collect_stats(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # wrong type server_url fetched from env, string is expected, but int found
+    test_data_from_file = test_config_data["file"]
+    test_data_from_file["num_table_to_collect_stats"] = -1
+    with pytest.raises(ValidationError) as ex:
+        PartialConfigFromFile(**test_data_from_file)
+    assert "num_table_to_collect_stats" in str(ex.value)
 
 # Test PartialConfigFromFile
 def test_partial_config_from_file_invalid_type(
@@ -85,16 +117,6 @@ def test_partial_config_from_file_missing_value(
     with pytest.raises(ValidationError) as ex:
         PartialConfigFromFile(**test_data_from_file)
     assert "server_url" in str(ex.value)
-
-
-def test_create_driver_config_builder_invalid_config(test_config_data: Dict[str, Any]
-) -> None:
-    with pytest.raises(DriverConfigException):
-        with tempfile.NamedTemporaryFile("w") as temp:
-            test_config_data["file"]["database_id"] = "15213"
-            yaml.safe_dump(test_config_data["file"], temp)
-            config_builder = DriverConfigBuilder('us-east-2')
-            config_builder.from_file(temp.name)
 
 
 def test_create_driver_config_builder_invalid_config_path() -> None:

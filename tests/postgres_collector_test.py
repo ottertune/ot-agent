@@ -1,6 +1,6 @@
 """Tests for interacting with Postgres database locally"""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, NoReturn, List, Callable, Tuple
 from unittest.mock import MagicMock, PropertyMock
 import json
@@ -17,8 +17,16 @@ from driver.collector.postgres_collector import (
     INDEX_STATIO,
     ROW_NUM_STAT,
 )
+from driver.collector.pg_table_level_stats_sqls import (
+    TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
+    PG_STAT_TABLE_STATS_TEMPLATE,
+    PG_STATIO_TABLE_STATS_TEMPLATE,
+    TABLE_SIZE_TABLE_STATS_TEMPLATE,
+)
 
 from driver.exceptions import PostgresCollectorException
+from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+
 
 # pylint: disable=missing-function-docstring
 
@@ -39,7 +47,7 @@ class SqlData:
     aggregated_local_metrics: Dict[str, Any]
 
     def __init__(self) -> None:
-        self.views = {
+        self.views = { # pyre-ignore[8]
             "pg_stat_archiver": [["g1", 1]],
             "pg_stat_bgwriter": [["g2", 2]],
             "pg_stat_database": [["dl1", 1, 1], ["dl2", 2, 2]],
@@ -49,6 +57,71 @@ class SqlData:
             "pg_stat_user_indexes": [["il1", 1, 1]],
             "pg_statio_user_indexes": [["il2", 2, 2]],
             "pg_stat_statements": [[123, 2, 1.5]],
+            "row_stats": [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)],
+            "top_tables": [(1234,)],
+            "table_level_pg_stat_user_tables": [
+                (
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    12,
+                    156742344,
+                    124901,
+                    8462823118,
+                    15243454,
+                    0,
+                    0,
+                    0,
+                    41303336,
+                    0,
+                    1258272,
+                    None,
+                    None,
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
+                    0,
+                    0,
+                    1,
+                    9,
+                ),
+            ],
+            "table_level_pg_statio_user_tables": [
+                (
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
+            ],
+            "table_level_table_size": [
+                (
+                    1544350,
+                    3761643520,
+                    2487918592,
+                    630784,
+                ),
+            ],
+            "table_level_bloat_ratio": [
+                (
+                    1234,
+                    324633,
+                    44150088.0,
+                    8192.0,
+                    24,
+                    100,
+                    False,
+                    24.0,
+                    23.0,
+                    8,
+                ),
+            ],
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -68,6 +141,76 @@ class SqlData:
             "pg_stat_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_statio_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_stat_statements": [["queryid"], ["calls"], ["avg_time_ms"]],
+            "row_stats": [
+                ["num_tables"],
+                ["num_empty_tables"],
+                ["num_tables_row_count_0_10k"],
+                ["num_tables_row_count_10k_100k"],
+                ["num_tables_row_count_100k_1m"],
+                ["num_tables_row_count_1m_10m"],
+                ["num_tables_row_count_10m_100m"],
+                ["num_tables_row_count_100m_inf"],
+                ["max_row_num"],
+                ["min_row_num"],
+            ],
+            "top_tables": [
+                ["relid"],
+            ],
+            "table_level_pg_stat_user_tables": [
+                ["relid"],
+                ["schemaname"],
+                ["relname"],
+                ["seq_scan"],
+                ["seq_tup_read"],
+                ["idx_scan"],
+                ["idx_tup_fetch"],
+                ["n_tup_ins"],
+                ["n_tup_upd"],
+                ["n_tup_del"],
+                ["n_tup_hot_upd"],
+                ["n_live_tup"],
+                ["n_dead_tup"],
+                ["n_mod_since_analyze"],
+                ["last_vacuum"],
+                ["last_autovacuum"],
+                ["last_analyze"],
+                ["last_autoanalyze"],
+                ["vacuum_count"],
+                ["autovacuum_count"],
+                ["analyze_count"],
+                ["autoanalyze_count"],
+            ],
+            "table_level_pg_statio_user_tables": [
+                ["relid"],
+                ["schemaname"],
+                ["relname"],
+                ["heap_blks_read"],
+                ["heap_blks_hit"],
+                ["idx_blks_read"],
+                ["idx_blks_hit"],
+                ["toast_blks_read"],
+                ["toast_blks_hit"],
+                ["tidx_blks_read"],
+                ["tidx_blks_hit"],
+            ],
+            "table_level_table_size": [
+                ["relid"],
+                ["indexes_size"],
+                ["relation_size"],
+                ["toast_size"],
+            ],
+            "table_level_bloat_ratio": [
+                ['relid'],
+                ['tblpages'],
+                ['reltuples'],
+                ['bs'],
+                ['page_hdr'],
+                ['fillfactor'],
+                ['is_na'],
+                ['tpl_data_size'],
+                ['tpl_hdr_size'],
+                ['ma'],
+            ],
         }
         self.aggregated_metas = {
             "pg_stat_database": [["local_count"], ["local_count2"]],
@@ -139,20 +282,15 @@ class SqlData:
                 },
             },
         }
-        self.row_stats_value: List[
-            Tuple[int, int, int, int, int, int, int, int, int, int]
-        ] = [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)]
-        self.row_stats_meta: List[List[str]] = [
-            ["num_tables"],
-            ["num_empty_tables"],
-            ["num_tables_row_count_0_10k"],
-            ["num_tables_row_count_10k_100k"],
-            ["num_tables_row_count_100k_1m"],
-            ["num_tables_row_count_1m_10m"],
-            ["num_tables_row_count_10m_100m"],
-            ["num_tables_row_count_100m_inf"],
-            ["max_row_num"],
-            ["min_row_num"],
+        self.padding_query_metas: List[List[str]] = [
+            ["relid", "attname", "attalign", "avg_width"]
+        ]
+        self.padding_query_values: List[Tuple[int, str, str, int]] = [
+            (1234, 'id', 'i', 4),
+            (1234, 'value', 'd', 8),
+            (1234, 'fixture_id', 'i', 4),
+            (1234, 'observation_id', 'i', 4),
+            (1234, 'session_id', 'i', 4),
         ]
 
     # @staticmethod
@@ -234,8 +372,28 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
             result.value = data.views["pg_stat_statements"]
             result.meta = data.metas["pg_stat_statements"]
         elif sql == ROW_NUM_STAT:
-            result.value = data.row_stats_value
-            result.meta = data.row_stats_meta
+            result.value = data.views["row_stats"]
+            result.meta = data.metas["row_stats"]
+        elif TOP_N_LARGEST_TABLES_SQL_TEMPLATE[
+            :TOP_N_LARGEST_TABLES_SQL_TEMPLATE.index("LIMIT")
+        ] in sql:
+            result.value = data.views["top_tables"]
+            result.meta = data.metas["top_tables"]
+        elif PG_STAT_TABLE_STATS_TEMPLATE[:PG_STAT_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["table_level_pg_stat_user_tables"]
+            result.meta = data.metas["table_level_pg_stat_user_tables"]
+        elif PG_STATIO_TABLE_STATS_TEMPLATE[:PG_STATIO_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["table_level_pg_statio_user_tables"]
+            result.meta = data.metas["table_level_pg_statio_user_tables"]
+        elif TABLE_SIZE_TABLE_STATS_TEMPLATE[:TABLE_SIZE_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["table_level_table_size"]
+            result.meta = data.metas["table_level_table_size"]
+        elif "tblpages" in sql:
+            result.value = data.views["table_level_bloat_ratio"]
+            result.meta = data.metas["table_level_bloat_ratio"]
+        elif "attalign" in sql:
+            result.value = data.padding_query_values
+            result.meta = data.padding_query_metas
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -337,3 +495,159 @@ def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_table_row_number_stats()
     assert "Failed to execute sql" in ex.value.message
+
+def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+        "pg_stat_user_tables_all_fields": {
+            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS,
+            "rows": [
+                [
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    12,
+                    156742344,
+                    124901,
+                    8462823118,
+                    15243454,
+                    0,
+                    0,
+                    0,
+                    41303336,
+                    0,
+                    1258272,
+                    None,
+                    None,
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
+                    0,
+                    0,
+                    1,
+                    9,
+                ],
+            ],
+        },
+        "pg_statio_user_tables_all_fields": {
+            "columns": [
+                "relid",
+                "schemaname",
+                "relname",
+                "heap_blks_read",
+                "heap_blks_hit",
+                "idx_blks_read",
+                "idx_blks_hit",
+                "toast_blks_read",
+                "toast_blks_hit",
+                "tidx_blks_read",
+                "tidx_blks_hit",
+            ],
+            "rows": [
+                [
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                ],
+            ],
+        },
+        "pg_stat_user_tables_table_sizes": {
+            "columns": [
+                "relid",
+                "indexes_size",
+                "relation_size",
+                "toast_size",
+            ],
+            "rows": [
+                [
+                    1544350,
+                    3761643520,
+                    2487918592,
+                    630784,
+                ],
+            ],
+        },
+        "table_bloat_ratios": {
+            "columns": [
+                "relid",
+                "bloat_ratio",
+            ],
+            "rows": [
+                [
+                    1234,
+                    0.09764872948837611,
+                ],
+            ],
+        },
+    }
+
+
+def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    with pytest.raises(PostgresCollectorException) as ex:
+        collector.collect_table_level_metrics(10)
+    assert "Failed to execute sql" in ex.value.message
+
+def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    # pylint: disable=protected-access
+    assert collector._calculate_padding_size_for_table([
+        (1234, 'id', 'i', 4),
+        (1234, 'value', 'd', 8),
+        (1234, 'fixture_id', 'i', 4),
+        (1234, 'observation_id', 'i', 4),
+        (1234, 'session_id', 'i', 4),
+    ]) == 4
+
+    # pylint: disable=protected-access
+    assert collector._calculate_padding_size_for_table([
+        (1234, 'id', 'i', 5),
+        (1234, 'value', 'd', 8),
+        (1234, 'fixture_id', 'd', 19),
+        (1234, 'observation_id', 'i', 121),
+        (1234, 'session_id', 's', 2),
+        (1234, 'session_id2', 's', 2),
+        (1234, 'session_id3', 'c', 1),
+        (1234, 'session_id4', 'c', 2),
+    ]) == 8
+
+    # pylint: disable=protected-access
+    assert collector._calculate_padding_size_for_table([
+        (1234, 'id', 'i', 8),
+        (1234, 'value', 'd', 8),
+        (1234, 'fixture_id', 'd', 3),
+        (1234, 'observation_id', 'c', 121),
+        (1234, 'session_id', 'i', 8),
+    ]) == 0
+
+    # pylint: disable=protected-access
+    assert collector._calculate_padding_size_for_tables([
+        (1234, 'id', 'i', 5),
+        (1234, 'value', 'i', 3),
+        (1234, 'fixture_id', 'd', 3),
+        (1234, 'observation_id', 'c', 7),
+        (1234, 'session_id', 'i', 2),
+        (2234, 'id', 'i', 1),
+        (2234, 'value', 'd', 2),
+        (2234, 'fixture_id', 'd', 3),
+        (2234, 'observation_id', 'd', 4),
+        (2234, 'session_id', 'i', 5),
+    ]) == {
+        1234: 12,
+        2234: 21,
+    }

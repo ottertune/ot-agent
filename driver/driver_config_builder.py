@@ -10,6 +10,7 @@ import os
 
 from pydantic import (
     BaseModel,
+    StrictBool,
     StrictInt,
     StrictStr,
     validator,
@@ -39,7 +40,19 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     """
     server_url: StrictStr
     monitor_interval: StrictInt
+    num_table_to_collect_stats: StrictInt
+    table_level_monitor_interval: StrictInt
     metric_source: List[str]
+
+    @validator("table_level_monitor_interval")
+    def check_table_level_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that table_level_monitor_interval is greater than 5 minutes"""
+        if val < 300:
+            raise ValueError(
+                "Invalid driver option table_level_monitor_interval, value >= 300"
+                f" is expected, but {val} is found"
+            )
+        return val
 
     @validator("monitor_interval")
     def check_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
@@ -51,6 +64,15 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
             )
         return val
 
+    @validator("num_table_to_collect_stats")
+    def check_num_table_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that num_table_to_collect_stats is not negative"""
+        if val < 0:
+            raise ValueError(
+                "Invalid driver option num_table_to_collect_stats, non-negative value"
+                f" is expected, but {val} is found"
+            )
+        return val
 
 class Overrides(NamedTuple):
     """
@@ -58,6 +80,8 @@ class Overrides(NamedTuple):
     """
     monitor_interval: int
     server_url: str
+    num_table_to_collect_stats: int
+    table_level_monitor_interval: int
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -82,6 +106,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
 
     db_user: StrictStr
     db_password: StrictStr
+
+    disable_table_level_stats: StrictBool = False
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -131,6 +157,9 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     metrics_to_retrieve_from_source: Dict[
         str, List[str]
     ]  # A list of target metric names
+    disable_table_level_stats: bool
+    num_table_to_collect_stats: int
+    table_level_monitor_interval: int
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -145,6 +174,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """build config options from config file"""
         with open(config_path, "r", encoding="utf-8") as config_file:
             data = yaml.safe_load(config_file)
+            print(f"??? data is {data}")
             if not isinstance(data, dict):
                 raise ValueError("Invalid data in the driver configuration YAML file")
 
@@ -164,13 +194,16 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def from_command_line(self, args) -> BaseDriverConfigBuilder:
         """build config options from command line arguments that aren't overriding other builders"""
         try:
-            from_cli = PartialConfigFromCommandline(aws_region=args.aws_region,
-                                                    db_identifier=args.db_identifier,
-                                                    db_user=args.db_username,
-                                                    db_password=args.db_password,
-                                                    api_key=args.api_key,
-                                                    db_key=args.db_key,
-                                                    organization_id=args.organization_id)
+            from_cli = PartialConfigFromCommandline(
+                aws_region=args.aws_region,
+                db_identifier=args.db_identifier,
+                db_user=args.db_username,
+                db_password=args.db_password,
+                api_key=args.api_key,
+                db_key=args.db_key,
+                organization_id=args.organization_id,
+                disable_table_level_stats=args.disable_table_level_stats,
+            )
         except ValidationError as ex:
             msg = (
                 "Invalid driver configuration for On-Prem deployment: "

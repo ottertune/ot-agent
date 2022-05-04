@@ -1,12 +1,18 @@
 """Tests for interacting with MySQL database"""
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import json
 
 import mysql.connector
 
 from driver.collector.collector_factory import get_mysql_version, connect_mysql
-from driver.database import collect_data_from_database
+from driver.database import (
+    collect_db_level_data_from_database,
+    collect_table_level_data_from_database,
+)
+from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
+
+# pylint: disable=ungrouped-imports
 from driver.collector.mysql_collector import MysqlCollector
 
 # pylint: disable=missing-function-docstring
@@ -52,7 +58,8 @@ def _get_driver_conf(
     mysql_host: str,
     mysql_port: str,
     mysql_database: str,
-) -> Dict[str, str]:
+    num_table_to_collect_stats: int,
+) -> Dict[str, Union[int, str]]:
     # pylint: disable=too-many-arguments
     conf = {
         "db_user": mysql_user,
@@ -64,6 +71,7 @@ def _get_driver_conf(
         "db_provider": "on_premise",
         "db_key": "test_key",
         "organization_id": "test_organization",
+        "num_table_to_collect_stats": num_table_to_collect_stats,
     }
     return conf
 
@@ -197,9 +205,9 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database
+        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10
     )
-    observation = collect_data_from_database(driver_conf)
+    observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
     metrics = observation["metrics_data"]
     summary = observation["summary"]
@@ -227,3 +235,61 @@ def test_mysql_collect_row_stats(
     row_stats = collector.collect_table_row_number_stats()
     conn.close()
     assert row_stats == {}
+
+
+def _verify_mysql_table_level_data(data: Dict[str, Any], table_nums: int) -> None:
+    assert data["information_schema_TABLES"]["columns"] == TABLE_LEVEL_MYSQL_COLUMNS
+    assert len(data["information_schema_TABLES"]["rows"]) == table_nums
+    for row in data["information_schema_TABLES"]["rows"]:
+        assert len(row) == len(TABLE_LEVEL_MYSQL_COLUMNS)
+
+
+def test_collect_table_level_data_from_database(
+    db_type: str,
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    # pylint: disable=too-many-arguments
+    num_table_to_collect_stats = 10
+
+    driver_conf = _get_driver_conf(
+        db_type,
+        mysql_user,
+        mysql_password,
+        mysql_host,
+        mysql_port,
+        mysql_database,
+        num_table_to_collect_stats,
+    )
+    observation = collect_table_level_data_from_database(driver_conf)
+    data = observation["data"]
+    summary = observation["summary"]
+    version_str = summary["version"]
+    assert summary["observation_time"] > 0
+    assert len(version_str) > 0
+    # 0 as the database is empty
+    _verify_mysql_table_level_data(data, 0)
+
+
+def test_mysql_collect_table_level_metrics(
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    num_table_to_collect_stats = 10
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+
+    version = get_mysql_version(conn)
+    collector = MysqlCollector(conn, version)
+    metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
+    # the metric json should not contain any field that cannot be converted to a string,
+    # like decimal type and datetime type
+    json.dumps(metrics)
+
+    _verify_mysql_table_level_data(metrics, 0)

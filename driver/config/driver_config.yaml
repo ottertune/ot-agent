@@ -21,3 +21,5 @@ metric_source: ["cloudwatch"]
 # Setup pertinent to ottertune agent driver behavior
 
 monitor_interval: 60
+table_level_monitor_interval: 3600
+num_table_to_collect_stats: 1000

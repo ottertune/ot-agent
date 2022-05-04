@@ -1,12 +1,24 @@
 """Postgres database collector to get knob and metric data from the target database"""
+import math
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Any, Tuple
+from itertools import groupby
+from typing import Dict, List, Any, Tuple, Optional, Union
 import logging
 import json
 
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
+from driver.collector.pg_table_level_stats_sqls import (
+    TABLE_SIZE_TABLE_STATS_TEMPLATE,
+    TABLE_BLOAT_RATIO_FACTOR_TEMPLATE,
+    PADDING_HELPER_TEMPLATE,
+    ALIGNMENT_DICT,
+    PG_STATIO_TABLE_STATS_TEMPLATE,
+    PG_STAT_TABLE_STATS_TEMPLATE,
+    TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
+)
 
 # database-wide statistics from pg_stat_database view
 DATABASE_STAT = """
@@ -109,7 +121,7 @@ SELECT
   count(nullif(n_live_tup > 1e4 and n_live_tup <= 1e5, false)) as num_tables_row_count_10k_100k,
   count(nullif(n_live_tup > 1e5 and n_live_tup <= 1e6, false)) as num_tables_row_count_100k_1m,
   count(nullif(n_live_tup > 1e6 and n_live_tup <= 1e7, false)) as num_tables_row_count_1m_10m,
-  count(nullif(n_live_tup > 1e7 and n_live_tup <= 1e8,false)) as num_tables_row_count_10m_100m,
+  count(nullif(n_live_tup > 1e7 and n_live_tup <= 1e8, false)) as num_tables_row_count_10m_100m,
   count(nullif(n_live_tup > 1e8, false)) as num_tables_row_count_100m_inf,
   max(n_live_tup) as max_row_num,
   min(n_live_tup) as min_row_num
@@ -125,6 +137,11 @@ class PostgresCollector(BaseDbCollector):
     # it will be 2 instead of 2min
     KNOBS_SQL = "SELECT name, setting From pg_settings;"
     ROW_NUMS_SQL: str = ROW_NUM_STAT
+    TABLE_LEVEL_STATS_SQLS: Dict[str, Any] = {
+        "pg_stat_user_tables_all_fields": PG_STAT_TABLE_STATS_TEMPLATE,
+        "pg_statio_user_tables_all_fields": PG_STATIO_TABLE_STATS_TEMPLATE,
+        "pg_stat_user_tables_table_sizes": TABLE_SIZE_TABLE_STATS_TEMPLATE,
+    }
     PG_STAT_VIEWS_LOCAL = {
         "database": ["pg_stat_database", "pg_stat_database_conflicts"],
         "table": ["pg_stat_user_tables", "pg_statio_user_tables"],
@@ -297,6 +314,200 @@ class PostgresCollector(BaseDbCollector):
         """
         raw_stats = self._cmd(self.ROW_NUMS_SQL)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
+
+    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect table level statistics
+        Returns:
+            {
+                "pg_stat_user_tables_all_fields": {
+                    "columns": [
+                        "relid",
+                        "schemaname",
+                        "relname",
+                        "seq_scan",
+                        "seq_tup_read",
+                        "idx_scan",
+                        "idx_tup_fetch",
+                        "n_tup_ins",
+                        "n_tup_upd",
+                        "n_tup_del",
+                        "n_tup_hot_upd",
+                        "n_live_tup",
+                        "n_dead_tup",
+                        "n_mod_since_analyze",
+                        "last_vacuum",
+                        "last_autovacuum",
+                        "last_analyze",
+                        "last_autoanalyze",
+                        "vacuum_count",
+                        "autovacuum_count",
+                        "analyze_count",
+                        "autoanalyze_count",
+                    ],
+                    "rows": List[List[Any]],
+                },
+                "pg_statio_user_tables_all_fields": {
+                    "columns": [
+                        "relid",
+                        "schemaname",
+                        "relname",
+                        "heap_blks_read",
+                        "heap_blks_hit",
+                        "idx_blks_read",
+                        "idx_blks_hit",
+                        "toast_blks_read",
+                        "toast_blks_hit",
+                        "tidx_blks_read",
+                        "tidx_blks_hit",
+                    ],
+                    "rows": List[List[Any]],
+                },
+                "pg_stat_user_tables_table_sizes": {
+                    "columns": [
+                        "relid",
+                        "indexes_size",
+                        "relation_size",
+                        "toast_size",
+                    ],
+                    "row": List[List[Any]],
+                },
+                "table_bloat_ratios": {
+                    "columns": [
+                        "relid",
+                        "bloat_ratio",
+                    ],
+                    "rows": List[List[Any]],
+                },
+            }
+            Raises:
+            PostgresCollectorException: Failed to execute the sql query to get metrics
+        """
+        metrics = {}
+        target_tables_tuple = self._cmd(
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
+        )[0]
+        # pyre-ignore[9]
+        target_tables: Tuple[int] = tuple(table[0] for table in target_tables_tuple)
+        # pyre-ignore[9]
+        target_tables_str: str = str(target_tables) if len(target_tables) > 1 else (
+            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)",
+        )
+        for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
+            rows, columns = self._cmd(
+                sql_template.format(table_list=target_tables_str),
+            )
+            metrics[field] = {
+                "columns": columns,
+                "rows": [list(row) for row in rows],
+            }
+        
+        # calculate bloat ratio
+        metrics["table_bloat_ratios"] = {
+            "columns": ["relid", "bloat_ratio"],
+            "rows": [],
+        }
+        if target_tables:
+            raw_padding_info, _ = self._cmd(
+                PADDING_HELPER_TEMPLATE.format(
+                    table_list=target_tables_str,
+                )
+            )
+            padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
+            bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(target_tables_str)
+            metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
+                padding_size_dict, bloat_ratio_factors_dict,
+            )
+        return metrics
+
+    def _calculate_bloat_ratios(
+        self,
+        padding_size_dict: Dict[int, int],
+        bloat_ratio_factors_dict: Dict[int, Dict[str, Any]],
+    ) -> List[List[Union[int, float]]]:
+        res = []
+        for relid, factors in bloat_ratio_factors_dict.items():
+            bloat_ratio = self._calculate_bloat_ratio_for_table(
+                padding_size=padding_size_dict[relid] if relid in padding_size_dict else 0,
+                **factors)
+            res.append([relid, bloat_ratio])
+        return res
+
+    # pylint: disable=no-self-use, invalid-name, too-many-arguments
+    def _calculate_bloat_ratio_for_table(
+        self,
+        is_na: bool,
+        padding_size: int,
+        tpl_data_size: float,
+        tpl_hdr_size: float,
+        ma: int,
+        tblpages: float,
+        reltuples: float,
+        bs: float,
+        page_hdr: float,
+        fillfactor: float,
+    ) -> Optional[float]:
+        if is_na:
+            return None
+        tpl_data_size = tpl_data_size + padding_size
+        tpl_size = 4 + tpl_hdr_size + tpl_data_size + 2 * ma - (
+            ma if tpl_hdr_size % ma == 0 else tpl_hdr_size % ma
+        ) - (
+            # pylint: disable=c-extension-no-member
+            ma if math.ceil(tpl_data_size) % ma == 0 else math.ceil(tpl_data_size) % ma
+        )
+        est_tblpages_ff = math.ceil( # pylint: disable=c-extension-no-member
+            reltuples / ((bs - page_hdr) * fillfactor / (tpl_size * 100.0))
+        )
+        return 100.0 * (
+            tblpages - est_tblpages_ff
+        ) / tblpages if (tblpages - est_tblpages_ff) > 0 else 0
+
+    def _retrive_bloat_ratio_factors_for_tables(
+        self,
+        target_tables_str: str,
+    ) -> Dict[int, Dict[str, Any]]:
+        factors, columns = self._cmd(
+            TABLE_BLOAT_RATIO_FACTOR_TEMPLATE.format(
+                table_list=target_tables_str,
+            )
+        )
+        return {
+            factor[0]: dict(zip(columns[1:], factor[1:]))
+            for factor in factors
+        }
+
+    def _calculate_padding_size_for_tables(
+        self,
+        raw_fields_info: List[Tuple[int, str, str, int]],
+    ) -> Dict[int, int]:
+        # Note that groupby requires that the list is sorted by the group key
+        # which is done currently by the query
+        return {
+            relid : self._calculate_padding_size_for_table(list(field_info))
+            for relid, field_info in groupby(raw_fields_info, lambda x: x[0])
+        }
+
+    # pylint: disable=no-self-use
+    def _calculate_padding_size_for_table(
+        self,
+        table_fields_info: List[Tuple[int, str, str, int]],
+    ) -> int:
+        # Note that table_fields_info will not be empty
+        # field: ('relid', 'attname', 'attalign', 'avg_width')
+        # example: (1544350, 'fixture_id', 'i', 4)
+        padding = 0
+        offset = table_fields_info[0][3]
+        for field in table_fields_info[1:]:
+            cur_alignment = ALIGNMENT_DICT[field[2]]
+            cur_alignment_ = cur_alignment - 1
+            padded_size = ((offset + cur_alignment_) & ~cur_alignment_)
+            padding += padded_size - offset
+            offset = padded_size + field[3]
+
+        # Assume tuples align to 4 bytes, process the last field
+        padded_size = ((offset + 3) & ~3)
+        padding += padded_size - offset
+        return padding
 
     def _aggregated_local_stats(self, local_metric: Dict[str, Any]) -> Dict[str, Any]:
         """Get Aggregated local metrics by summing all values"""
