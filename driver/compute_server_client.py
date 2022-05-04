@@ -1,5 +1,6 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
+import json
 from typing import Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
@@ -30,6 +31,7 @@ class DBLevelObservation(TypedDict):
     ]  # summary information like observation time, database version, etc
     db_key: str
     organization_id: str
+
 
 class TableLevelObservation(TypedDict):
     """Table level observation data collected from the target database."""
@@ -99,12 +101,13 @@ class ComputeServerClient:
         """
         # pylint: disable=unused-variable
         headers = self._generate_headers(data["organization_id"])
-                # TODO: Remove this when compute-service has the endpoint
 
         url = f"{self._server_url}/table_level_observation/"
+        data_str = json.dumps(data, default=str)
+        headers["Content-Type"] = "application/json"
         try:
             response = self._req_session.post(
-                url, json=data, headers=headers, timeout=10
+                url, data=data_str, headers=headers, timeout=10
             )
             response.raise_for_status()
         except Exception as ex:
