@@ -11,6 +11,7 @@ from driver.database import (
     collect_table_level_data_from_database,
 )
 from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
+
 # pylint: disable=ungrouped-imports
 from driver.collector.mysql_collector import MysqlCollector
 
@@ -235,11 +236,13 @@ def test_mysql_collect_row_stats(
     conn.close()
     assert row_stats == {}
 
+
 def _verify_mysql_table_level_data(data: Dict[str, Any], table_nums: int) -> None:
     assert data["information_schema_TABLES"]["columns"] == TABLE_LEVEL_MYSQL_COLUMNS
     assert len(data["information_schema_TABLES"]["rows"]) == table_nums
     for row in data["information_schema_TABLES"]["rows"]:
         assert len(row) == len(TABLE_LEVEL_MYSQL_COLUMNS)
+
 
 def test_collect_table_level_data_from_database(
     db_type: str,
@@ -268,7 +271,8 @@ def test_collect_table_level_data_from_database(
     assert summary["observation_time"] > 0
     assert len(version_str) > 0
     # 0 as the database is empty
-    _verify_mysql_table_level_data(data, num_table_to_collect_stats)
+    _verify_mysql_table_level_data(data, 0)
+
 
 def test_mysql_collect_table_level_metrics(
     mysql_user: str,
@@ -288,4 +292,4 @@ def test_mysql_collect_table_level_metrics(
     # like decimal type and datetime type
     json.dumps(metrics)
 
-    _verify_mysql_table_level_data(metrics, num_table_to_collect_stats)
+    _verify_mysql_table_level_data(metrics, 0)

@@ -18,11 +18,16 @@ SELECT
   DATA_FREE
 FROM
   information_schema.TABLES
+WHERE 
+  TABLE_SCHEMA
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY 
   TABLE_ROWS
 DESC LIMIT 
   {n};
 """
+
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -242,7 +247,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         """Collect statistics about the number of rows of different tables"""
         return {}
 
-    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+    def collect_table_level_metrics(
+        self, num_table_to_collect_stats: int
+    ) -> Dict[str, Any]:
         """Collect table level statistics
 
         Returns:

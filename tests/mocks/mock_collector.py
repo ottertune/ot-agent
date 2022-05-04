@@ -2,8 +2,9 @@
 Package for testing driver without needing a real collector
 """
 
+import pytz
+from datetime import datetime
 from typing import Dict, Tuple, List, Any
-import logging
 
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 
@@ -52,11 +53,11 @@ class MockCollector(BaseDbCollector):
                     "last_vacuum", "last_autovacuum", "last_analyze", "last_autoanalyze", "vacuum_count", "autovacuum_count",
                     "analyze_count", "autoanalyze_count"],
                 "rows": [[1, "public", "table_1", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-                    "2020-11-24T18:30:35.772765+00:00", "2020-11-24T19:30:35.772765+00:00",
-                    "2020-11-24T20:30:35.772765+00:00", "2020-11-24T21:30:35.772765+00:00", 12, 13, 14, 15],
+                    datetime.now(pytz.utc), datetime.now(pytz.utc),
+                    datetime.now(pytz.utc), datetime.now(pytz.utc), 12, 13, 14, 15],
                     [2, "public", "table_2", 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                        "2020-11-25T18:30:35.772765+00:00", "2020-11-25T19:30:35.772765+00:00",
-                        "2020-11-25T20:30:35.772765+00:00", "2020-11-25T21:30:35.772765+00:00", 22, 23, 24, 25]]
+                        datetime.now(pytz.utc), datetime.now(pytz.utc),
+                        datetime.now(pytz.utc), datetime.now(pytz.utc), 22, 23, 24, 25]]
             },
             "pg_statio_user_tables_all_fields": {
                 "columns": ["relid", "schemaname", "relname", "heap_blks_read", "heap_blks_hit",
