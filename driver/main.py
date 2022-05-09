@@ -78,7 +78,8 @@ def _get_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--disable-table-level-stats",
-        action="store_true",
+        type=str,
+        default="False",
         help="Whether to collect stats for table level analysis or not.",
     )
     parser.add_argument(
