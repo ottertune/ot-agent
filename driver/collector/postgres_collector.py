@@ -388,9 +388,8 @@ class PostgresCollector(BaseDbCollector):
         )[0]
         # pyre-ignore[9]
         target_tables: Tuple[int] = tuple(table[0] for table in target_tables_tuple)
-        # pyre-ignore[9]
         target_tables_str: str = str(target_tables) if len(target_tables) > 1 else (
-            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)",
+            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)"
         )
         for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
             rows, columns = self._cmd(

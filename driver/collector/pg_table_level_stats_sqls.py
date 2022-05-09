@@ -99,5 +99,5 @@ FROM (
   WHERE NOT att.attisdropped AND tbl.oid in {table_list}
     AND tbl.relkind in ('r','m')
   GROUP BY 1,2,3,4,5,6
-) AS s
+) AS s;
 """
