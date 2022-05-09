@@ -174,7 +174,6 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """build config options from config file"""
         with open(config_path, "r", encoding="utf-8") as config_file:
             data = yaml.safe_load(config_file)
-            print(f"??? data is {data}")
             if not isinstance(data, dict):
                 raise ValueError("Invalid data in the driver configuration YAML file")
 
@@ -202,7 +201,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 api_key=args.api_key,
                 db_key=args.db_key,
                 organization_id=args.organization_id,
-                disable_table_level_stats=args.disable_table_level_stats,
+                disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
             )
         except ValidationError as ex:
             msg = (
