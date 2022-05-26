@@ -67,7 +67,7 @@ traitlets==5.0.5
 typing-extensions==3.10.0.2
 typing-inspect==0.6.0
 tzlocal==2.1
-ujson==4.0.2
+ujson==5.2.0
 urllib3==1.26.7
 wcwidth==0.2.5
 Werkzeug==1.0.1
