@@ -11,7 +11,7 @@
 # Postgres only:
 # POSTGRES_OTTERTUNE_DB_NAME - Specific database in DBMS to collect metrics from
 
-FROM python:3.10.1-slim-bullseye
+FROM python:3.9.9-slim-bullseye
 
 ENV OTTERTUNE_OVERRIDE_SERVER_URL="https://api.ottertune.com"
 ENV OTTERTUNE_OVERRIDE_NUM_TABLE_TO_COLLECT_STATS="1000"
