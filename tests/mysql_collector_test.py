@@ -56,11 +56,11 @@ class SqlData:
         self.replica_status = [["localhost", 60]]
         self.replica_status_meta = [["Source_Host"], ["Connect_Retry"]]
         self.table_level_stats = [[
-            'mysql',
-            'time_zone_transition',
-            'BASE TABLE',
-            'InnoDB',
-            'Dynamic',
+            "mysql",
+            "time_zone_transition",
+            "BASE TABLE",
+            "InnoDB",
+            "Dynamic",
             119074,
             39,
             4734976,
@@ -78,6 +78,90 @@ class SqlData:
             ["DATA_LENGTH"],
             ["INDEX_LENGTH"],
             ["DATA_FREE"],
+        ]
+        self.index_stats = [
+            [
+                "tpcc",
+                "OORDER",
+                0,
+                "tpcc",
+                "O_W_ID",
+                1,
+                "O_W_ID",
+                "A",
+                4,
+                None,
+                "",
+                "BTREE"
+            ],
+            [
+                "tpcc",
+                "OORDER",
+                0,
+                "tpcc",
+                "O_W_ID",
+                2,
+                "O_D_ID",
+                "A",
+                48,
+                None,
+                "",
+                "BTREE"
+            ]
+        ]
+        self.index_stats_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+            ["NON_UNIQUE"],
+            ["INDEX_SCHEMA"],
+            ["INDEX_NAME"],
+            ["SEQ_IN_INDEX"],
+            ["COLUMN_NAME"],
+            ["COLLATION"],
+            ["CARDINALITY"],
+            ["SUB_PART"],
+            ["NULLABLE"],
+            ["INDEX_TYPE"]
+        ]
+        self.index_usage = [[
+            "TABLE",
+            "tpcc",
+            "CUSTOMER",
+            "PRIMARY",
+            60000,
+            2834031795200,
+            1307086781600,
+            47233600,
+            1526945013600,
+            60000,
+            2834031795200,
+            1307086781600,
+            47233600,
+            1526945013600,
+            0,
+            0,
+            0,
+            0,
+        ]]
+        self.index_usage_meta = [
+            ["OBJECT_TYPE"],
+            ["OBJECT_SCHEMA"],
+            ["OBJECT_NAME"],
+            ["INDEX_NAME"],
+            ["COUNT_STAR"],
+            ["SUM_TIMER_WAIT"],
+            ["COUNT_READ"],
+            ["SUM_TIMER_READ"],
+            ["COUNT_WRITE"],
+            ["SUM_TIMER_WRITE"],
+            ["COUNT_FETCH"],
+            ["SUM_TIMER_FETCH"],
+            ["COUNT_INSERT"],
+            ["SUM_TIMER_INSERT"],
+            ["COUNT_UPDATE"],
+            ["SUM_TIMER_UPDATE"],
+            ["COUNT_DELETE"],
+            ["SUM_TIMER_DELETE"]
         ]
 
     def expected_default_result(self) -> Dict[str, Any]:
@@ -169,9 +253,12 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql in ("SHOW REPLICA STATUS;", "SHOW SLAVE STATUS;"):
             result.value = data.replica_status
             result.meta = data.replica_status_meta
-        elif "information_schema.TABLES" in sql:
+        elif "information_schema.TABLES".lower() in sql.lower():
             result.value = data.table_level_stats
             result.meta = data.table_level_stats_meta
+        elif "information_schema.STATISTICS".lower() in sql.lower():
+            result.value = data.index_stats
+            result.meta = data.index_stats_meta
 
     return sql_fn
 
@@ -302,6 +389,7 @@ def test_check_permissions_specific_access_denied(
         else:
             assert "unknown" in info["example"]
 
+
 def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
@@ -311,6 +399,43 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
     assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+        'information_schema_STATISTICS': {
+            'columns': ['TABLE_SCHEMA',
+                          'TABLE_NAME',
+                          'NON_UNIQUE',
+                          'INDEX_SCHEMA',
+                          'INDEX_NAME',
+                          'SEQ_IN_INDEX',
+                          'COLUMN_NAME',
+                          'COLLATION',
+                          'CARDINALITY',
+                          'SUB_PART',
+                          'NULLABLE',
+                          'INDEX_TYPE'],
+              'rows': [['tpcc',
+                        'OORDER',
+                        0,
+                        'tpcc',
+                        'O_W_ID',
+                        1,
+                        'O_W_ID',
+                        'A',
+                        4,
+                        None,
+                        '',
+                        'BTREE'],
+                       ['tpcc',
+                        'OORDER',
+                        0,
+                        'tpcc',
+                        'O_W_ID',
+                        2,
+                        'O_D_ID',
+                        'A',
+                        48,
+                        None,
+                        '',
+                        'BTREE']]},
         "information_schema_TABLES": {
             "columns":TABLE_LEVEL_MYSQL_COLUMNS,
             "rows": [
@@ -328,7 +453,45 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 ],
             ],
         },
+        'performance_schema_table_io_waits_summary_by_index_usage':
+            {'columns': ['TABLE_SCHEMA',
+                         'TABLE_NAME',
+                         'NON_UNIQUE',
+                         'INDEX_SCHEMA',
+                         'INDEX_NAME',
+                         'SEQ_IN_INDEX',
+                         'COLUMN_NAME',
+                         'COLLATION',
+                         'CARDINALITY',
+                         'SUB_PART',
+                         'NULLABLE',
+                         'INDEX_TYPE'],
+             'rows': [['tpcc',
+                       'OORDER',
+                       0,
+                       'tpcc',
+                       'O_W_ID',
+                       1,
+                       'O_W_ID',
+                       'A',
+                       4,
+                       None,
+                       '',
+                       'BTREE'],
+                      ['tpcc',
+                       'OORDER',
+                       0,
+                       'tpcc',
+                       'O_W_ID',
+                       2,
+                       'O_D_ID',
+                       'A',
+                       48,
+                       None,
+                       '',
+                       'BTREE']]}
     }
+
 
 def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
