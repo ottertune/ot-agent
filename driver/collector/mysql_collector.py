@@ -55,12 +55,6 @@ AND
     (OBJECT_SCHEMA,OBJECT_NAME) IN {schema_table_list};
 """
 
-UNUSED_INDEX_SQL = """
-SELECT
-    OBJECT_SCHEMA,OBJECT_NAME,INDEX_NAME
-FROM
-    sys.schema_unused_indexes;
-"""
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -320,9 +314,6 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             INDEX_USAGE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
         index_usage_rows = [list(row) for row in index_usage_values]
 
-        # unused_index_values, unused_index_columns = self._cmd(UNUSED_INDEX_SQL)
-        # unused_index_rows = [list(row) for row in unused_index_values]
-
         return {
             "information_schema_TABLES": {
                 "columns": table_columns,
@@ -335,11 +326,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "performance_schema_table_io_waits_summary_by_index_usage": {
                 "columns": index_usage_columns,
                 "rows": index_usage_rows,
-            },
-            # "sys_schema_unused_indexes": {
-            #     "columns": unused_index_columns,
-            #     "rows": unused_index_rows
-            # }
+            }
         }
 
     def _find_schema_table(self, columns, rows):
