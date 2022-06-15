@@ -259,10 +259,10 @@ def test_collect_table_level_data_from_database(
     )
 
     cur.execute(
-        "INSERT INTO test1(id, num, data) values (1, 2, 'abc');"
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
     cur.execute(
-        "INSERT INTO test2(id, num, data) values (1, 2, 'abc');"
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
 
     driver_conf = _get_driver_conf(
@@ -306,10 +306,10 @@ def test_postgres_collect_table_level_metrics(
     )
 
     cur.execute(
-        "INSERT INTO test1(id, num, data) values (1, 2, 'abc');"
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
     cur.execute(
-        "INSERT INTO test2(id, num, data) values (1, 2, 'abc');"
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
 
     version = get_postgres_version(conn)
