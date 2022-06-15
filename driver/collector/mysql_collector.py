@@ -328,7 +328,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         schema_table_string_list = ["(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
                                     for item in self._find_schema_table(table_columns, table_rows)]
         if not schema_table_string_list:
-            schema_table_string = "(NULL, NULL)"
+            schema_table_string = "(0, 0)"
         else:
             schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
 
