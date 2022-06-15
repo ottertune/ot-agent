@@ -264,6 +264,9 @@ def test_collect_table_level_data_from_database(
     cur.execute(
         "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
+    cur.execute(
+        "ANALYZE"
+    )
 
     driver_conf = _get_driver_conf(
         db_type,
@@ -310,6 +313,9 @@ def test_postgres_collect_table_level_metrics(
     )
     cur.execute(
         "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "ANALYZE"
     )
 
     version = get_postgres_version(conn)
