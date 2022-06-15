@@ -163,6 +163,20 @@ class SqlData:
             ["COUNT_DELETE"],
             ["SUM_TIMER_DELETE"]
         ]
+        self.index_size = [[
+            "tpcc",
+            "CUSTOMER",
+            "IDX_CUSTOMER_NAME",
+            675,
+            11059200
+        ]]
+        self.index_size_meta = [
+            ["DATABASE_NAME"],
+            ["TABLE_NAME"],
+            ["INDEX_NAME"],
+            ["STAT_VALUE"],
+            ["SIZE_IN_BYTE"]
+        ]
 
     def expected_default_result(self) -> Dict[str, Any]:
         """
@@ -259,6 +273,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "information_schema.STATISTICS".lower() in sql.lower():
             result.value = data.index_stats
             result.meta = data.index_stats_meta
+        elif "mysql.innodb_index_stats".lower() in sql.lower():
+            result.value = data.index_size
+            result.meta = data.index_size_meta
 
     return sql_fn
 
@@ -399,43 +416,58 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
     assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+        'indexes_size': {
+            'columns': [
+                'DATABASE_NAME',
+                'TABLE_NAME',
+                'INDEX_NAME',
+                'STAT_VALUE',
+                'SIZE_IN_BYTE'],
+            'rows': [[
+                'tpcc',
+                'CUSTOMER',
+                'IDX_CUSTOMER_NAME',
+                675,
+                11059200]]},
         'information_schema_STATISTICS': {
-            'columns': ['TABLE_SCHEMA',
-                          'TABLE_NAME',
-                          'NON_UNIQUE',
-                          'INDEX_SCHEMA',
-                          'INDEX_NAME',
-                          'SEQ_IN_INDEX',
-                          'COLUMN_NAME',
-                          'COLLATION',
-                          'CARDINALITY',
-                          'SUB_PART',
-                          'NULLABLE',
-                          'INDEX_TYPE'],
-              'rows': [['tpcc',
-                        'OORDER',
-                        0,
-                        'tpcc',
-                        'O_W_ID',
-                        1,
-                        'O_W_ID',
-                        'A',
-                        4,
-                        None,
-                        '',
-                        'BTREE'],
-                       ['tpcc',
-                        'OORDER',
-                        0,
-                        'tpcc',
-                        'O_W_ID',
-                        2,
-                        'O_D_ID',
-                        'A',
-                        48,
-                        None,
-                        '',
-                        'BTREE']]},
+            'columns': [
+                'TABLE_SCHEMA',
+                'TABLE_NAME',
+                'NON_UNIQUE',
+                'INDEX_SCHEMA',
+                'INDEX_NAME',
+                'SEQ_IN_INDEX',
+                'COLUMN_NAME',
+                'COLLATION',
+                'CARDINALITY',
+                'SUB_PART',
+                'NULLABLE',
+                'INDEX_TYPE'],
+            'rows': [[
+                'tpcc',
+                'OORDER',
+                0,
+                'tpcc',
+                'O_W_ID',
+                1,
+                'O_W_ID',
+                'A',
+                4,
+                None,
+                '',
+                'BTREE'],
+               ['tpcc',
+                'OORDER',
+                0,
+                'tpcc',
+                'O_W_ID',
+                2,
+                'O_D_ID',
+                'A',
+                48,
+                None,
+                '',
+                'BTREE']]},
         "information_schema_TABLES": {
             "columns":TABLE_LEVEL_MYSQL_COLUMNS,
             "rows": [

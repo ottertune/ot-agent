@@ -38,7 +38,7 @@ SELECT
 FROM
     information_schema.STATISTICS
 WHERE
- (TABLE_SCHEMA,TABLE_NAME) IN {schema_table_list};
+    (TABLE_SCHEMA,TABLE_NAME) IN {schema_table_list};
 """
 
 INDEX_USAGE_SQL_TEMPLATE = """
@@ -53,6 +53,18 @@ WHERE
     OBJECT_TYPE='TABLE'
 AND
     (OBJECT_SCHEMA,OBJECT_NAME) IN {schema_table_list};
+"""
+
+INDEX_SIZE_SQL_TEMPLATE = """
+SELECT
+    DATABASE_NAME, TABLE_NAME, INDEX_NAME, STAT_VALUE,
+    STAT_VALUE * @@innodb_page_size AS SIZE_IN_BYTE
+FROM
+    mysql.innodb_index_stats
+WHERE
+    stat_name = 'size'
+AND
+    (DATABASE_NAME,TABLE_NAME) IN {schema_table_list};
 """
 
 
@@ -295,13 +307,25 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
                     "DATA_FREE",
                 ],
                 "rows": List[List[Any]],
+            },
+            "information_schema_STATISTICS": {
+                "columns": [...],
+                "rows": [[...], [...]]
+            },
+            "performance_schema_table_io_waits_summary_by_index_usage": {
+                "columns": [...],
+                "rows": [[...], [...]]
+            },
+            "indexes_size": {
+                "columns": [...],
+                "rows": [[...], [...]]
             }
         }
         """
         table_values, table_columns = self._cmd(
             TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats))
         table_rows = [list(row) for row in table_values]
-        schema_table_string_list = ["({schema}, {table})".format(schema=item[0], table=item[1])
+        schema_table_string_list = ["(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
                                     for item in self._find_schema_table(table_columns, table_rows)]
 
         schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
@@ -313,6 +337,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         index_usage_values, index_usage_columns = self._cmd(
             INDEX_USAGE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
         index_usage_rows = [list(row) for row in index_usage_values]
+
+        index_size_values, index_size_columns = self._cmd(
+            INDEX_SIZE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+        index_size_rows = [list(row) for row in index_size_values]
 
         return {
             "information_schema_TABLES": {
@@ -326,6 +354,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "performance_schema_table_io_waits_summary_by_index_usage": {
                 "columns": index_usage_columns,
                 "rows": index_usage_rows,
+            },
+            "indexes_size":{
+                "columns": index_size_columns,
+                "rows": index_size_rows,
             }
         }
 
