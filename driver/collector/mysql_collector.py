@@ -327,8 +327,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         table_rows = [list(row) for row in table_values]
         schema_table_string_list = ["(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
                                     for item in self._find_schema_table(table_columns, table_rows)]
-
-        schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
+        if not schema_table_string_list:
+            schema_table_string = "(NULL, NULL)"
+        else:
+            schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
 
         index_stats_values, index_stats_columns = self._cmd(
             INDEX_STATS_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
