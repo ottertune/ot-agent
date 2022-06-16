@@ -325,9 +325,5 @@ def test_postgres_collect_table_level_metrics(
     version = get_postgres_version(conn)
     collector = PostgresCollector(conn, version)
     metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
-    # the metric json should not contain any field that cannot be converted to a string,
-    # like decimal type and datetime type
-    print(metrics)
-    json.dumps(metrics)
 
     _verify_postgres_table_level_data(metrics, 2)
