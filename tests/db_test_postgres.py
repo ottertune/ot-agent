@@ -1,5 +1,5 @@
 """Tests for interacting with Postgres database"""
-
+import time
 from typing import Dict, Any
 import json
 
@@ -264,6 +264,8 @@ def test_collect_table_level_data_from_database(
     cur.execute(
         "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
+
+    time.sleep(1)
     cur.execute(
         "ANALYZE;"
     )
@@ -314,6 +316,8 @@ def test_postgres_collect_table_level_metrics(
     cur.execute(
         "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
+
+    time.sleep(1)
     cur.execute(
         "ANALYZE;"
     )
