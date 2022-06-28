@@ -88,6 +88,30 @@ class SqlData:
                     1,
                     9,
                 ),
+                (
+                    1544351,
+                    "public",
+                    "partitionednumericmetric_partition_0",
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
+                    0,
+                    0,
+                    0,
+                    0,
+                ),
             ],
             "table_level_pg_statio_user_tables": [
                 (
@@ -103,6 +127,19 @@ class SqlData:
                     None,
                     None,
                 ),
+                (
+                    1544351,
+                    "public",
+                    "partitionednumericmetric_partition_0",
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
             ],
             "table_level_table_size": [
                 (
@@ -110,6 +147,12 @@ class SqlData:
                     3761643520,
                     2487918592,
                     630784,
+                ),
+                (
+                    1544351,
+                    0,
+                    0,
+                    0,
                 ),
             ],
             "table_level_bloat_ratio": [
@@ -722,6 +765,30 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     1,
                     9,
                 ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
+                    0,
+                    0,
+                    0,
+                    0
+                ]
             ],
         },
         "pg_statio_user_indexes_all_fields": {
@@ -762,6 +829,19 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     None,
                     None,
                 ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                     0,
+                     0,
+                     0,
+                     0,
+                     None,
+                     None,
+                     None,
+                     None
+                ]
             ],
         },
         "pg_stat_user_tables_table_sizes": {
@@ -778,6 +858,12 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     2487918592,
                     630784,
                 ],
+                [
+                    1544351,
+                    0,
+                    0,
+                    0
+                ]
             ],
         },
         "table_bloat_ratios": {

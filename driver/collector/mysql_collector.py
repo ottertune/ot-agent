@@ -22,10 +22,49 @@ WHERE
   TABLE_SCHEMA
 NOT IN
   ('information_schema', 'performance_schema', 'mysql', 'sys')
+AND
+  TABLE_ROWS > 0
 ORDER BY 
   TABLE_ROWS
 DESC LIMIT 
   {n};
+"""
+
+INDEX_STATS_SQL_TEMPLATE = """
+SELECT 
+    TABLE_SCHEMA,TABLE_NAME,NON_UNIQUE,
+    INDEX_SCHEMA,INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME,
+    COLLATION,CARDINALITY,SUB_PART,NULLABLE,INDEX_TYPE 
+FROM
+    information_schema.STATISTICS
+WHERE
+    (TABLE_SCHEMA,TABLE_NAME) IN {schema_table_list};
+"""
+
+INDEX_USAGE_SQL_TEMPLATE = """
+SELECT
+    OBJECT_TYPE,OBJECT_SCHEMA,OBJECT_NAME,INDEX_NAME,COUNT_STAR,
+    SUM_TIMER_WAIT,COUNT_READ,SUM_TIMER_READ,COUNT_WRITE,SUM_TIMER_WRITE,
+    COUNT_FETCH,SUM_TIMER_FETCH,COUNT_INSERT,SUM_TIMER_INSERT,
+    COUNT_UPDATE,SUM_TIMER_UPDATE,COUNT_DELETE,SUM_TIMER_DELETE 
+FROM
+    performance_schema.table_io_waits_summary_by_index_usage 
+WHERE
+    OBJECT_TYPE='TABLE'
+AND
+    (OBJECT_SCHEMA,OBJECT_NAME) IN {schema_table_list};
+"""
+
+INDEX_SIZE_SQL_TEMPLATE = """
+SELECT
+    DATABASE_NAME, TABLE_NAME, INDEX_NAME, STAT_VALUE,
+    STAT_VALUE * @@innodb_page_size AS SIZE_IN_BYTE
+FROM
+    mysql.innodb_index_stats
+WHERE
+    stat_name = 'size'
+AND
+    (DATABASE_NAME,TABLE_NAME) IN {schema_table_list};
 """
 
 
@@ -250,7 +289,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
     def collect_table_level_metrics(
         self, num_table_to_collect_stats: int
     ) -> Dict[str, Any]:
-        """Collect table level statistics
+        """Collect table level and index statistics
 
         Returns:
         {
@@ -268,18 +307,71 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
                     "DATA_FREE",
                 ],
                 "rows": List[List[Any]],
+            },
+            "information_schema_STATISTICS": {
+                "columns": [...],
+                "rows": [[...], [...]]
+            },
+            "performance_schema_table_io_waits_summary_by_index_usage": {
+                "columns": [...],
+                "rows": [[...], [...]]
+            },
+            "indexes_size": {
+                "columns": [...],
+                "rows": [[...], [...]]
             }
         }
         """
-        values, columns = self._cmd(
-            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
-        )
+        table_values, table_columns = self._cmd(
+            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats))
+        table_rows = [list(row) for row in table_values]
+        schema_table_string_list = ["(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
+                                    for item in self._find_schema_table(table_columns, table_rows)]
+        if not schema_table_string_list:
+            schema_table_string = "((NULL,NULL))"
+        else:
+            schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
+
+        index_stats_values, index_stats_columns = self._cmd(
+            INDEX_STATS_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+        index_stats_rows = [list(row) for row in index_stats_values]
+
+        index_usage_values, index_usage_columns = self._cmd(
+            INDEX_USAGE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+        index_usage_rows = [list(row) for row in index_usage_values]
+
+        index_size_values, index_size_columns = self._cmd(
+            INDEX_SIZE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+        index_size_rows = [list(row) for row in index_size_values]
+
         return {
             "information_schema_TABLES": {
-                "columns": columns,
-                "rows": [list(row) for row in values],
+                "columns": table_columns,
+                "rows": table_rows,
+            },
+            "information_schema_STATISTICS": {
+                "columns": index_stats_columns,
+                "rows": index_stats_rows,
+            },
+            "performance_schema_table_io_waits_summary_by_index_usage": {
+                "columns": index_usage_columns,
+                "rows": index_usage_rows,
+            },
+            "indexes_size":{
+                "columns": index_size_columns,
+                "rows": index_size_rows,
             }
         }
+
+    def _find_schema_table(self, columns, rows):
+        schema_idx = columns.index("TABLE_SCHEMA")
+        table_idx = columns.index("TABLE_NAME")
+        schema_table_list = []
+
+        for row in rows:
+            schema_table_list.append([row[schema_idx], row[table_idx]])
+
+        return schema_table_list
 
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics
