@@ -101,3 +101,41 @@ FROM (
   GROUP BY 1,2,3,4,5,6
 ) AS s;
 """
+
+TOP_N_LARGEST_INDEXES_SQL_TEMPLATE = """
+SELECT
+  indexrelid, pg_relation_size(indexrelid) as index_size
+FROM
+  pg_stat_user_indexes
+WHERE
+  relid IN {table_list}
+ORDER BY
+  index_size
+DESC LIMIT 10000;
+"""
+
+PG_STAT_USER_INDEXES_TEMPLATE = """
+SELECT
+  *
+FROM
+  pg_stat_user_indexes
+WHERE
+  indexrelid IN {index_list};
+"""
+
+PG_STATIO_USER_INDEXES_TEMPLATE = """
+SELECT
+  indexrelid, idx_blks_read, idx_blks_hit
+FROM
+  pg_statio_user_indexes
+WHERE
+  indexrelid IN {index_list};
+"""
+
+PG_INDEX_TEMPLATE = """
+SELECT
+  *
+FROM
+  pg_index
+WHERE indexrelid IN {index_list};
+"""

@@ -18,6 +18,10 @@ from driver.collector.pg_table_level_stats_sqls import (
     PG_STATIO_TABLE_STATS_TEMPLATE,
     PG_STAT_TABLE_STATS_TEMPLATE,
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
+    TOP_N_LARGEST_INDEXES_SQL_TEMPLATE,
+    PG_STAT_USER_INDEXES_TEMPLATE,
+    PG_STATIO_USER_INDEXES_TEMPLATE,
+    PG_INDEX_TEMPLATE,
 )
 
 # database-wide statistics from pg_stat_database view
@@ -141,6 +145,11 @@ class PostgresCollector(BaseDbCollector):
         "pg_stat_user_tables_all_fields": PG_STAT_TABLE_STATS_TEMPLATE,
         "pg_statio_user_tables_all_fields": PG_STATIO_TABLE_STATS_TEMPLATE,
         "pg_stat_user_tables_table_sizes": TABLE_SIZE_TABLE_STATS_TEMPLATE,
+    }
+    INDEX_STATS_SQLS: Dict[str, Any] = {
+        "pg_stat_user_indexes_all_fields": PG_STAT_USER_INDEXES_TEMPLATE,
+        "pg_statio_user_indexes_all_fields": PG_STATIO_USER_INDEXES_TEMPLATE,
+        "pg_index_all_fields": PG_INDEX_TEMPLATE,
     }
     PG_STAT_VIEWS_LOCAL = {
         "database": ["pg_stat_database", "pg_stat_database_conflicts"],
@@ -378,10 +387,64 @@ class PostgresCollector(BaseDbCollector):
                     ],
                     "rows": List[List[Any]],
                 },
+                'index_sizes': {
+                    'columns': [
+                        'indexrelid',
+                        'index_size'
+                    ],
+                    'rows': List[List[Any]],
+                },
+                'pg_index_all_fields': {
+                    'columns': [
+                        'indexrelid',
+                        'indrelid',
+                        'indnatts',
+                        'indnkeyatts',
+                        'indisunique',
+                        'indisprimary',
+                        'indisexclusion',
+                        'indimmediate',
+                        'indisclustered',
+                        'indisvalid',
+                        'indcheckxmin',
+                        'indisready',
+                        'indislive',
+                        'indisreplident',
+                        'indkey',
+                        'indcollation',
+                        'indclass',
+                        'indoption',
+                        'indexprs',
+                        'indpred'
+                    ],
+                    'rows': List[List[Any]],
+                },
+                'pg_stat_user_indexes_all_fields': {
+                    'columns': [
+                        'relid',
+                        'indexrelid',
+                        'schemaname',
+                        'relname',
+                        'indexrelname',
+                        'idx_scan',
+                        'idx_tup_read',
+                        'idx_tup_fetch'
+                    ],
+                    'rows': List[List[Any]],
+                },
+                'pg_statio_user_indexes_all_fields': {
+                    'columns': [
+                        'indexrelid',
+                        'idx_blks_read',
+                        'idx_blks_hit'
+                    ],
+                  'rows': List[List[Any]],
+                },
             }
             Raises:
             PostgresCollectorException: Failed to execute the sql query to get metrics
         """
+        # pylint: disable=too-many-locals
         metrics = {}
         target_tables_tuple = self._cmd(
             TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
@@ -416,6 +479,33 @@ class PostgresCollector(BaseDbCollector):
             metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
                 padding_size_dict, bloat_ratio_factors_dict,
             )
+
+        target_indexes_tuple = self._cmd(
+            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str),
+        )[0]
+        target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
+        target_indexes_str = str(target_indexes) if len(target_indexes) > 1 else (
+            f"({target_indexes[0]})" if len(target_indexes) == 1 else "(0)"
+        )
+
+        for field, sql_template in self.INDEX_STATS_SQLS.items():
+            rows, columns = self._cmd(
+                sql_template.format(index_list = target_indexes_str),
+            )
+            metrics[field] = {
+                "columns": columns,
+                "rows": [list(row) for row in rows],
+            }
+
+        metrics["index_sizes"] = {
+            "columns": ["indexrelid", "index_size"],
+            "rows": [],
+        }
+
+        if target_indexes:
+            metrics["index_sizes"]["rows"] = [
+                [index[0], index[1]] for index in target_indexes_tuple]
+
         return metrics
 
     def _calculate_bloat_ratios(
