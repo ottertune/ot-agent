@@ -1,5 +1,5 @@
 """Tests for interacting with Postgres database"""
-
+import time
 from typing import Dict, Any
 import json
 
@@ -184,6 +184,7 @@ def test_postgres_collect_row_stats(
         assert row_stats["min_row_num"] >= 0
         assert row_stats["max_row_num"] >= 0
 
+
 def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> None:
     # pg_stat_user_tables_all_fields
     assert data[
@@ -231,6 +232,7 @@ def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> 
     for row in data["table_bloat_ratios"]["rows"]:
         assert len(row) == 2
 
+
 def test_collect_table_level_data_from_database(
     db_type: str,
     pg_user: str,
@@ -256,6 +258,18 @@ def test_collect_table_level_data_from_database(
         "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
     )
 
+    cur.execute(
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+
+    time.sleep(1)
+    cur.execute(
+        "ANALYZE;"
+    )
+
     driver_conf = _get_driver_conf(
         db_type,
         pg_user,
@@ -273,7 +287,8 @@ def test_collect_table_level_data_from_database(
     assert summary["observation_time"] > 0
     assert len(version_str) > 0
     # 0 as the database is empty
-    _verify_postgres_table_level_data(data, 3)
+    _verify_postgres_table_level_data(data, 2)
+
 
 def test_postgres_collect_table_level_metrics(
     pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
@@ -287,6 +302,7 @@ def test_postgres_collect_table_level_metrics(
     cur.execute(
         "CREATE TABLE IF NOT EXISTS test1 (id serial PRIMARY KEY, num integer, data varchar);",
     )
+
     cur.execute(
         "CREATE TABLE IF NOT EXISTS test2 (id serial PRIMARY KEY, num integer, data varchar);",
     )
@@ -294,11 +310,20 @@ def test_postgres_collect_table_level_metrics(
         "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
     )
 
+    cur.execute(
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+
+    time.sleep(1)
+    cur.execute(
+        "ANALYZE;"
+    )
+
     version = get_postgres_version(conn)
     collector = PostgresCollector(conn, version)
     metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
-    # the metric json should not contain any field that cannot be converted to a string,
-    # like decimal type and datetime type
-    json.dumps(metrics)
 
-    _verify_postgres_table_level_data(metrics, 3)
+    _verify_postgres_table_level_data(metrics, 2)
