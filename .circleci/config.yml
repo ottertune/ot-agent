@@ -16,6 +16,11 @@ jobs:
           name: Lint
           command: pylint driver/ tests/
       - run:
+          name: typecheck-ci
+          # There may be a better way to specify the search path
+          command: |
+            pyre --noninteractive --search-path /home/circleci/.pyenv/versions/3.8.8/lib/python3.8/site-packages
+      - run:
           name: Test
           command: pytest
   

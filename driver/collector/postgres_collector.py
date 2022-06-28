@@ -479,9 +479,10 @@ class PostgresCollector(BaseDbCollector):
                 padding_size_dict, bloat_ratio_factors_dict,
             )
 
-        target_indexes_tuple = self._cmd(
+        target_indexes_tuple: List[List[int]] = self._cmd(
             TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str),
         )[0]
+        # pyre-ignore[9]
         target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
         target_indexes_str = str(target_indexes) if len(target_indexes) > 1 else (
             f"({target_indexes[0]})" if len(target_indexes) == 1 else "(0)"
