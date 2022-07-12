@@ -22,6 +22,10 @@ from driver.collector.pg_table_level_stats_sqls import (
     PG_STAT_TABLE_STATS_TEMPLATE,
     PG_STATIO_TABLE_STATS_TEMPLATE,
     TABLE_SIZE_TABLE_STATS_TEMPLATE,
+    TOP_N_LARGEST_INDEXES_SQL_TEMPLATE,
+    PG_INDEX_TEMPLATE,
+    PG_STATIO_USER_INDEXES_TEMPLATE,
+    PG_STAT_USER_INDEXES_TEMPLATE,
 )
 
 from driver.exceptions import PostgresCollectorException
@@ -165,6 +169,54 @@ class SqlData:
                     8,
                 ),
             ],
+            "pg_stat_user_indexes_top_n": [
+                (24889, 16384)
+            ],
+            "pg_stat_user_indexes_all_fields": [
+                (
+                    24882,
+                    24889,
+                    "public",
+                    "test1",
+                    "test1_pkey",
+                    3,
+                    2,
+                    2,
+                )
+            ],
+            "pg_statio_user_indexes_all_fields": [
+                (
+                    24889,
+                    3,
+                    7,
+                )
+            ],
+            "pg_index_all_fields": [
+                (
+                    24889,
+                    24882,
+                    1,
+                    1,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    1,
+                    0,
+                    1978,
+                    0,
+                    None,
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 "
+                    ":vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 "
+                    ":varnoold 1 :varoattno 4 :location 135}) :location 131}",
+                )
+            ]
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -243,16 +295,57 @@ class SqlData:
                 ["toast_size"],
             ],
             "table_level_bloat_ratio": [
-                ['relid'],
-                ['tblpages'],
-                ['reltuples'],
-                ['bs'],
-                ['page_hdr'],
-                ['fillfactor'],
-                ['is_na'],
-                ['tpl_data_size'],
-                ['tpl_hdr_size'],
-                ['ma'],
+                ["relid"],
+                ["tblpages"],
+                ["reltuples"],
+                ["bs"],
+                ["page_hdr"],
+                ["fillfactor"],
+                ["is_na"],
+                ["tpl_data_size"],
+                ["tpl_hdr_size"],
+                ["ma"],
+            ],
+            "pg_stat_user_indexes_top_n": [
+                ["indexrelid"],
+                ["index_size"],
+            ],
+            "pg_stat_user_indexes_all_fields": [
+                ["relid"],
+                ["indexrelid"],
+                ["schemaname"],
+                ["relname"],
+                ["indexrelname"],
+                ["idx_scan"],
+                ["idx_tup_read"],
+                ["idx_tup_fetch"],
+            ],
+            "pg_statio_user_indexes_all_fields": [
+                ["indexrelid"],
+                ["idx_blks_read"],
+                ["idx_blks_hit"],
+            ],
+            "pg_index_all_fields": [
+                ["indexrelid"],
+                ["indrelid"],
+                ["indnatts"],
+                ["indnkeyatts"],
+                ["indisunique"],
+                ["indisprimary"],
+                ["indisexclusion"],
+                ["indimmediate"],
+                ["indisclustered"],
+                ["indisvalid"],
+                ["indcheckxmin"],
+                ["indisready"],
+                ["indislive"],
+                ["indisreplident"],
+                ["indkey"],
+                ["indcollation"],
+                ["indclass"],
+                ["indoption"],
+                ["indexprs"],
+                ["indpred"],
             ],
         }
         self.aggregated_metas = {
@@ -437,6 +530,19 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "attalign" in sql:
             result.value = data.padding_query_values
             result.meta = data.padding_query_metas
+        elif TOP_N_LARGEST_INDEXES_SQL_TEMPLATE[:TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.index("IN")] \
+                in sql:
+            result.value = data.views["pg_stat_user_indexes_top_n"]
+            result.meta = data.metas["pg_stat_user_indexes_top_n"]
+        elif PG_STAT_USER_INDEXES_TEMPLATE[:PG_STAT_USER_INDEXES_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["pg_stat_user_indexes_all_fields"]
+            result.meta = data.metas["pg_stat_user_indexes_all_fields"]
+        elif PG_STATIO_USER_INDEXES_TEMPLATE[:PG_STATIO_USER_INDEXES_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["pg_statio_user_indexes_all_fields"]
+            result.meta = data.metas["pg_statio_user_indexes_all_fields"]
+        elif PG_INDEX_TEMPLATE[:PG_INDEX_TEMPLATE.index("IN")] in sql:
+            result.value = data.views["pg_index_all_fields"]
+            result.meta = data.metas["pg_index_all_fields"]
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -539,6 +645,7 @@ def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
         collector.collect_table_row_number_stats()
     assert "Failed to execute sql" in ex.value.message
 
+
 def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
@@ -548,6 +655,89 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(mock_conn, "9.6.3")
     assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+        "index_sizes": {
+            "columns": [
+                "indexrelid",
+                "index_size"
+            ],
+            "rows": [[24889, 16384]]
+        },
+        "pg_index_all_fields": {
+            "columns": [
+                "indexrelid",
+                "indrelid",
+                "indnatts",
+                "indnkeyatts",
+                "indisunique",
+                "indisprimary",
+                "indisexclusion",
+                "indimmediate",
+                "indisclustered",
+                "indisvalid",
+                "indcheckxmin",
+                "indisready",
+                "indislive",
+                "indisreplident",
+                "indkey",
+                "indcollation",
+                "indclass",
+                "indoption",
+                "indexprs",
+                "indpred"
+            ],
+            "rows": [
+                [
+                    24889,
+                    24882,
+                    1,
+                    1,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    1,
+                    0,
+                    1978,
+                    0,
+                    None,
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 "
+                    ":varattno 4 :vartype 16 :vartypmod -1 "
+                    ":varcollid 0 :varlevelsup 0 :varnoold 1 "
+                    ":varoattno 4 :location 135}) :location "
+                    "131}"
+                ]
+            ]
+        },
+        "pg_stat_user_indexes_all_fields": {
+            "columns": [
+                "relid",
+                "indexrelid",
+                "schemaname",
+                "relname",
+                "indexrelname",
+                "idx_scan",
+                "idx_tup_read",
+                "idx_tup_fetch"
+            ],
+            "rows": [
+                [
+                    24882,
+                    24889,
+                    "public",
+                    "test1",
+                    "test1_pkey",
+                    3,
+                    2,
+                    2
+                ]
+            ]
+        },
         "pg_stat_user_tables_all_fields": {
             "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS,
             "rows": [
@@ -600,6 +790,16 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     0
                 ]
             ],
+        },
+        "pg_statio_user_indexes_all_fields": {
+            "columns": [
+                "indexrelid",
+                "idx_blks_read",
+                "idx_blks_hit"
+            ],
+            "rows": [
+                [24889, 3, 7]
+            ]
         },
         "pg_statio_user_tables_all_fields": {
             "columns": [
@@ -688,6 +888,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_table_level_metrics(10)
     assert "Failed to execute sql" in ex.value.message
+
 
 def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
     collector = PostgresCollector(mock_conn, "9.6.3")
