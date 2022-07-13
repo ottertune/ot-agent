@@ -1,8 +1,8 @@
 """Tests for interacting with MySQL database"""
+import json
+import time
 
 from typing import Dict, Any, Union
-import json
-
 import mysql.connector
 
 from driver.collector.collector_factory import get_mysql_version, connect_mysql
@@ -59,6 +59,7 @@ def _get_driver_conf(
     mysql_port: str,
     mysql_database: str,
     num_table_to_collect_stats: int,
+    num_index_to_collect_stats: int,
 ) -> Dict[str, Union[int, str]]:
     # pylint: disable=too-many-arguments
     conf = {
@@ -72,6 +73,7 @@ def _get_driver_conf(
         "db_key": "test_key",
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
+        "num_index_to_collect_stats": num_index_to_collect_stats,
     }
     return conf
 
@@ -205,7 +207,7 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10
+        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10, 100
     )
     observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
@@ -254,6 +256,11 @@ def test_collect_table_level_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 10
+
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+    _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
 
     driver_conf = _get_driver_conf(
         db_type,
@@ -263,6 +270,7 @@ def test_collect_table_level_data_from_database(
         mysql_port,
         mysql_database,
         num_table_to_collect_stats,
+        num_index_to_collect_stats
     )
     observation = collect_table_level_data_from_database(driver_conf)
     data = observation["data"]
@@ -282,14 +290,49 @@ def test_mysql_collect_table_level_metrics(
     mysql_database: str,
 ) -> None:
     num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 100
     conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
     conn = connect_mysql(conf)
+    _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
 
     version = get_mysql_version(conn)
     collector = MysqlCollector(conn, version)
-    metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
+    metrics = collector.collect_table_level_metrics(target_table_info)
+    metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
+
     # the metric json should not contain any field that cannot be converted to a string,
     # like decimal type and datetime type
     json.dumps(metrics)
 
     _verify_mysql_table_level_data(metrics, 0)
+
+
+def test_mysql_collect_index_metrics(
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 100
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+
+    _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
+    _db_query(conn, "CREATE DATABASE testdb;")
+    _db_query(conn, "USE testdb;")
+    _db_query(conn, "CREATE TABLE IF NOT EXISTS test1 "
+                    "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
+                    "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));")
+    _db_query(conn, "INSERT IGNORE INTO test1(id, num, data) values (1, 2, 'abc');")
+    _db_query(conn, "ALTER TABLE test1 ADD INDEX idx_test1(num);")
+
+    time.sleep(1)
+    version = get_mysql_version(conn)
+    collector = MysqlCollector(conn, version)
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
+    metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+
+    assert metrics["indexes_size"]["rows"][1][2] == "idx_test1"

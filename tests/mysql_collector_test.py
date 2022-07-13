@@ -415,7 +415,28 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.fetchall.side_effect = lambda: res.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
-    assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
+    assert collector.collect_table_level_metrics(target_table_info) == {
+        "information_schema_TABLES": {
+            "columns":TABLE_LEVEL_MYSQL_COLUMNS,
+            "rows": [
+                [
+                    'mysql',
+                    'time_zone_transition',
+                    'BASE TABLE',
+                    'InnoDB',
+                    'Dynamic',
+                    119074,
+                    39,
+                    4734976,
+                    0,
+                    4194304,
+                ],
+            ],
+        },
+    }
+    assert collector.collect_index_metrics(target_table_info=target_table_info,
+                                           num_index_to_collect_stats=10) == {
         'indexes_size': {
             'columns': [
                 'DATABASE_NAME',
@@ -468,23 +489,6 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 None,
                 '',
                 'BTREE']]},
-        "information_schema_TABLES": {
-            "columns":TABLE_LEVEL_MYSQL_COLUMNS,
-            "rows": [
-                [
-                    'mysql',
-                    'time_zone_transition',
-                    'BASE TABLE',
-                    'InnoDB',
-                    'Dynamic',
-                    119074,
-                    39,
-                    4734976,
-                    0,
-                    4194304,
-                ],
-            ],
-        },
         'performance_schema_table_io_waits_summary_by_index_usage':
             {'columns': ['TABLE_SCHEMA',
                          'TABLE_NAME',
@@ -530,5 +534,6 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     collector = MysqlCollector(mock_conn, "5.7.3")
     with pytest.raises(MysqlCollectorException) as ex:
-        collector.collect_table_level_metrics(10)
+        target_table_info = collector.get_target_table_info(10)
+        collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message

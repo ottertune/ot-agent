@@ -42,6 +42,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     monitor_interval: StrictInt
     num_table_to_collect_stats: StrictInt
     table_level_monitor_interval: StrictInt
+    num_index_to_collect_stats: StrictInt
     metric_source: List[str]
 
     @validator("table_level_monitor_interval")
@@ -74,6 +75,17 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
             )
         return val
 
+    @validator("num_index_to_collect_stats")
+    def check_num_index_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that num_index_to_collect_stats is not negative"""
+        if val < 0:
+            raise ValueError(
+                "Invalid driver option num_index_to_collect_stats, non-negative value"
+                f" is expected, but {val} is found"
+            )
+        return val
+
+
 class Overrides(NamedTuple):
     """
     Runtime overrides for configurations in files, useful for when running in container
@@ -82,6 +94,7 @@ class Overrides(NamedTuple):
     server_url: str
     num_table_to_collect_stats: int
     table_level_monitor_interval: int
+    num_index_to_collect_stats: int
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -108,6 +121,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_password: StrictStr
 
     disable_table_level_stats: StrictBool = False
+    disable_index_level_Stats: StrictBool = False
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -160,6 +174,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_table_level_stats: bool
     num_table_to_collect_stats: int
     table_level_monitor_interval: int
+    disable_index_level_stats: bool
+    num_index_to_collect_stats: int
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -202,6 +218,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 db_key=args.db_key,
                 organization_id=args.organization_id,
                 disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
+                disable_index_level_Stats = args.disable_index_level_stats.lower() == "true",
             )
         except ValidationError as ex:
             msg = (

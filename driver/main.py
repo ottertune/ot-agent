@@ -102,6 +102,17 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how often to collect table level data (in seconds)",
     )
+    parser.add_argument(
+        "--disable-index-stats",
+        type=str,
+        default="False",
+        help="Whether to disable index stats collection.",
+    )
+    parser.add_argument(
+        "--override-num-index-to-collect-stats",
+        type=int,
+        help="Override file setting for how many tables to collect table level stats",
+    )
     return parser.parse_args()
 
 
@@ -110,6 +121,7 @@ def schedule_db_level_monitor_job(config) -> None:
     The outer polling loop for the driver
     """
     schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
+
 
 def schedule_table_level_monitor_job(config) -> None:
     """
@@ -159,7 +171,7 @@ def run() -> None:
     config = get_config(args)
 
     schedule_db_level_monitor_job(config)
-    if not config.disable_table_level_stats:
+    if not config.disable_table_level_stats or not config.disable_index_level_stats:
         schedule_table_level_monitor_job(config)
     scheduler.start()
 

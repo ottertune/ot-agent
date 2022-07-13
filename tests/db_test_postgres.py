@@ -35,6 +35,7 @@ def _get_driver_conf(
     pg_port: str,
     pg_database: str,
     num_table_to_collect_stats: int,
+    num_index_to_collect_stats: int,
 ) -> Dict[str, Any]:
     # pylint: disable=too-many-arguments
     conf = {
@@ -48,6 +49,7 @@ def _get_driver_conf(
         "db_key": "test_key",
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
+        "num_index_to_collect_stats": num_index_to_collect_stats,
     }
     return conf
 
@@ -132,7 +134,7 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10,
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
     )
     observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
@@ -241,8 +243,9 @@ def test_collect_table_level_data_from_database(
     pg_port: str,
     pg_database: str,
 ) -> None:
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-locals
     num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 10
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
 
@@ -278,6 +281,7 @@ def test_collect_table_level_data_from_database(
         pg_port,
         pg_database,
         num_table_to_collect_stats,
+        num_index_to_collect_stats,
     )
     # pylint: disable=too-many-function-args
     observation = collect_table_level_data_from_database(driver_conf)
@@ -294,6 +298,7 @@ def test_postgres_collect_table_level_metrics(
     pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
 ) -> None:
     num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 100
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
 
@@ -324,6 +329,50 @@ def test_postgres_collect_table_level_metrics(
 
     version = get_postgres_version(conn)
     collector = PostgresCollector(conn, version)
-    metrics = collector.collect_table_level_metrics(num_table_to_collect_stats)
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
+    metrics = collector.collect_table_level_metrics(target_table_info)
+    metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
 
     _verify_postgres_table_level_data(metrics, 2)
+
+
+def test_postgres_collect_index_metrics(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    num_table_to_collect_stats = 10
+    num_index_to_collect_stats = 100
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+
+    # create three tables
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test1 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test2 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_test1 ON test1(num);"
+    )
+
+    time.sleep(1)
+    cur.execute(
+        "ANALYZE;"
+    )
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
+    metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+
+    index_names = [row[4] for row in metrics["pg_stat_user_indexes_all_fields"]["rows"]]
+    assert "idx_test1" in index_names

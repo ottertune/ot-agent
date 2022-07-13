@@ -25,9 +25,25 @@ NOT IN
 AND
   TABLE_ROWS > 0
 ORDER BY 
-  TABLE_ROWS
-DESC LIMIT 
+  TABLE_ROWS DESC
+LIMIT
   {n};
+"""
+
+INDEX_SIZE_SQL_TEMPLATE = """
+SELECT
+    DATABASE_NAME, TABLE_NAME, INDEX_NAME, STAT_VALUE,
+    STAT_VALUE * @@innodb_page_size AS SIZE_IN_BYTE
+FROM
+    mysql.innodb_index_stats
+WHERE
+    stat_name='size'
+AND
+    (DATABASE_NAME,TABLE_NAME) IN {schema_table_list}
+ORDER BY
+    SIZE_IN_BYTE DESC
+LIMIT
+    {n};
 """
 
 INDEX_STATS_SQL_TEMPLATE = """
@@ -38,7 +54,7 @@ SELECT
 FROM
     information_schema.STATISTICS
 WHERE
-    (TABLE_SCHEMA,TABLE_NAME) IN {schema_table_list};
+    (TABLE_SCHEMA,TABLE_NAME,INDEX_NAME) IN {schema_table_index_list};
 """
 
 INDEX_USAGE_SQL_TEMPLATE = """
@@ -52,19 +68,7 @@ FROM
 WHERE
     OBJECT_TYPE='TABLE'
 AND
-    (OBJECT_SCHEMA,OBJECT_NAME) IN {schema_table_list};
-"""
-
-INDEX_SIZE_SQL_TEMPLATE = """
-SELECT
-    DATABASE_NAME, TABLE_NAME, INDEX_NAME, STAT_VALUE,
-    STAT_VALUE * @@innodb_page_size AS SIZE_IN_BYTE
-FROM
-    mysql.innodb_index_stats
-WHERE
-    stat_name = 'size'
-AND
-    (DATABASE_NAME,TABLE_NAME) IN {schema_table_list};
+    (OBJECT_SCHEMA,OBJECT_NAME,INDEX_NAME) IN {schema_table_index_list};
 """
 
 
@@ -286,10 +290,26 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         """Collect statistics about the number of rows of different tables"""
         return {}
 
-    def collect_table_level_metrics(
-        self, num_table_to_collect_stats: int
-    ) -> Dict[str, Any]:
-        """Collect table level and index statistics
+    def get_target_table_info(self,
+                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+        """Get the information of tables to collect table and index stats"""
+        table_values, table_columns = self._cmd(
+            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats))
+        table_rows = [list(row) for row in table_values]
+        schema_table_string_list = [
+            "(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
+            for item in self._find_columns(
+                table_columns, table_rows, ["TABLE_SCHEMA", "TABLE_NAME"])
+        ]
+        return {
+            "table_columns": table_columns,
+            "table_rows": table_rows,
+            "schema_table_string_list": schema_table_string_list
+        }
+
+    def collect_table_level_metrics(self,
+                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Collect table level statistics
 
         Returns:
         {
@@ -312,6 +332,27 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
                 "columns": [...],
                 "rows": [[...], [...]]
             },
+        }
+        """
+
+        return {
+            "information_schema_TABLES": {
+                "columns": target_table_info.get("table_columns"),
+                "rows": target_table_info.get("table_rows"),
+            },
+        }
+
+    def collect_index_metrics(self,
+                              target_table_info: Dict[str, Any],
+                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect index statistics
+
+        Returns:
+        {
+            "information_schema_STATISTICS": {
+                "columns": [...],
+                "rows": [[...], [...]]
+            },
             "performance_schema_table_io_waits_summary_by_index_usage": {
                 "columns": [...],
                 "rows": [[...], [...]]
@@ -322,33 +363,44 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             }
         }
         """
-        table_values, table_columns = self._cmd(
-            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats))
-        table_rows = [list(row) for row in table_values]
-        schema_table_string_list = ["(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
-                                    for item in self._find_schema_table(table_columns, table_rows)]
+        # pylint: disable=too-many-locals
+        schema_table_string_list = target_table_info.get("schema_table_string_list")
+
         if not schema_table_string_list:
             schema_table_string = "((NULL,NULL))"
         else:
             schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
 
+        index_size_values, index_size_columns = self._cmd(
+            INDEX_SIZE_SQL_TEMPLATE.format(schema_table_list=schema_table_string,
+                                           n=num_index_to_collect_stats))
+
+        index_size_rows = [list(row) for row in index_size_values]
+
+        schema_table_index_string_list = [
+            "(\"{schema}\", \"{table}\", \"{index}\")".format(
+                schema=item[0], table=item[1], index=item[2])
+            for item in self._find_columns(
+                index_size_columns, index_size_values,
+                ["DATABASE_NAME", "TABLE_NAME", "INDEX_NAME"])
+        ]
+
+        if not schema_table_index_string_list:
+            schema_table_index_string = "((NULL,NULL,NULL))"
+        else:
+            schema_table_index_string = "(" + ",".join(schema_table_index_string_list) + ")"
+
         index_stats_values, index_stats_columns = self._cmd(
-            INDEX_STATS_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+            INDEX_STATS_SQL_TEMPLATE.format(
+                schema_table_index_list=schema_table_index_string))
         index_stats_rows = [list(row) for row in index_stats_values]
 
         index_usage_values, index_usage_columns = self._cmd(
-            INDEX_USAGE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
+            INDEX_USAGE_SQL_TEMPLATE.format(
+                schema_table_index_list=schema_table_index_string))
         index_usage_rows = [list(row) for row in index_usage_values]
 
-        index_size_values, index_size_columns = self._cmd(
-            INDEX_SIZE_SQL_TEMPLATE.format(schema_table_list=schema_table_string))
-        index_size_rows = [list(row) for row in index_size_values]
-
         return {
-            "information_schema_TABLES": {
-                "columns": table_columns,
-                "rows": table_rows,
-            },
             "information_schema_STATISTICS": {
                 "columns": index_stats_columns,
                 "rows": index_stats_rows,
@@ -357,21 +409,23 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
                 "columns": index_usage_columns,
                 "rows": index_usage_rows,
             },
-            "indexes_size":{
+            "indexes_size": {
                 "columns": index_size_columns,
                 "rows": index_size_rows,
             }
         }
 
-    def _find_schema_table(self, columns, rows):
-        schema_idx = columns.index("TABLE_SCHEMA")
-        table_idx = columns.index("TABLE_NAME")
-        schema_table_list = []
+    def _find_columns(self,
+                      columns: List[str],
+                      rows: List[List[Any]],
+                      target_columns: List[str]) -> List[List[Any]]:
+        indices = [columns.index(target_col) for target_col in target_columns]
+        result = []
 
         for row in rows:
-            schema_table_list.append([row[schema_idx], row[table_idx]])
+            result.append([row[idx] for idx in indices])
 
-        return schema_table_list
+        return result
 
     def _collect_derived_metrics(self) -> Dict[str, Any]:
         """Collect metrics derived from base metrics

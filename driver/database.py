@@ -1,13 +1,14 @@
 """
 The driver pipeline function. It's responsible for a single tuning/monitoring loop.
 """
-
+import logging
 import time
 from typing import Dict, Any
 
 from driver.compute_server_client import DBLevelObservation, TableLevelObservation
 from driver.collector.collector_factory import get_collector
 from driver.driver_config_builder import DriverConfig
+from driver.exceptions import DbCollectorException
 from driver.metric_source_utils import METRIC_SOURCE_COLLECTOR
 
 
@@ -31,6 +32,7 @@ def collect_db_level_observation_for_on_prem(config: DriverConfig) -> DBLevelObs
     observation["metrics_data"]["global"].update(metrics_from_sources)
     return observation
 
+
 def collect_table_level_observation_for_on_prem(config: DriverConfig) -> TableLevelObservation:
     """
     Get the table level observation data for the target cloud database.
@@ -47,6 +49,7 @@ def collect_table_level_observation_for_on_prem(config: DriverConfig) -> TableLe
     """
     observation = collect_table_level_data_from_database(config._asdict())
     return observation
+
 
 def collect_data_from_metric_sources(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     """Get data from various metric sources"""
@@ -95,6 +98,7 @@ def collect_db_level_data_from_database(driver_conf: Dict[str, Any]) -> DBLevelO
     }
     return observation
 
+
 def collect_table_level_data_from_database(driver_conf: Dict[str, Any]) -> TableLevelObservation:
     """
     Get the table level metrics data from the target database.
@@ -112,7 +116,20 @@ def collect_table_level_data_from_database(driver_conf: Dict[str, Any]) -> Table
 
     with get_collector(driver_conf) as collector:
         observation_time = int(time.time())
-        data = collector.collect_table_level_metrics(driver_conf["num_table_to_collect_stats"])
+        target_table_info = collector.get_target_table_info(
+            driver_conf["num_table_to_collect_stats"])
+        data: Dict[str, Any] = {}
+        if not driver_conf.get("disable_table_level_stats", False):
+            table_level_data = collector.collect_table_level_metrics(target_table_info)
+            data.update(table_level_data)
+        if not driver_conf.get("disable_index_level_stats", False):
+            try:
+                index_data = collector.collect_index_metrics(
+                    target_table_info,
+                    driver_conf["num_index_to_collect_stats"])
+                data.update(index_data)
+            except DbCollectorException:
+                logging.exception("Error raised during index stats collection.")
         version = collector.get_version()
         summary: Dict[str, Any] = {
             "version": version,

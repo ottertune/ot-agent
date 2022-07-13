@@ -29,8 +29,20 @@ class BaseDbCollector(ABC):
         """Collect statistics about the number of rows of different tables"""
     
     @abstractmethod
-    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+    def get_target_table_info(self,
+                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+        """Get the information of tables to collect table and index stats"""
+
+    @abstractmethod
+    def collect_table_level_metrics(self,
+                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
         """Collect table level statistics"""
+
+    @abstractmethod
+    def collect_index_metrics(self,
+                              target_table_info: Dict[str, Any],
+                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect index statistics"""
 
     @abstractmethod
     def get_version(self) -> str:
