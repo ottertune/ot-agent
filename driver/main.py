@@ -140,6 +140,7 @@ def get_config(args):
         server_url=args.override_server_url,
         num_table_to_collect_stats=args.override_num_table_to_collect_stats,
         table_level_monitor_interval=args.override_table_level_monitor_interval,
+        num_index_to_collect_stats=args.override_num_index_to_collect_stats,
     )
 
     config_builder.from_file(args.config)\
