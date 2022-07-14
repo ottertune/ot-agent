@@ -654,90 +654,8 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(mock_conn, "9.6.3")
-    assert collector.collect_table_level_metrics(num_table_to_collect_stats=1) == {
-        "index_sizes": {
-            "columns": [
-                "indexrelid",
-                "index_size"
-            ],
-            "rows": [[24889, 16384]]
-        },
-        "pg_index_all_fields": {
-            "columns": [
-                "indexrelid",
-                "indrelid",
-                "indnatts",
-                "indnkeyatts",
-                "indisunique",
-                "indisprimary",
-                "indisexclusion",
-                "indimmediate",
-                "indisclustered",
-                "indisvalid",
-                "indcheckxmin",
-                "indisready",
-                "indislive",
-                "indisreplident",
-                "indkey",
-                "indcollation",
-                "indclass",
-                "indoption",
-                "indexprs",
-                "indpred"
-            ],
-            "rows": [
-                [
-                    24889,
-                    24882,
-                    1,
-                    1,
-                    True,
-                    True,
-                    False,
-                    True,
-                    False,
-                    True,
-                    False,
-                    True,
-                    True,
-                    False,
-                    1,
-                    0,
-                    1978,
-                    0,
-                    None,
-                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 "
-                    ":varattno 4 :vartype 16 :vartypmod -1 "
-                    ":varcollid 0 :varlevelsup 0 :varnoold 1 "
-                    ":varoattno 4 :location 135}) :location "
-                    "131}"
-                ]
-            ]
-        },
-        "pg_stat_user_indexes_all_fields": {
-            "columns": [
-                "relid",
-                "indexrelid",
-                "schemaname",
-                "relname",
-                "indexrelname",
-                "idx_scan",
-                "idx_tup_read",
-                "idx_tup_fetch"
-            ],
-            "rows": [
-                [
-                    24882,
-                    24889,
-                    "public",
-                    "test1",
-                    "test1_pkey",
-                    3,
-                    2,
-                    2
-                ]
-            ]
-        },
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
+    assert collector.collect_table_level_metrics(target_table_info=target_table_info) == {
         "pg_stat_user_tables_all_fields": {
             "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS,
             "rows": [
@@ -790,16 +708,6 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     0
                 ]
             ],
-        },
-        "pg_statio_user_indexes_all_fields": {
-            "columns": [
-                "indexrelid",
-                "idx_blks_read",
-                "idx_blks_hit"
-            ],
-            "rows": [
-                [24889, 3, 7]
-            ]
         },
         "pg_statio_user_tables_all_fields": {
             "columns": [
@@ -879,6 +787,102 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
             ],
         },
     }
+    assert collector.collect_index_metrics(target_table_info=target_table_info,
+                                           num_index_to_collect_stats=10) == {
+               "indexes_size": {
+                   "columns": [
+                       "indexrelid",
+                       "index_size"
+                   ],
+                   "rows": [[24889, 16384]]
+               },
+               "pg_index_all_fields": {
+                   "columns": [
+                       "indexrelid",
+                       "indrelid",
+                       "indnatts",
+                       "indnkeyatts",
+                       "indisunique",
+                       "indisprimary",
+                       "indisexclusion",
+                       "indimmediate",
+                       "indisclustered",
+                       "indisvalid",
+                       "indcheckxmin",
+                       "indisready",
+                       "indislive",
+                       "indisreplident",
+                       "indkey",
+                       "indcollation",
+                       "indclass",
+                       "indoption",
+                       "indexprs",
+                       "indpred"
+                   ],
+                   "rows": [
+                       [
+                           24889,
+                           24882,
+                           1,
+                           1,
+                           True,
+                           True,
+                           False,
+                           True,
+                           False,
+                           True,
+                           False,
+                           True,
+                           True,
+                           False,
+                           1,
+                           0,
+                           1978,
+                           0,
+                           None,
+                           "{BOOLEXPR :boolop not :args ({VAR :varno 1 "
+                           ":varattno 4 :vartype 16 :vartypmod -1 "
+                           ":varcollid 0 :varlevelsup 0 :varnoold 1 "
+                           ":varoattno 4 :location 135}) :location "
+                           "131}"
+                       ]
+                   ]
+               },
+               "pg_stat_user_indexes_all_fields": {
+                   "columns": [
+                       "relid",
+                       "indexrelid",
+                       "schemaname",
+                       "relname",
+                       "indexrelname",
+                       "idx_scan",
+                       "idx_tup_read",
+                       "idx_tup_fetch"
+                   ],
+                   "rows": [
+                       [
+                           24882,
+                           24889,
+                           "public",
+                           "test1",
+                           "test1_pkey",
+                           3,
+                           2,
+                           2
+                       ]
+                   ]
+               },
+               "pg_statio_user_indexes_all_fields": {
+                   "columns": [
+                       "indexrelid",
+                       "idx_blks_read",
+                       "idx_blks_hit"
+                   ],
+                   "rows": [
+                       [24889, 3, 7]
+                   ]
+               },
+           }
 
 
 def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
@@ -886,7 +890,8 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector(mock_conn, "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
-        collector.collect_table_level_metrics(10)
+        target_table_info = collector.get_target_table_info(10)
+        collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message
 
 

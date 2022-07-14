@@ -43,7 +43,12 @@ class MockCollector(BaseDbCollector):
     def collect_table_row_number_stats(self) -> Dict[str, Any]:
         return {}
 
-    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+    def get_target_table_info(self,
+                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+        return {}
+
+    def collect_table_level_metrics(self,
+                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
         """Collect table level statistics"""
         return {
             "pg_stat_user_tables_all_fields": {
@@ -77,6 +82,11 @@ class MockCollector(BaseDbCollector):
                     [2, 0.6]]
             },
         }
+
+    def collect_index_metrics(self,
+                              target_table_info: Dict[str, Any],
+                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+        return {}
 
     def get_version(self) -> str:
         """Get database version"""

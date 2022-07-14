@@ -323,7 +323,22 @@ class PostgresCollector(BaseDbCollector):
         raw_stats = self._cmd(self.ROW_NUMS_SQL)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
-    def collect_table_level_metrics(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+    def get_target_table_info(self,
+                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+        target_tables_tuple = self._cmd(
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
+        )[0]
+        target_tables = tuple(table[0] for table in target_tables_tuple)
+        target_tables_str = str(target_tables) if len(target_tables) > 1 else (
+            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)"
+        )
+        return {
+            "target_tables": target_tables,
+            "target_tables_str": target_tables_str,
+        }
+
+    def collect_table_level_metrics(self,
+                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
         """Collect table level statistics
         Returns:
             {
@@ -386,7 +401,51 @@ class PostgresCollector(BaseDbCollector):
                     ],
                     "rows": List[List[Any]],
                 },
-                'index_sizes': {
+            }
+        Raises:
+            PostgresCollectorException: Failed to execute the sql query to get metrics
+        """
+        metrics = {}
+        target_tables = target_table_info["target_tables"]
+        target_tables_str = target_table_info["target_tables_str"]
+
+        for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
+            rows, columns = self._cmd(
+                sql_template.format(table_list=target_tables_str),
+            )
+            metrics[field] = {
+                "columns": columns,
+                "rows": [list(row) for row in rows],
+            }
+
+        # calculate bloat ratio
+        metrics["table_bloat_ratios"] = {
+            "columns": ["relid", "bloat_ratio"],
+            "rows": [],
+        }
+        if target_tables:
+            raw_padding_info, _ = self._cmd(
+                PADDING_HELPER_TEMPLATE.format(
+                    table_list=target_tables_str,
+                )
+            )
+            padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
+            bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(
+                target_tables_str,
+            )
+            metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
+                padding_size_dict, bloat_ratio_factors_dict,
+            )
+
+        return metrics
+
+    def collect_index_metrics(self,
+                              target_table_info: Dict[str, Any],
+                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect index statistics
+        Returns:
+            {
+                'indexes_size': {
                     'columns': [
                         'indexrelid',
                         'index_size'
@@ -443,44 +502,12 @@ class PostgresCollector(BaseDbCollector):
             Raises:
             PostgresCollectorException: Failed to execute the sql query to get metrics
         """
-        # pylint: disable=too-many-locals
         metrics = {}
-        target_tables_tuple = self._cmd(
-            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
-        )[0]
-        # pyre-ignore[9]
-        target_tables: Tuple[int] = tuple(table[0] for table in target_tables_tuple)
-        target_tables_str: str = str(target_tables) if len(target_tables) > 1 else (
-            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)"
-        )
-        for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
-            rows, columns = self._cmd(
-                sql_template.format(table_list=target_tables_str),
-            )
-            metrics[field] = {
-                "columns": columns,
-                "rows": [list(row) for row in rows],
-            }
-        
-        # calculate bloat ratio
-        metrics["table_bloat_ratios"] = {
-            "columns": ["relid", "bloat_ratio"],
-            "rows": [],
-        }
-        if target_tables:
-            raw_padding_info, _ = self._cmd(
-                PADDING_HELPER_TEMPLATE.format(
-                    table_list=target_tables_str,
-                )
-            )
-            padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
-            bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(target_tables_str)
-            metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
-                padding_size_dict, bloat_ratio_factors_dict,
-            )
+        target_tables_str = target_table_info["target_tables_str"]
 
         target_indexes_tuple: List[List[int]] = self._cmd(
-            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str),
+            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str,
+                                                      n=num_index_to_collect_stats),
         )[0]
         # pyre-ignore[9]
         target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
@@ -497,15 +524,14 @@ class PostgresCollector(BaseDbCollector):
                 "rows": [list(row) for row in rows],
             }
 
-        metrics["index_sizes"] = {
+        metrics["indexes_size"] = {
             "columns": ["indexrelid", "index_size"],
             "rows": [],
         }
 
         if target_indexes:
-            metrics["index_sizes"]["rows"] = [
+            metrics["indexes_size"]["rows"] = [
                 [index[0], index[1]] for index in target_indexes_tuple]
-
         return metrics
 
     def _calculate_bloat_ratios(

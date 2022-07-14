@@ -113,7 +113,7 @@ WHERE
   relid IN {table_list}
 ORDER BY
   index_size
-DESC LIMIT 10000;
+DESC LIMIT {n};
 """
 
 PG_STAT_USER_INDEXES_TEMPLATE = """
