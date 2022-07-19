@@ -122,7 +122,7 @@ def collect_table_level_data_from_database(driver_conf: Dict[str, Any]) -> Table
         if not driver_conf.get("disable_table_level_stats", False):
             table_level_data = collector.collect_table_level_metrics(target_table_info)
             data.update(table_level_data)
-        if not driver_conf.get("disable_index_level_stats", False):
+        if not driver_conf.get("disable_index_stats", False):
             try:
                 index_data = collector.collect_index_metrics(
                     target_table_info,
