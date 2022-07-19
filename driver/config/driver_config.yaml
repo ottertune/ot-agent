@@ -23,3 +23,4 @@ metric_source: ["cloudwatch"]
 monitor_interval: 60
 table_level_monitor_interval: 3600
 num_table_to_collect_stats: 1000
+num_index_to_collect_stats: 10000
