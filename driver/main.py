@@ -172,7 +172,7 @@ def run() -> None:
     config = get_config(args)
 
     schedule_db_level_monitor_job(config)
-    if not config.disable_table_level_stats or not config.disable_index_level_stats:
+    if not config.disable_table_level_stats or not config.disable_index_stats:
         schedule_table_level_monitor_job(config)
     scheduler.start()
 
