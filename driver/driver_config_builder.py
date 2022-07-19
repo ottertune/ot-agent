@@ -121,7 +121,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_password: StrictStr
 
     disable_table_level_stats: StrictBool = False
-    disable_index_Stats: StrictBool = False
+    disable_index_stats: StrictBool = False
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
