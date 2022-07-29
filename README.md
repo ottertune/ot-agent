@@ -61,7 +61,7 @@ To collect metrics from the database, you need to [configure database settings](
 
 # Deploying a Release
 
-Create a release by [making one in the Github UI](https://github.com/ottertune/ot-agent/releases/new). This will automatically trigger a job to build and push images to public ECR and Dockerhub. Currently each version is named after a character from the show [The Wire](https://en.wikipedia.org/wiki/The_Wire).
+Create a release by [making one in the Github UI](https://github.com/ottertune/ot-agent/releases/new). This will automatically trigger a job to build and push images to public ECR and Dockerhub. Each version name is a two word alliteration of the form: Adjective Animal.
 
 ----
 
