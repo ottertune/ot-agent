@@ -4,6 +4,7 @@ import json
 from typing import Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
+from ot_models.models import AgentRelease, get_latest_agent_version
 
 from driver.exceptions import ComputeServerClientException
 
@@ -16,8 +17,7 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.GATEWAY_TIMEOUT,
 }
 
-# TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.3.10"
+AGENT_VERSION = get_latest_agent_version().version
 
 
 class DBLevelObservation(TypedDict):

@@ -39,6 +39,7 @@ mypy-boto3-rds==1.16.63.0
 mypy-boto3-sts==1.16.63.0
 mypy-extensions==0.4.3
 mysql-connector-python==8.0.19
+ot-models===0.7.10
 parso==0.8.1
 pexpect==4.8.0
 pickleshare==0.7.5
