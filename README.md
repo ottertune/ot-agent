@@ -63,6 +63,12 @@ To collect metrics from the database, you need to [configure database settings](
 
 Create a release by [making one in the Github UI](https://github.com/ottertune/ot-agent/releases/new). This will automatically trigger a job to build and push images to public ECR and Dockerhub. Each version name is a two word alliteration of the form: Adjective Animal.
 
+Once you've deployed the release, please update the fixture located in:
+
+```
+service/backend/settings/fixtures/agent_release.json
+```
+
 ----
 
 # License
