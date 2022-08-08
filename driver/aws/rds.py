@@ -95,3 +95,33 @@ def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
     if db_type == "aurora":  # for aurora mysql 5.6
         db_type = "aurora_mysql"
     return db_type
+
+
+def get_db_parameter_group_name(db_instance_identifier: str, client: RDSClient) -> str:
+    """
+    Get database parameter group name
+    """
+    instance_info = get_db_instance_info(db_instance_identifier, client)
+    return instance_info["DBParameterGroups"][0]["DBParameterGroupName"]
+
+
+def get_db_non_default_parameters(
+    db_instance_identifier: str, client: RDSClient
+) -> str:
+    """
+    Get list of database parameters that are set by the user
+    """
+    db_non_default_parameters = []
+    db_parameter_group_name = get_db_parameter_group_name(
+        db_instance_identifier, client
+    )
+
+    response = client.describe_db_parameters(DBParameterGroupName=db_parameter_group_name)
+
+    db_non_default_parameters = [
+        parameter["ParameterName"]
+        for parameter in resp["Parameters"]
+        if parameter["Source"] == "user"
+    ]
+
+    return db_non_default_parameters
