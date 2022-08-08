@@ -120,7 +120,7 @@ def get_db_non_default_parameters(
 
     db_non_default_parameters = [
         parameter["ParameterName"]
-        for parameter in resp["Parameters"]
+        for parameter in response["Parameters"]
         if parameter["Source"] == "user"
     ]
 
