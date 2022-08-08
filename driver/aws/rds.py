@@ -107,7 +107,7 @@ def get_db_parameter_group_name(db_instance_identifier: str, client: RDSClient) 
 
 def get_db_non_default_parameters(
     db_instance_identifier: str, client: RDSClient
-) -> str:
+) -> List[str]:
     """
     Get list of database parameters that are set by the user
     """
