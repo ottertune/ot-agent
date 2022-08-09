@@ -139,9 +139,7 @@ class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialize
     db_port: StrictInt
     db_version: StrictStr
     db_type: StrictStr
-    db_non_default_parameters: List[
-        str
-    ]
+    db_non_default_parameters: List[str]
 
 
 class PartialConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: uninitialized variables
