@@ -95,6 +95,7 @@ def collect_db_level_data_from_database(driver_conf: Dict[str, Any]) -> DBLevelO
         "row_num_stats": row_num_stats,
         "db_key": driver_conf["db_key"],
         "organization_id": driver_conf["organization_id"],
+        "non_default_knobs": driver_conf["db_non_default_parameters"]
     }
     return observation
 
