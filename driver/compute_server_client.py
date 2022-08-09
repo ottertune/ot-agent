@@ -1,7 +1,7 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
 import json
-from typing import Dict, Any, TypedDict, Set
+from typing import List, Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
 
@@ -31,6 +31,7 @@ class DBLevelObservation(TypedDict):
     ]  # summary information like observation time, database version, etc
     db_key: str
     organization_id: str
+    non_default_knobs: List[str]
 
 
 class TableLevelObservation(TypedDict):
