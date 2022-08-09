@@ -137,7 +137,7 @@ def test_partial_config_from_file_missing_value(
 def test_partial_config_from_rds_success(
     test_config_data: Dict[str, Any]
 ) -> None:
-    # rds config success: all key values intact 
+    # rds config success: all key values intact
     test_data_from_rds = test_config_data["rds"]
     partial_config = PartialConfigFromRDS(**test_data_from_rds)
     assert partial_config.db_type == "mysql"
@@ -147,7 +147,7 @@ def test_partial_config_from_rds_success(
     assert partial_config.db_non_default_parameters == ['test_parameter_1', 'test_parameter_2']
 
 
-def test_partial_config_from_file_invalid_type(
+def test_partial_config_from_rds_invalid_type(
     test_config_data: Dict[str, Any]
 ) -> None:
     # wrong type db_version fetched from env, string is expected, but int found
@@ -158,7 +158,7 @@ def test_partial_config_from_file_invalid_type(
     assert "db_version" in str(ex.value)
 
 
-def test_partial_config_from_file_missing_value(
+def test_partial_config_from_rds_missing_value(
     test_config_data: Dict[str, Any]
 ) -> None:
     # missing option db_non_default_parameters fetched from rds
