@@ -186,9 +186,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_index_stats: bool
     num_index_to_collect_stats: int
 
-    db_non_default_parameters: List[
-        str
-    ]
+    db_non_default_parameters: List[str]
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
