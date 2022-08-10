@@ -2,7 +2,7 @@
 import json
 import time
 
-from typing import Dict, Any, Union
+from typing import List, Dict, Any, Union
 import mysql.connector
 
 from driver.collector.collector_factory import get_mysql_version, connect_mysql
@@ -60,7 +60,7 @@ def _get_driver_conf(
     mysql_database: str,
     num_table_to_collect_stats: int,
     num_index_to_collect_stats: int,
-) -> Dict[str, Union[int, str]]:
+) -> Dict[str, Union[int, str, List[str]]]:
     # pylint: disable=too-many-arguments
     conf = {
         "db_user": mysql_user,
