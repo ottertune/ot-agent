@@ -57,6 +57,13 @@ To collect metrics from the database, you need to [configure database settings](
 | make docker [VERSION=0.1.0] | to build the docker image with provided tag (default: `ottertune/agent:0.1.0`).                                                                                                                                                                                                                                                                                              |
 | make publish                | builds the Docker image for `linux/amd64` and `linux/arm64`, then uploads the images to Dockerhub. To use, you must first run create a Docker builder using the following command:  ```bash docker buildx create --name mybuilder --use ```  `mybuilder` can be any name. You only need to run this command once; after which, you can run `make publish` whenever you want. |
 
+## Code Flow 
+
+A basic diagram showing the logic flow of different components: 
+https://www.figma.com/file/SwvHqpya7BGBj9MHot6dGC/OT-Agent?node-id=0%3A1
+
+<img width="1295" alt="Screen Shot 2022-08-10 at 11 39 45 AM" src="https://user-images.githubusercontent.com/5196925/183947336-b0743c9e-2a75-4cfe-af4a-c81bbdecbd6f.png">
+
 ----
 
 # Deploying a Release
