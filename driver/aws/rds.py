@@ -129,7 +129,7 @@ def get_db_non_default_parameters(
                 DBParameterGroupName=db_parameter_group_name
             )
             db_parameters = response["Parameters"]
-        except KeyError() as ex:
+        except KeyError as ex:
             logging.warning(
                 "RDS client: Unable to collect parameters for Parameter Group Name %s",
                 db_parameter_group_name,
