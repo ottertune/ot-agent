@@ -104,9 +104,9 @@ def get_db_parameter_group_name(db_instance_identifier: str, client: RDSClient) 
     """
     db_parameter_group_name = ""
     instance_info = get_db_instance_info(db_instance_identifier, client)
-    parameter_groups = instance_info.get("DBParameterGroups", "")
+    parameter_groups = instance_info.get("DBParameterGroups")
     if parameter_groups:
-        db_parameter_group_name = parameter_groups[0].get("DBParameterGroupName", "")
+        db_parameter_group_name = parameter_groups[0].get("DBParameterGroupName")
 
     if not db_parameter_group_name:
         logging.warning(
@@ -142,10 +142,10 @@ def get_db_non_default_parameters(
             )
 
         db_non_default_parameters = [
-            parameter.get("ParameterName", "")
+            parameter.get("ParameterName")
             for parameter in db_parameters
-            if parameter.get("Source", "") == "user"
-            and parameter.get("ParameterName", "")
+            if parameter.get("Source") == "user"
+            and "ParameterName" in parameter
         ]
     else:
         logging.warning(
