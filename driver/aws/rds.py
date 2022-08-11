@@ -128,9 +128,8 @@ def get_db_non_default_parameters(
             response = client.describe_db_parameters(
                 DBParameterGroupName=db_parameter_group_name
             )
-            response.raise_for_status()
-            db_parameters = response.get("Parameters", [])
-        except Exception as ex:
+            db_parameters = response["Parameters"]
+        except KeyError() as ex:
             logging.warning(
                 "RDS client: Unable to collect parameters for Parameter Group Name %s",
                 db_parameter_group_name,
