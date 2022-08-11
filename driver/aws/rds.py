@@ -108,6 +108,12 @@ def get_db_parameter_group_name(db_instance_identifier: str, client: RDSClient) 
     if parameter_groups:
         db_parameter_group_name = parameter_groups[0].get("DBParameterGroupName", "")
 
+    if not db_parameter_group_name:
+        logging.warning(
+            "RDS client: Unable to get parameter group name for instance %s",
+            db_instance_identifier,
+        )
+
     return db_parameter_group_name
 
 
@@ -143,7 +149,7 @@ def get_db_non_default_parameters(
         ]
     else:
         logging.warning(
-            "RDS client: Unable to get parameter group name for instance %s",
+            "RDS client: Cannot fetch parameters without parameter group name for instance %s",
             db_instance_identifier,
         )
 
