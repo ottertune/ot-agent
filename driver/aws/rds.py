@@ -1,5 +1,6 @@
 """Library for aws Relational Database Service (sts) methods"""
 
+import logging
 from typing import List, Optional
 from functools import lru_cache
 
@@ -122,12 +123,29 @@ def get_db_non_default_parameters(
     )
 
     if db_parameter_group_name:
-        response = client.describe_db_parameters(DBParameterGroupName=db_parameter_group_name)
+        db_parameters = []
+        try:
+            response = client.describe_db_parameters(
+                DBParameterGroupName=db_parameter_group_name
+            )
+            response.raise_for_status()
+            db_parameters = response.get("Parameters", [])
+        except Exception as ex:
+            logging.warning(
+                "RDS client: Unable to collect parameters for Parameter Group Name %s",
+                db_parameter_group_name,
+            )
 
         db_non_default_parameters = [
             parameter.get("ParameterName", "")
-            for parameter in response.get("Parameters", [])
-            if parameter.get("Source", "") == "user" and parameter.get("ParameterName", "")
+            for parameter in db_parameters
+            if parameter.get("Source", "") == "user"
+            and parameter.get("ParameterName", "")
         ]
+    else:
+        logging.warning(
+            "RDS client: Unable to get parameter group name for instance %s",
+            db_instance_identifier,
+        )
 
     return db_non_default_parameters
