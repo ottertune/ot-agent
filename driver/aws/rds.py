@@ -1,5 +1,6 @@
 """Library for aws Relational Database Service (sts) methods"""
 
+import logging
 from typing import List, Optional
 from functools import lru_cache
 
@@ -95,3 +96,61 @@ def get_db_type(db_instance_identifier: str, client: RDSClient) -> str:
     if db_type == "aurora":  # for aurora mysql 5.6
         db_type = "aurora_mysql"
     return db_type
+
+
+def get_db_parameter_group_name(db_instance_identifier: str, client: RDSClient) -> str:
+    """
+    Get database parameter group name
+    """
+    db_parameter_group_name = ""
+    instance_info = get_db_instance_info(db_instance_identifier, client)
+    parameter_groups = instance_info.get("DBParameterGroups")
+    if parameter_groups:
+        db_parameter_group_name = parameter_groups[0].get("DBParameterGroupName")
+
+    if not db_parameter_group_name:
+        logging.warning(
+            "RDS client: Unable to get parameter group name for instance %s",
+            db_instance_identifier,
+        )
+
+    return db_parameter_group_name
+
+
+def get_db_non_default_parameters(
+    db_instance_identifier: str, client: RDSClient
+) -> List[str]:
+    """
+    Get list of database parameters that are set by the user
+    """
+    db_non_default_parameters = []
+    db_parameter_group_name = get_db_parameter_group_name(
+        db_instance_identifier, client
+    )
+
+    if db_parameter_group_name:
+        db_parameters = []
+        try:
+            response = client.describe_db_parameters(
+                DBParameterGroupName=db_parameter_group_name
+            )
+            db_parameters = response["Parameters"]
+        except KeyError as ex:
+            logging.warning(
+                "RDS client: Unable to collect parameters for Parameter Group Name %s",
+                db_parameter_group_name,
+            )
+
+        db_non_default_parameters = [
+            parameter.get("ParameterName")
+            for parameter in db_parameters
+            if parameter.get("Source") == "user"
+            and "ParameterName" in parameter
+        ]
+    else:
+        logging.warning(
+            "RDS client: Cannot fetch parameters without parameter group name for instance %s",
+            db_instance_identifier,
+        )
+
+    return db_non_default_parameters

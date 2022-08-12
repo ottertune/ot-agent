@@ -18,7 +18,13 @@ from pydantic import (
 )
 import yaml
 
-from driver.aws.rds import get_db_version, get_db_port, get_db_hostname, get_db_type
+from driver.aws.rds import (
+    get_db_version,
+    get_db_port,
+    get_db_hostname,
+    get_db_type,
+    get_db_non_default_parameters,
+)
 from driver.aws.wrapper import AwsWrapper
 from driver.exceptions import DriverConfigException
 
@@ -133,6 +139,7 @@ class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialize
     db_port: StrictInt
     db_version: StrictStr
     db_type: StrictStr
+    db_non_default_parameters: List[str]
 
 
 class PartialConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: uninitialized variables
@@ -176,6 +183,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     table_level_monitor_interval: int
     disable_index_stats: bool
     num_index_to_collect_stats: int
+
+    db_non_default_parameters: List[str]
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -272,7 +281,10 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
             "db_port": get_db_port(db_instance_identifier, self.rds_client),
             "db_version": get_db_version(db_instance_identifier, self.rds_client),
-            "db_type": get_db_type(db_instance_identifier, self.rds_client)
+            "db_type": get_db_type(db_instance_identifier, self.rds_client),
+            "db_non_default_parameters": get_db_non_default_parameters(
+                db_instance_identifier, self.rds_client
+            )
         }
 
         try:

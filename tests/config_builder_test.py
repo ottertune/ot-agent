@@ -11,6 +11,7 @@ import pytest
 
 from driver.driver_config_builder import (
     PartialConfigFromFile,
+    PartialConfigFromRDS,
     DriverConfigBuilder,
 )
 
@@ -58,13 +59,23 @@ def _test_config_data() -> Dict[str, Any]:
         "tune_interval": 600,
     }
 
+    partial_config_from_rds: Dict[str, Any] = {
+        "db_type": "mysql",
+        "db_host": "test_host",
+        "db_port": 3306,
+        "db_version": "14_2",
+        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2']
+    }
+
     config: Dict[str, Any] = {}
     config.update(partial_config_from_file)
     config.update(partial_config_from_server)
+    config.update(partial_config_from_rds)
 
     return dict(
         file=partial_config_from_file,
         server=partial_config_from_server,
+        rds=partial_config_from_rds,
     )
 
 
@@ -120,6 +131,42 @@ def test_partial_config_from_file_missing_value(
     with pytest.raises(ValidationError) as ex:
         PartialConfigFromFile(**test_data_from_file)
     assert "server_url" in str(ex.value)
+
+
+# Test PartialConfigFromRDS
+def test_partial_config_from_rds_success(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # rds config success: all key values intact
+    test_data_from_rds = test_config_data["rds"]
+    partial_config = PartialConfigFromRDS(**test_data_from_rds)
+    assert partial_config.db_type == "mysql"
+    assert partial_config.db_host == "test_host"
+    assert partial_config.db_port == 3306
+    assert partial_config.db_version == "14_2"
+    assert partial_config.db_non_default_parameters == ['test_parameter_1', 'test_parameter_2']
+
+
+def test_partial_config_from_rds_invalid_type(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # wrong type db_version fetched from env, string is expected, but int found
+    test_data_from_rds = test_config_data["rds"]
+    test_data_from_rds["db_version"] = 10
+    with pytest.raises(ValidationError) as ex:
+        PartialConfigFromRDS(**test_data_from_rds)
+    assert "db_version" in str(ex.value)
+
+
+def test_partial_config_from_rds_missing_value(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # missing option db_non_default_parameters fetched from rds
+    test_data_from_rds = test_config_data["rds"]
+    test_data_from_rds.pop("db_non_default_parameters")
+    with pytest.raises(ValidationError) as ex:
+        PartialConfigFromRDS(**test_data_from_rds)
+    assert "db_non_default_parameters" in str(ex.value)
 
 
 def test_create_driver_config_builder_invalid_config_path() -> None:
