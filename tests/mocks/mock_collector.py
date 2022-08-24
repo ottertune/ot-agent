@@ -88,6 +88,10 @@ class MockCollector(BaseDbCollector):
                               num_index_to_collect_stats: int) -> Dict[str, Any]:
         return {}
 
+    def collect_query_metrics(self,
+                              num_query_to_collect_stats: int) -> Dict[str, Any]:
+        return {}
+
     def get_version(self) -> str:
         """Get database version"""
         return "0.0"

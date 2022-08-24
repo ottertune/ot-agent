@@ -337,3 +337,31 @@ def test_mysql_collect_index_metrics(
     metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
 
     assert metrics["indexes_size"]["rows"][1][2] == "idx_test1"
+
+
+def test_mysql_collect_query_metrics(
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    num_query_to_collect_stats = 10
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+
+    _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
+    _db_query(conn, "CREATE DATABASE testdb;")
+    _db_query(conn, "USE testdb;")
+    _db_query(conn, "CREATE TABLE IF NOT EXISTS test1 "
+                    "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
+                    "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));")
+    _db_query(conn, "INSERT IGNORE INTO test1(id, num, data) values (1, 2, 'abc');")
+    _db_query(conn, "ALTER TABLE test1 ADD INDEX idx_test1(num);")
+
+    time.sleep(1)
+    version = get_mysql_version(conn)
+    collector = MysqlCollector(conn, version)
+    metrics = collector.collect_query_metrics(num_query_to_collect_stats)
+
+    assert metrics["events_statements_summary_by_digest"]["rows"]

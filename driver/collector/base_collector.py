@@ -45,5 +45,10 @@ class BaseDbCollector(ABC):
         """Collect index statistics"""
 
     @abstractmethod
+    def collect_query_metrics(self,
+                              num_query_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect query statistics"""
+
+    @abstractmethod
     def get_version(self) -> str:
         """Get database version"""

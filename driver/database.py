@@ -5,7 +5,11 @@ import logging
 import time
 from typing import Dict, Any
 
-from driver.compute_server_client import DBLevelObservation, TableLevelObservation
+from driver.compute_server_client import (
+    DBLevelObservation,
+    TableLevelObservation,
+    QueryObservation,
+)
 from driver.collector.collector_factory import get_collector
 from driver.driver_config_builder import DriverConfig
 from driver.exceptions import DbCollectorException
@@ -48,6 +52,24 @@ def collect_table_level_observation_for_on_prem(config: DriverConfig) -> TableLe
         PostgresCollectorException: unable to connect to Postgres database or get version.
     """
     observation = collect_table_level_data_from_database(config._asdict())
+    return observation
+
+
+def collect_query_observation_for_on_prem(config: DriverConfig) -> QueryObservation:
+    """
+    Get the query observation data for the target cloud database.
+
+    Args:
+        config: driver configuration for cloud deployment.
+    Returns:
+        Query observation data from the target database.
+    Raises:
+        DriverConfigException: invalid database configuration.
+        DbCollectorException: database type is not supported.
+        MysqlCollectorException: unable to connect to MySQL database or get version.
+        PostgresCollectorException: unable to connect to Postgres database or get version.
+    """
+    observation = collect_query_observation_from_database(config._asdict())
     return observation
 
 
@@ -142,5 +164,37 @@ def collect_table_level_data_from_database(driver_conf: Dict[str, Any]) -> Table
         "summary": summary,
         "db_key": driver_conf["db_key"],
         "organization_id": driver_conf["organization_id"],
+    }
+    return observation
+
+
+def collect_query_observation_from_database(config: Dict[str, Any]) -> QueryObservation:
+    """
+    Collect query metrics from databases and compress the data
+
+    Args:
+        config: driver configuration.
+    Returns:
+        Collected data from the target database.
+    Raises:
+        DriverConfigException: invalid database configuration.
+        DbCollectorException: database type is not supported.
+        MysqlCollectorException: unable to connect to MySQL database or get version.
+        PostgresCollectorException: unable to connect to Postgres database or get version.
+    """
+    with get_collector(config) as collector:
+        observation_time = int(time.time())
+        query_metrics = collector.collect_query_metrics(int(config["num_query_to_collect"]))
+        version = collector.get_version()
+        summary: Dict[str, Any] = {
+            "version": version,
+            "observation_time": observation_time,
+        }
+
+    observation: QueryObservation = {
+        "data": query_metrics,
+        "summary": summary,
+        "db_key": config["db_key"],
+        "organization_id": config["organization_id"],
     }
     return observation

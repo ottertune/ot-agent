@@ -11,6 +11,7 @@ from driver.compute_server_client import ComputeServerClient
 from driver.database import (
     collect_db_level_observation_for_on_prem,
     collect_table_level_observation_for_on_prem,
+    collect_query_observation_for_on_prem,
 )
 
 
@@ -18,6 +19,7 @@ TUNE_JOB_ID = "tune_job"
 DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
+QUERY_MONITOR_JOB_ID = "query_monitor_job"
 
 
 def driver_pipeline(
@@ -38,6 +40,9 @@ def driver_pipeline(
         _db_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+    elif job_id == QUERY_MONITOR_JOB_ID:
+        _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+
 
 def _db_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
@@ -59,6 +64,7 @@ def _db_level_monitor_driver_pipeline_for_on_prem(
     logging.debug("Posting db level observation data to the server.")
     compute_server_client.post_db_level_observation(db_level_observation)
 
+
 def _table_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
@@ -79,6 +85,24 @@ def _table_level_monitor_driver_pipeline_for_on_prem(
     logging.debug("Posting table level observation data to the server.")
     compute_server_client.post_table_level_observation(table_level_observation)
 
+
+def _query_monitor_driver_pipeline_for_on_prem(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects queries every day
+    Args:
+        config: Driver configuration.
+        compute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    query_observation = collect_query_observation_for_on_prem(config)
+    compute_server_client.post_query_observation(query_observation)
+
+
 def _get_interval(config: DriverConfig, job_id: str) -> int:
     """Get the scheduled time interval (sec) based on job id."""
 
@@ -86,6 +110,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.monitor_interval)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.table_level_monitor_interval)
+    elif QUERY_MONITOR_JOB_ID in job_id:
+        interval_s = int(config.query_monitor_interval)
     else:
         raise ValueError(f"Job {job_id} is not supported")
     return interval_s

@@ -71,6 +71,17 @@ AND
     (OBJECT_SCHEMA,OBJECT_NAME,INDEX_NAME) IN {schema_table_index_list};
 """
 
+QUERY_STATS_SQL_TEMPLATE = """
+SELECT
+    *
+FROM
+    performance_schema.events_statements_summary_by_digest
+ORDER BY
+    COUNT_STAR DESC
+LIMIT
+    {n};
+"""
+
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -415,8 +426,8 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             }
         }
 
-    def _find_columns(self,
-                      columns: List[str],
+    @staticmethod
+    def _find_columns(columns: List[str],
                       rows: List[List[Any]],
                       target_columns: List[str]) -> List[List[Any]]:
         indices = [columns.index(target_col) for target_col in target_columns]
@@ -467,6 +478,20 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             buffer_miss_ratio=buffer_miss_ratio, read_write_ratio=read_write_ratio
         )
         return derived_metrics
+
+    def collect_query_metrics(self,
+                              num_query_to_collect_stats: int) -> Dict[str, Any]:
+        """Collect query statistics"""
+        query_values, query_columns = self._cmd(
+            QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats))
+        query_rows = [list(row) for row in query_values]
+
+        return {
+            "events_statements_summary_by_digest": {
+                "columns": query_columns,
+                "rows": query_rows,
+            }
+        }
 
     @staticmethod
     def _truncate_innodb_status(status: str) -> str:

@@ -1,6 +1,7 @@
 """Tests for interacting with Mysql database locally"""
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Callable, Dict, List, NoReturn, Union, Optional
 from unittest.mock import MagicMock, PropertyMock
 import pytest
@@ -177,6 +178,66 @@ class SqlData:
             ["STAT_VALUE"],
             ["SIZE_IN_BYTE"]
         ]
+        self.query_stats = [[
+            None,
+            "SELECT COUNT ( * ) FROM `information_schema` . `PLUGINS` WHERE `PLUGIN_NAME` = ?",
+            435321,
+            282100585546000,
+            427483000,
+            648028000,
+            51135477000,
+            679796000000,
+            0,
+            0,
+            0,
+            435321,
+            20895408,
+            435321,
+            435321,
+            0,
+            0,
+            0,
+            0,
+            435321,
+            0,
+            0,
+            0,
+            0,
+            435321,
+            0,
+            datetime.strptime("2022-07-28 19:21:48.350718", "%Y-%m-%d %H:%M:%S.%f"),
+            datetime.strptime("2022-08-22 23:58:23.005279", "%Y-%m-%d %H:%M:%S.%f"),
+        ]]
+        self.query_stats_meta = [
+            ["SCHEMA_NAME"],
+            ["DIGEST_TEXT"],
+            ["COUNT_STAR"],
+            ["SUM_TIMER_WAIT"],
+            ["MIN_TIMER_WAIT"],
+            ["AVG_TIMER_WAIT"],
+            ["MAX_TIMER_WAIT"],
+            ["SUM_LOCK_TIME"],
+            ["SUM_ERRORS"],
+            ["SUM_WARNINGS"],
+            ["SUM_ROWS_AFFECTED"],
+            ["SUM_ROWS_SENT"],
+            ["SUM_ROWS_EXAMINED"],
+            ["SUM_CREATED_TMP_DISK_TABLES"],
+            ["SUM_CREATED_TMP_TABLES"],
+            ["SUM_SELECT_FULL_JOIN"],
+            ["SUM_SELECT_FULL_RANGE_JOIN"],
+            ["SUM_SELECT_RANGE"],
+            ["SUM_SELECT_RANGE_CHECK"],
+            ["SUM_SELECT_SCAN"],
+            ["SUM_SORT_MERGE_PASSES"],
+            ["SUM_SORT_RANGE"],
+            ["SUM_SORT_ROWS"],
+            ["SUM_SORT_SCAN"],
+            ["SUM_NO_INDEX_USED"],
+            ["SUM_NO_GOOD_INDEX_USED"],
+            ["FIRST_SEEN"],
+            ["LAST_SEEN"],
+        ]
 
     def expected_default_result(self) -> Dict[str, Any]:
         """
@@ -276,6 +337,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "mysql.innodb_index_stats".lower() in sql.lower():
             result.value = data.index_size
             result.meta = data.index_size_meta
+        elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
+            result.value = data.query_stats
+            result.meta = data.query_stats_meta
 
     return sql_fn
 
@@ -537,3 +601,80 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
         target_table_info = collector.get_target_table_info(10)
         collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message
+
+
+def test_collect_query_metric_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    res = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, res)
+    mock_cursor.fetchall.side_effect = lambda: res.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
+    collector = MysqlCollector(mock_conn, "7.9.9")
+    assert collector.collect_query_metrics(num_query_to_collect_stats=1) == \
+           {'events_statements_summary_by_digest': {
+               'columns': [
+                   'SCHEMA_NAME',
+                   'DIGEST_TEXT',
+                   'COUNT_STAR',
+                   'SUM_TIMER_WAIT',
+                   'MIN_TIMER_WAIT',
+                   'AVG_TIMER_WAIT',
+                   'MAX_TIMER_WAIT',
+                   'SUM_LOCK_TIME',
+                   'SUM_ERRORS',
+                   'SUM_WARNINGS',
+                   'SUM_ROWS_AFFECTED',
+                   'SUM_ROWS_SENT',
+                   'SUM_ROWS_EXAMINED',
+                   'SUM_CREATED_TMP_DISK_TABLES',
+                   'SUM_CREATED_TMP_TABLES',
+                   'SUM_SELECT_FULL_JOIN',
+                   'SUM_SELECT_FULL_RANGE_JOIN',
+                   'SUM_SELECT_RANGE',
+                   'SUM_SELECT_RANGE_CHECK',
+                   'SUM_SELECT_SCAN',
+                   'SUM_SORT_MERGE_PASSES',
+                   'SUM_SORT_RANGE',
+                   'SUM_SORT_ROWS',
+                   'SUM_SORT_SCAN',
+                   'SUM_NO_INDEX_USED',
+                   'SUM_NO_GOOD_INDEX_USED',
+                   'FIRST_SEEN',
+                   'LAST_SEEN',],
+               'rows': [
+                   [
+                       None,
+                       'SELECT COUNT ( * ) FROM '
+                       '`information_schema` . '
+                       '`PLUGINS` WHERE '
+                       '`PLUGIN_NAME` = ?',
+                       435321,
+                       282100585546000,
+                       427483000,
+                       648028000,
+                       51135477000,
+                       679796000000,
+                       0,
+                       0,
+                       0,
+                       435321,
+                       20895408,
+                       435321,
+                       435321,
+                       0,
+                       0,
+                       0,
+                       0,
+                       435321,
+                       0,
+                       0,
+                       0,
+                       0,
+                       435321,
+                       0,
+                       datetime(2022, 7, 28, 19, 21, 48, 350718),
+                       datetime(2022, 8, 22, 23, 58, 23, 5279),
+                   ]
+               ]}
+           }

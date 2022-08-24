@@ -1,12 +1,15 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
 import json
+import zlib
 from typing import List, Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
 
 from driver.exceptions import ComputeServerClientException
 
+
+TIMEOUT_SEC = 30
 SECONDS_TO_MS = 1000
 RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.REQUEST_TIMEOUT,
@@ -36,6 +39,17 @@ class DBLevelObservation(TypedDict):
 
 class TableLevelObservation(TypedDict):
     """Table level observation data collected from the target database."""
+
+    data: Dict[str, Any]
+    summary: Dict[
+        str, Any
+    ]  # summary information like observation time, database version, etc
+    db_key: str
+    organization_id: str
+
+
+class QueryObservation(TypedDict):
+    """Query observation data collected from the target database."""
 
     data: Dict[str, Any]
     summary: Dict[
@@ -85,7 +99,7 @@ class ComputeServerClient:
         url = f"{self._server_url}/observation/"
         try:
             response = self._req_session.post(
-                url, json=data, headers=headers, timeout=10
+                url, json=data, headers=headers, timeout=TIMEOUT_SEC
             )
             response.raise_for_status()
         except Exception as ex:
@@ -108,9 +122,34 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json"
         try:
             response = self._req_session.post(
-                url, data=data_str, headers=headers, timeout=10
+                url, data=data_str, headers=headers, timeout=TIMEOUT_SEC
             )
             response.raise_for_status()
         except Exception as ex:
             msg = "Failed to post the table level observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+
+    def post_query_observation(self, data: QueryObservation) -> None:
+        """Post **COMPRESSED** query observation to the server
+        Args:
+            session_id: Session that the data is uploaded to.
+            data: Collected data from the target database.
+        Raises:
+            ComputeServerClientException: Failed to post the observation.
+        """
+        url = f"{self._server_url}/query_observation/"
+        # pylint: disable=c-extension-no-member
+        compressed_data = zlib.compress(json.dumps(data, indent=2).encode('utf-8'))
+
+        try:
+            response = self._req_session.post(
+                url, data=compressed_data, timeout=TIMEOUT_SEC,
+                headers={
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Content-Encoding": "gzip",
+                },
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the query observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
