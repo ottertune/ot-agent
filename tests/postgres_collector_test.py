@@ -1,9 +1,10 @@
 """Tests for interacting with Postgres database locally"""
+import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, NoReturn, List, Callable, Tuple
 from unittest.mock import MagicMock, PropertyMock
-import json
+
 import mock
 import psycopg2
 import pytest
@@ -16,6 +17,9 @@ from driver.collector.postgres_collector import (
     INDEX_STAT,
     INDEX_STATIO,
     ROW_NUM_STAT,
+    VACUUM_PROGRESS_STAT,
+    VACUUM_ACTIVITY_STAT,
+    VACUUM_USER_TABLES_STAT,
 )
 from driver.collector.pg_table_level_stats_sqls import (
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
@@ -31,8 +35,7 @@ from driver.collector.pg_table_level_stats_sqls import (
 from driver.exceptions import PostgresCollectorException
 from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
 
-
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,too-many-lines
 
 
 @dataclass
@@ -48,19 +51,24 @@ class SqlData:
     metas: Dict[str, List[List[str]]]
     aggregated_metas: Dict[str, List[List[str]]]
     local_metrics: Dict[str, Any]
-    aggregated_local_metrics: Dict[str, Any]
 
     def __init__(self) -> None:
-        self.views = { # pyre-ignore[8]
+        self.views = {  # pyre-ignore[8]
             "pg_stat_archiver": [["g1", 1]],
             "pg_stat_bgwriter": [["g2", 2]],
             "pg_stat_database": [["dl1", 1, 1], ["dl2", 2, 2]],
             "pg_stat_database_conflicts": [["dl3", 3, 3], ["dl4", 4, 4]],
             "pg_stat_user_tables": [["tl1", datetime(2020, 1, 1, 0, 0, 0, 0), 1]],
+            "pg_stat_user_tables_raw": [["tl1", datetime(2020, 1, 1, 0, 0, 0, 0), 1]],
             "pg_statio_user_tables": [["tl2", datetime(2020, 1, 1, 0, 0, 0, 0), 2]],
             "pg_stat_user_indexes": [["il1", 1, 1]],
             "pg_statio_user_indexes": [["il2", 2, 2]],
             "pg_stat_statements": [[123, 2, 1.5]],
+            "pg_stat_activity": [
+                [1, "dl1", "act1", "vacuum tl1;"],
+                [2, "dl2", "act2", "autovacuum: VACUUM ANALYZE dl2.tl2"],
+            ],
+            "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
             "row_stats": [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)],
             "top_tables": [(1234,)],
             "table_level_pg_stat_user_tables": [
@@ -169,9 +177,7 @@ class SqlData:
                     8,
                 ),
             ],
-            "pg_stat_user_indexes_top_n": [
-                (24889, 16384)
-            ],
+            "pg_stat_user_indexes_top_n": [(24889, 16384)],
             "pg_stat_user_indexes_all_fields": [
                 (
                     24882,
@@ -216,7 +222,7 @@ class SqlData:
                     ":vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 "
                     ":varnoold 1 :varoattno 4 :location 135}) :location 131}",
                 )
-            ]
+            ],
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -232,10 +238,13 @@ class SqlData:
             "pg_stat_database": [["datname"], ["local_count"], ["datid"]],
             "pg_stat_database_conflicts": [["datname"], ["local_count"], ["datid"]],
             "pg_stat_user_tables": [["relname"], ["table_date"], ["relid"]],
+            "pg_stat_user_tables_raw": [["relname"], ["last_autovacuum"], ["relid"]],
             "pg_statio_user_tables": [["relname"], ["table_date"], ["relid"]],
             "pg_stat_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_statio_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_stat_statements": [["queryid"], ["calls"], ["avg_time_ms"]],
+            "pg_stat_activity": [["pid"], ["datid"], ["state"], ["query"]],
+            "pg_stat_progress_vacuum": [["pid"], ["relid"], ["phase"]],
             "row_stats": [
                 ["num_tables"],
                 ["num_empty_tables"],
@@ -359,54 +368,10 @@ class SqlData:
         self.local_metrics = {
             "database": {
                 "pg_stat_database": {
-                    1: {"datname": "dl1", "local_count": 1, "datid": 1},
-                    2: {"datname": "dl2", "local_count": 2, "datid": 2},
-                },
-                "pg_stat_database_conflicts": {
-                    3: {"datname": "dl3", "local_count": 3, "datid": 3},
-                    4: {"datname": "dl4", "local_count": 4, "datid": 4},
-                },
-            },
-            "table": {
-                "pg_stat_user_tables": {
-                    1: {
-                        "relname": "tl1",
-                        "table_date": "2020-01-01T00:00:00",
-                        "relid": 1,
-                    }
-                },
-                "pg_statio_user_tables": {
-                    2: {
-                        "relname": "tl2",
-                        "table_date": "2020-01-01T00:00:00",
-                        "relid": 2,
-                    }
-                },
-            },
-            "index": {
-                "pg_stat_user_indexes": {
-                    1: {"relname": "il1", "local_count": 1, "indexrelid": 1}
-                },
-                "pg_statio_user_indexes": {
-                    2: {"relname": "il2", "local_count": 2, "indexrelid": 2}
-                },
-            },
-        }
-        self.aggregated_local_metrics = {
-            "database": {
-                "pg_stat_database": {
-                    "aggregated": {"local_count": 1, "local_count2": 1},
+                    "aggregated": {"local_count": 1, "local_count2": 1}
                 },
                 "pg_stat_database_conflicts": {
                     "aggregated": {"local_count": 2, "local_count2": 2}
-                },
-            },
-            "table": {
-                "pg_stat_user_tables": {
-                    "aggregated": {"local_count": 3, "local_count2": 3}
-                },
-                "pg_statio_user_tables": {
-                    "aggregated": {"local_count": 4, "local_count2": 4}
                 },
             },
             "index": {
@@ -417,16 +382,51 @@ class SqlData:
                     "aggregated": {"local_count": 6, "local_count2": 6}
                 },
             },
+            "process": {
+                "pg_stat_vacuum_activity": {
+                    1: {
+                        "datid": "dl1",
+                        "pid": 1,
+                        "state": "act1",
+                        "query": "vacuum tl1",
+                    },
+                    2: {
+                        "datid": "dl2",
+                        "pid": 2,
+                        "state": "act2",
+                        "query": "autovacuum: VACUUM ANALYZE dl2.tl2",
+                    },
+                },
+                "pg_stat_progress_vacuum": {
+                    1: {"phase": "phase1", "pid": 1, "relid": "tl1"},
+                    2: {"phase": "phase2", "pid": 2, "relid": "tl2"},
+                },
+            },
+            "table": {
+                "pg_stat_vacuum_tables": {
+                    1: {
+                        "last_autovacuum": "2020-01-01T00:00:00",
+                        "relid": 1,
+                        "relname": "tl1",
+                    }
+                },
+                "pg_stat_user_tables": {
+                    "aggregated": {"local_count": 3, "local_count2": 3}
+                },
+                "pg_statio_user_tables": {
+                    "aggregated": {"local_count": 4, "local_count2": 4}
+                },
+            },
         }
         self.padding_query_metas: List[List[str]] = [
             ["relid", "attname", "attalign", "avg_width"]
         ]
         self.padding_query_values: List[Tuple[int, str, str, int]] = [
-            (1234, 'id', 'i', 4),
-            (1234, 'value', 'd', 8),
-            (1234, 'fixture_id', 'i', 4),
-            (1234, 'observation_id', 'i', 4),
-            (1234, 'session_id', 'i', 4),
+            (1234, "id", "i", 4),
+            (1234, "value", "d", 8),
+            (1234, "fixture_id", "i", 4),
+            (1234, "observation_id", "i", 4),
+            (1234, "session_id", "i", 4),
         ]
 
     # @staticmethod
@@ -441,7 +441,7 @@ class SqlData:
                     )
                 },
             },
-            "local": self.aggregated_local_metrics,
+            "local": self.local_metrics,
         }
 
 
@@ -510,18 +510,32 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == ROW_NUM_STAT:
             result.value = data.views["row_stats"]
             result.meta = data.metas["row_stats"]
-        elif TOP_N_LARGEST_TABLES_SQL_TEMPLATE[
-            :TOP_N_LARGEST_TABLES_SQL_TEMPLATE.index("LIMIT")
-        ] in sql:
+        elif (
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE[
+                : TOP_N_LARGEST_TABLES_SQL_TEMPLATE.index("LIMIT")
+            ]
+            in sql
+        ):
             result.value = data.views["top_tables"]
             result.meta = data.metas["top_tables"]
-        elif PG_STAT_TABLE_STATS_TEMPLATE[:PG_STAT_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+        elif (
+            PG_STAT_TABLE_STATS_TEMPLATE[: PG_STAT_TABLE_STATS_TEMPLATE.index("IN")]
+            in sql
+        ):
             result.value = data.views["table_level_pg_stat_user_tables"]
             result.meta = data.metas["table_level_pg_stat_user_tables"]
-        elif PG_STATIO_TABLE_STATS_TEMPLATE[:PG_STATIO_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+        elif (
+            PG_STATIO_TABLE_STATS_TEMPLATE[: PG_STATIO_TABLE_STATS_TEMPLATE.index("IN")]
+            in sql
+        ):
             result.value = data.views["table_level_pg_statio_user_tables"]
             result.meta = data.metas["table_level_pg_statio_user_tables"]
-        elif TABLE_SIZE_TABLE_STATS_TEMPLATE[:TABLE_SIZE_TABLE_STATS_TEMPLATE.index("IN")] in sql:
+        elif (
+            TABLE_SIZE_TABLE_STATS_TEMPLATE[
+                : TABLE_SIZE_TABLE_STATS_TEMPLATE.index("IN")
+            ]
+            in sql
+        ):
             result.value = data.views["table_level_table_size"]
             result.meta = data.metas["table_level_table_size"]
         elif "tblpages" in sql:
@@ -530,19 +544,40 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "attalign" in sql:
             result.value = data.padding_query_values
             result.meta = data.padding_query_metas
-        elif TOP_N_LARGEST_INDEXES_SQL_TEMPLATE[:TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.index("IN")] \
-                in sql:
+        elif (
+            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE[
+                : TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.index("IN")
+            ]
+            in sql
+        ):
             result.value = data.views["pg_stat_user_indexes_top_n"]
             result.meta = data.metas["pg_stat_user_indexes_top_n"]
-        elif PG_STAT_USER_INDEXES_TEMPLATE[:PG_STAT_USER_INDEXES_TEMPLATE.index("IN")] in sql:
+        elif (
+            PG_STAT_USER_INDEXES_TEMPLATE[: PG_STAT_USER_INDEXES_TEMPLATE.index("IN")]
+            in sql
+        ):
             result.value = data.views["pg_stat_user_indexes_all_fields"]
             result.meta = data.metas["pg_stat_user_indexes_all_fields"]
-        elif PG_STATIO_USER_INDEXES_TEMPLATE[:PG_STATIO_USER_INDEXES_TEMPLATE.index("IN")] in sql:
+        elif (
+            PG_STATIO_USER_INDEXES_TEMPLATE[
+                : PG_STATIO_USER_INDEXES_TEMPLATE.index("IN")
+            ]
+            in sql
+        ):
             result.value = data.views["pg_statio_user_indexes_all_fields"]
             result.meta = data.metas["pg_statio_user_indexes_all_fields"]
-        elif PG_INDEX_TEMPLATE[:PG_INDEX_TEMPLATE.index("IN")] in sql:
+        elif PG_INDEX_TEMPLATE[: PG_INDEX_TEMPLATE.index("IN")] in sql:
             result.value = data.views["pg_index_all_fields"]
             result.meta = data.metas["pg_index_all_fields"]
+        elif sql == VACUUM_ACTIVITY_STAT:
+            result.value = data.views["pg_stat_activity"]
+            result.meta = data.metas["pg_stat_activity"]
+        elif sql == VACUUM_PROGRESS_STAT:
+            result.value = data.views["pg_stat_progress_vacuum"]
+            result.meta = data.metas["pg_stat_progress_vacuum"]
+        elif sql == VACUUM_USER_TABLES_STAT:
+            result.value = data.views["pg_stat_user_tables_raw"]
+            result.meta = data.metas["pg_stat_user_tables_raw"]
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -655,7 +690,9 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(mock_conn, "9.6.3")
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
-    assert collector.collect_table_level_metrics(target_table_info=target_table_info) == {
+    assert collector.collect_table_level_metrics(
+        target_table_info=target_table_info
+    ) == {
         "pg_stat_user_tables_all_fields": {
             "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS,
             "rows": [
@@ -685,8 +722,8 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
+                    "public",
+                    "partitionednumericmetric_partition_0",
                     0,
                     0,
                     0,
@@ -705,8 +742,8 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     0,
                     0,
                     0,
-                    0
-                ]
+                    0,
+                ],
             ],
         },
         "pg_statio_user_tables_all_fields": {
@@ -739,17 +776,17 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
-                     0,
-                     0,
-                     0,
-                     0,
-                     None,
-                     None,
-                     None,
-                     None
-                ]
+                    "public",
+                    "partitionednumericmetric_partition_0",
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                ],
             ],
         },
         "pg_stat_user_tables_table_sizes": {
@@ -766,12 +803,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     2487918592,
                     630784,
                 ],
-                [
-                    1544351,
-                    0,
-                    0,
-                    0
-                ]
+                [1544351, 0, 0, 0],
             ],
         },
         "table_bloat_ratios": {
@@ -787,102 +819,83 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
             ],
         },
     }
-    assert collector.collect_index_metrics(target_table_info=target_table_info,
-                                           num_index_to_collect_stats=10) == {
-               "indexes_size": {
-                   "columns": [
-                       "indexrelid",
-                       "index_size"
-                   ],
-                   "rows": [[24889, 16384]]
-               },
-               "pg_index_all_fields": {
-                   "columns": [
-                       "indexrelid",
-                       "indrelid",
-                       "indnatts",
-                       "indnkeyatts",
-                       "indisunique",
-                       "indisprimary",
-                       "indisexclusion",
-                       "indimmediate",
-                       "indisclustered",
-                       "indisvalid",
-                       "indcheckxmin",
-                       "indisready",
-                       "indislive",
-                       "indisreplident",
-                       "indkey",
-                       "indcollation",
-                       "indclass",
-                       "indoption",
-                       "indexprs",
-                       "indpred"
-                   ],
-                   "rows": [
-                       [
-                           24889,
-                           24882,
-                           1,
-                           1,
-                           True,
-                           True,
-                           False,
-                           True,
-                           False,
-                           True,
-                           False,
-                           True,
-                           True,
-                           False,
-                           1,
-                           0,
-                           1978,
-                           0,
-                           None,
-                           "{BOOLEXPR :boolop not :args ({VAR :varno 1 "
-                           ":varattno 4 :vartype 16 :vartypmod -1 "
-                           ":varcollid 0 :varlevelsup 0 :varnoold 1 "
-                           ":varoattno 4 :location 135}) :location "
-                           "131}"
-                       ]
-                   ]
-               },
-               "pg_stat_user_indexes_all_fields": {
-                   "columns": [
-                       "relid",
-                       "indexrelid",
-                       "schemaname",
-                       "relname",
-                       "indexrelname",
-                       "idx_scan",
-                       "idx_tup_read",
-                       "idx_tup_fetch"
-                   ],
-                   "rows": [
-                       [
-                           24882,
-                           24889,
-                           "public",
-                           "test1",
-                           "test1_pkey",
-                           3,
-                           2,
-                           2
-                       ]
-                   ]
-               },
-               "pg_statio_user_indexes_all_fields": {
-                   "columns": [
-                       "indexrelid",
-                       "idx_blks_read",
-                       "idx_blks_hit"
-                   ],
-                   "rows": [
-                       [24889, 3, 7]
-                   ]
-               },
-           }
+    assert collector.collect_index_metrics(
+        target_table_info=target_table_info, num_index_to_collect_stats=10
+    ) == {
+        "indexes_size": {
+            "columns": ["indexrelid", "index_size"],
+            "rows": [[24889, 16384]],
+        },
+        "pg_index_all_fields": {
+            "columns": [
+                "indexrelid",
+                "indrelid",
+                "indnatts",
+                "indnkeyatts",
+                "indisunique",
+                "indisprimary",
+                "indisexclusion",
+                "indimmediate",
+                "indisclustered",
+                "indisvalid",
+                "indcheckxmin",
+                "indisready",
+                "indislive",
+                "indisreplident",
+                "indkey",
+                "indcollation",
+                "indclass",
+                "indoption",
+                "indexprs",
+                "indpred",
+            ],
+            "rows": [
+                [
+                    24889,
+                    24882,
+                    1,
+                    1,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    1,
+                    0,
+                    1978,
+                    0,
+                    None,
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 "
+                    ":varattno 4 :vartype 16 :vartypmod -1 "
+                    ":varcollid 0 :varlevelsup 0 :varnoold 1 "
+                    ":varoattno 4 :location 135}) :location "
+                    "131}",
+                ]
+            ],
+        },
+        "pg_stat_user_indexes_all_fields": {
+            "columns": [
+                "relid",
+                "indexrelid",
+                "schemaname",
+                "relname",
+                "indexrelname",
+                "idx_scan",
+                "idx_tup_read",
+                "idx_tup_fetch",
+            ],
+            "rows": [[24882, 24889, "public", "test1", "test1_pkey", 3, 2, 2]],
+        },
+        "pg_statio_user_indexes_all_fields": {
+            "columns": ["indexrelid", "idx_blks_read", "idx_blks_hit"],
+            "rows": [[24889, 3, 7]],
+        },
+    }
 
 
 def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
@@ -898,48 +911,116 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
 def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
     collector = PostgresCollector(mock_conn, "9.6.3")
     # pylint: disable=protected-access
-    assert collector._calculate_padding_size_for_table([
-        (1234, 'id', 'i', 4),
-        (1234, 'value', 'd', 8),
-        (1234, 'fixture_id', 'i', 4),
-        (1234, 'observation_id', 'i', 4),
-        (1234, 'session_id', 'i', 4),
-    ]) == 4
+    assert (
+        collector._calculate_padding_size_for_table(
+            [
+                (1234, "id", "i", 4),
+                (1234, "value", "d", 8),
+                (1234, "fixture_id", "i", 4),
+                (1234, "observation_id", "i", 4),
+                (1234, "session_id", "i", 4),
+            ]
+        )
+        == 4
+    )
 
     # pylint: disable=protected-access
-    assert collector._calculate_padding_size_for_table([
-        (1234, 'id', 'i', 5),
-        (1234, 'value', 'd', 8),
-        (1234, 'fixture_id', 'd', 19),
-        (1234, 'observation_id', 'i', 121),
-        (1234, 'session_id', 's', 2),
-        (1234, 'session_id2', 's', 2),
-        (1234, 'session_id3', 'c', 1),
-        (1234, 'session_id4', 'c', 2),
-    ]) == 8
+    assert (
+        collector._calculate_padding_size_for_table(
+            [
+                (1234, "id", "i", 5),
+                (1234, "value", "d", 8),
+                (1234, "fixture_id", "d", 19),
+                (1234, "observation_id", "i", 121),
+                (1234, "session_id", "s", 2),
+                (1234, "session_id2", "s", 2),
+                (1234, "session_id3", "c", 1),
+                (1234, "session_id4", "c", 2),
+            ]
+        )
+        == 8
+    )
 
     # pylint: disable=protected-access
-    assert collector._calculate_padding_size_for_table([
-        (1234, 'id', 'i', 8),
-        (1234, 'value', 'd', 8),
-        (1234, 'fixture_id', 'd', 3),
-        (1234, 'observation_id', 'c', 121),
-        (1234, 'session_id', 'i', 8),
-    ]) == 0
+    assert (
+        collector._calculate_padding_size_for_table(
+            [
+                (1234, "id", "i", 8),
+                (1234, "value", "d", 8),
+                (1234, "fixture_id", "d", 3),
+                (1234, "observation_id", "c", 121),
+                (1234, "session_id", "i", 8),
+            ]
+        )
+        == 0
+    )
 
     # pylint: disable=protected-access
-    assert collector._calculate_padding_size_for_tables([
-        (1234, 'id', 'i', 5),
-        (1234, 'value', 'i', 3),
-        (1234, 'fixture_id', 'd', 3),
-        (1234, 'observation_id', 'c', 7),
-        (1234, 'session_id', 'i', 2),
-        (2234, 'id', 'i', 1),
-        (2234, 'value', 'd', 2),
-        (2234, 'fixture_id', 'd', 3),
-        (2234, 'observation_id', 'd', 4),
-        (2234, 'session_id', 'i', 5),
-    ]) == {
+    assert collector._calculate_padding_size_for_tables(
+        [
+            (1234, "id", "i", 5),
+            (1234, "value", "i", 3),
+            (1234, "fixture_id", "d", 3),
+            (1234, "observation_id", "c", 7),
+            (1234, "session_id", "i", 2),
+            (2234, "id", "i", 1),
+            (2234, "value", "d", 2),
+            (2234, "fixture_id", "d", 3),
+            (2234, "observation_id", "d", 4),
+            (2234, "session_id", "i", 5),
+        ]
+    ) == {
         1234: 12,
         2234: 21,
     }
+
+
+def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "vacuum oorder;"})["query"]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "--some comments\nvacuum oorder;"})[
+            "query"
+        ]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "--some comments\n vacuum oorder;"})[
+            "query"
+        ]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "--some comments\nVACUUM oorder;"})[
+            "query"
+        ]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "--some comments\nVACUUM OORDER;"})[
+            "query"
+        ]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query({"query": "VACUUM OORDER"})["query"]
+        == "vacuum oorder"
+    )
+    # pylint: disable=protected-access
+    assert (
+        collector._anonymize_query(
+            {"query": "--some comments\n\t\t VACUUM TPCC.OORDER\t\n--comment"}
+        )["query"]
+        == "vacuum tpcc.oorder"
+    )
+    # pylint: disable=protected-access
+    assert collector._anonymize_query({"query": "vacuum tl1;"})["query"] == "vacuum tl1"
