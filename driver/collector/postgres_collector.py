@@ -1,4 +1,5 @@
 """Postgres database collector to get knob and metric data from the target database"""
+import re
 import math
 from datetime import datetime
 from decimal import Decimal
@@ -132,6 +133,42 @@ FROM
   pg_stat_user_tables;
 """
 
+# process statistics for vacuum processes from pg_stat_activity view
+VACUUM_ACTIVITY_STAT = """
+SELECT
+  usename,
+  datid,
+  datname,
+  pid,
+  wait_event_type,
+  wait_event,
+  state,
+  query
+FROM
+  pg_stat_activity
+WHERE
+  query ilike '%vacuum %'
+  and pid not in (select pg_backend_pid());
+"""
+
+# autovacuum progress statistics
+VACUUM_PROGRESS_STAT = """
+SELECT * FROM pg_stat_progress_vacuum;
+"""
+
+# User table information for autovacuum monitoring
+VACUUM_USER_TABLES_STAT = """
+SELECT 
+  relid,
+  last_autovacuum,
+  n_dead_tup,
+  relname
+FROM
+  pg_stat_user_tables
+WHERE
+  relid in (SELECT relid from pg_stat_progress_vacuum);
+"""
+
 
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
@@ -150,23 +187,37 @@ class PostgresCollector(BaseDbCollector):
         "pg_statio_user_indexes_all_fields": PG_STATIO_USER_INDEXES_TEMPLATE,
         "pg_index_all_fields": PG_INDEX_TEMPLATE,
     }
-    PG_STAT_VIEWS_LOCAL = {
+    PG_STAT_VIEWS_LOCAL_AGGREGATED = {
         "database": ["pg_stat_database", "pg_stat_database_conflicts"],
         "table": ["pg_stat_user_tables", "pg_statio_user_tables"],
         "index": ["pg_stat_user_indexes", "pg_statio_user_indexes"],
+    }
+    PG_STAT_VIEWS_LOCAL_RAW = {
+        "table": ["pg_stat_vacuum_tables"],
+        "process": ["pg_stat_vacuum_activity", "pg_stat_progress_vacuum"],
     }
     PG_STAT_VIEWS_LOCAL_KEY = {
         "database": "datid",
         "table": "relid",
         "index": "indexrelid",
+        "process": "pid",
     }
-    PG_STAT_LOCAL_QUERY: Dict[str, str] = {
+    PG_STAT_LOCAL_QUERY_AGGREGATED: Dict[str, str] = {
         "pg_stat_database": DATABASE_STAT,
         "pg_stat_database_conflicts": DATABASE_CONFLICTS_STAT,
         "pg_stat_user_tables": TABLE_STAT,
         "pg_statio_user_tables": TABLE_STATIO,
         "pg_stat_user_indexes": INDEX_STAT,
         "pg_statio_user_indexes": INDEX_STATIO,
+    }
+    PG_STAT_LOCAL_QUERY_RAW: Dict[str, str] = {
+        "pg_stat_progress_vacuum": VACUUM_PROGRESS_STAT,
+        "pg_stat_vacuum_activity": VACUUM_ACTIVITY_STAT,
+        "pg_stat_vacuum_tables": VACUUM_USER_TABLES_STAT,
+    }
+
+    VIEW_DATA_POST_PROCESS_FUNCTIONS: Dict[str, str] = {
+        "pg_stat_vacuum_activity": "_anonymize_query",
     }
 
     def __init__(
@@ -284,7 +335,7 @@ class PostgresCollector(BaseDbCollector):
 
         metrics: Dict[str, Any] = {
             "global": {},
-            "local": {"database": {}, "table": {}, "index": {}},
+            "local": {"database": {}, "table": {}, "index": {}, "process": {}},
         }
 
         # global
@@ -299,11 +350,13 @@ class PostgresCollector(BaseDbCollector):
         }
         # local
         self._aggregated_local_stats(metrics["local"])
+        self._raw_local_stats(metrics["local"])
 
         return metrics
 
     def collect_table_row_number_stats(self) -> Dict[str, Any]:
         """Collect statistics about the number of rows of different tables
+
         Returns:
             {
                 "num_tables": <int>,
@@ -628,11 +681,12 @@ class PostgresCollector(BaseDbCollector):
         """Get Aggregated local metrics by summing all values"""
 
         for category, data in local_metric.items():
-            views = self.PG_STAT_VIEWS_LOCAL[category]
+            views = self.PG_STAT_VIEWS_LOCAL_AGGREGATED.get(category, [])
             for view in views:
-                query = self.PG_STAT_LOCAL_QUERY[view]
+                query = self.PG_STAT_LOCAL_QUERY_AGGREGATED[view]
                 rows = self._get_metrics(query)
-                data[view] = {}
+                if view not in data:
+                    data[view] = {}
                 if len(rows) > 0:
                     data[view]["aggregated"] = rows[0]
         return local_metric
@@ -641,14 +695,19 @@ class PostgresCollector(BaseDbCollector):
         """Get raw local metrics without aggregation"""
 
         for category, data in local_metric.items():
-            views = self.PG_STAT_VIEWS_LOCAL[category]
+            views = self.PG_STAT_VIEWS_LOCAL_RAW.get(category, [])
             views_key = self.PG_STAT_VIEWS_LOCAL_KEY[category]
             for view in views:
-                query = f"SELECT * FROM {view};"
+                query = self.PG_STAT_LOCAL_QUERY_RAW[view]
                 rows = self._get_metrics(query)
                 data[view] = {}
+
                 for row in rows:
                     key = row.get(views_key)
+                    if view in self.VIEW_DATA_POST_PROCESS_FUNCTIONS:
+                        row = getattr(
+                            self, self.VIEW_DATA_POST_PROCESS_FUNCTIONS[view]
+                        )(row)
                     data[view][key] = row
         return local_metric
 
@@ -719,3 +778,28 @@ class PostgresCollector(BaseDbCollector):
                     ex,
                 )
         return res
+
+    @staticmethod
+    def _anonymize_query(row: Dict):
+        """
+        Keeps only autovacuum/vacuum relevant portion of query strings,
+        to prevent driver from sending sensitive data to ottertune.
+        """
+        raw_query: str = row["query"]
+        if "autovacuum: " in raw_query:
+            row["query"] = raw_query
+        elif "vacuum " in raw_query.lower():
+            # Example:
+            # -- a sql comment
+            # VACUUM tpcc.oorder\t;
+            #
+            # re.search("/vacuum .*[^;]/gmi"): VACUUM tpcc.oorder\t
+            # query.strip(): VACUUM tpcc.oorder
+            query = re.search(
+                r"vacuum .*[^;]", raw_query, flags=re.MULTILINE | re.IGNORECASE
+            )
+            if query is not None:
+                query = query.group(0)
+                query = query.strip()
+                row["query"] = query.lower()
+        return row
