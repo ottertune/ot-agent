@@ -377,3 +377,18 @@ def test_postgres_collect_index_metrics(
 
     index_names = [row[4] for row in metrics["pg_stat_user_indexes_all_fields"]["rows"]]
     assert "idx_test1" in index_names
+
+
+def test_postgres_collect_query_metrics(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    num_query_to_collect_stats = 10
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    metrics = collector.collect_query_metrics(num_query_to_collect_stats)
+
+    # pg_stat_statements currently doesn't work for integration test.
+    # So this is a placeholder.
+    assert metrics["pg_stat_statements"]

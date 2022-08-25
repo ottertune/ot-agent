@@ -19,6 +19,9 @@ ENV OTTERTUNE_OVERRIDE_NUM_INDEX_TO_COLLECT_STATS="10000"
 ENV OTTERTUNE_OVERRIDE_TABLE_LEVEL_MONITOR_INTERVAL="3600"
 ENV OTTERTUNE_DISABLE_TABLE_LEVEL_STATS="False"
 ENV OTTERTUNE_DISABLE_INDEX_STATS="False"
+ENV OTTERTUNE_DISABLE_QUERY_MONITORING="False"
+ENV OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL="3600"
+ENV OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT="10000"
 
 RUN mkdir -p /ottertune/driver
 COPY . /ottertune/driver
@@ -37,5 +40,7 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --override-table-level-monitor-interval $OTTERTUNE_OVERRIDE_TABLE_LEVEL_MONITOR_INTERVAL \
   --disable-table-level-stats $OTTERTUNE_DISABLE_TABLE_LEVEL_STATS \
   --override-num-index-to-collect-stats $OTTERTUNE_OVERRIDE_NUM_INDEX_TO_COLLECT_STATS \
-  --disable-index-stats OTTERTUNE_DISABLE_INDEX_STATS
-
+  --disable-index-stats $OTTERTUNE_DISABLE_INDEX_STATS \
+  --disable-query-monitoring $OTTERTUNE_DISABLE_QUERY_STATS \
+  --override-query-monitor-interval $OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL \
+  --override-num-query-to-collect $OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT

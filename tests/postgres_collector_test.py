@@ -8,8 +8,8 @@ from unittest.mock import MagicMock, PropertyMock
 import mock
 import psycopg2
 import pytest
-from driver.collector.postgres_collector import PostgresCollector
 from driver.collector.postgres_collector import (
+    PostgresCollector,
     DATABASE_STAT,
     DATABASE_CONFLICTS_STAT,
     TABLE_STAT,
@@ -17,6 +17,7 @@ from driver.collector.postgres_collector import (
     INDEX_STAT,
     INDEX_STATIO,
     ROW_NUM_STAT,
+    PG_STAT_STATEMENTS_MODULE_QUERY,
     VACUUM_PROGRESS_STAT,
     VACUUM_ACTIVITY_STAT,
     VACUUM_USER_TABLES_STAT,
@@ -30,10 +31,12 @@ from driver.collector.pg_table_level_stats_sqls import (
     PG_INDEX_TEMPLATE,
     PG_STATIO_USER_INDEXES_TEMPLATE,
     PG_STAT_USER_INDEXES_TEMPLATE,
+    PG_QUERY_STATS_SQL_TEMPLATE,
 )
 
 from driver.exceptions import PostgresCollectorException
 from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+
 
 # pylint: disable=missing-function-docstring,too-many-lines
 
@@ -223,6 +226,25 @@ class SqlData:
                     ":varnoold 1 :varoattno 4 :location 135}) :location 131}",
                 )
             ],
+            "pg_stat_statements_all_fields": [
+                10,
+                16384,
+                2067594330036860870,
+                'FETCH 50 IN "query-cursor_1"',
+                6057292,
+                302864600,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ]
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -356,6 +378,25 @@ class SqlData:
                 ["indexprs"],
                 ["indpred"],
             ],
+            "pg_stat_statements_all_fields": [
+                ["userid"],
+                ["dbid"],
+                ["queryid"],
+                ["query"],
+                ["calls"],
+                ["rows"],
+                ["shared_blks_hit"],
+                ["shared_blks_read"],
+                ["shared_blks_dirtied"],
+                ["shared_blks_written"],
+                ["local_blks_hit"],
+                ["local_blks_read"],
+                ["local_blks_dirtied"],
+                ["temp_blks_read"],
+                ["temp_blks_written"],
+                ["blk_read_time"],
+                ["blk_write_time"],
+            ]
         }
         self.aggregated_metas = {
             "pg_stat_database": [["local_count"], ["local_count2"]],
@@ -504,7 +545,8 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == INDEX_STATIO:
             result.value = data.aggregated_views["pg_statio_user_indexes"]
             result.meta = data.aggregated_metas["pg_statio_user_indexes"]
-        elif "pg_stat_statements" in sql:
+        elif sql == PG_STAT_STATEMENTS_MODULE_QUERY or \
+                'avg_time_ms FROM pg_stat_statements;' in sql:
             result.value = data.views["pg_stat_statements"]
             result.meta = data.metas["pg_stat_statements"]
         elif sql == ROW_NUM_STAT:
@@ -569,6 +611,12 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif PG_INDEX_TEMPLATE[: PG_INDEX_TEMPLATE.index("IN")] in sql:
             result.value = data.views["pg_index_all_fields"]
             result.meta = data.metas["pg_index_all_fields"]
+        elif PG_QUERY_STATS_SQL_TEMPLATE[:PG_QUERY_STATS_SQL_TEMPLATE.index("LIMIT")] in sql:
+            result.value = data.views["pg_stat_statements_all_fields"]
+            result.meta = data.metas["pg_stat_statements_all_fields"]
+        elif sql == 'CREATE EXTENSION pg_stat_statements;':
+            result.value = []
+            result.meta = []
         elif sql == VACUUM_ACTIVITY_STAT:
             result.value = data.views["pg_stat_activity"]
             result.meta = data.metas["pg_stat_activity"]
@@ -973,6 +1021,51 @@ def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
         1234: 12,
         2234: 21,
     }
+
+
+def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    assert collector.collect_query_metrics(1) == \
+           {'pg_stat_statements': {'columns': ['userid',
+                                               'dbid',
+                                               'queryid',
+                                               'query',
+                                               'calls',
+                                               'rows',
+                                               'shared_blks_hit',
+                                               'shared_blks_read',
+                                               'shared_blks_dirtied',
+                                               'shared_blks_written',
+                                               'local_blks_hit',
+                                               'local_blks_read',
+                                               'local_blks_dirtied',
+                                               'temp_blks_read',
+                                               'temp_blks_written',
+                                               'blk_read_time',
+                                               'blk_write_time',],
+                                   'rows': [10,
+                                            16384,
+                                            2067594330036860870,
+                                            'FETCH 50 IN "query-cursor_1"',
+                                            6057292,
+                                            302864600,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,]}}
 
 
 def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:

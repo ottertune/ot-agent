@@ -112,8 +112,9 @@ FROM
 WHERE
   relid IN {table_list}
 ORDER BY
-  index_size
-DESC LIMIT {n};
+  index_size DESC
+LIMIT
+  {n};
 """
 
 PG_STAT_USER_INDEXES_TEMPLATE = """
@@ -140,4 +141,15 @@ SELECT
 FROM
   pg_index
 WHERE indexrelid IN {index_list};
+"""
+
+PG_QUERY_STATS_SQL_TEMPLATE = """
+SELECT
+  *
+FROM
+  pg_stat_statements
+ORDER BY
+  calls DESC
+LIMIT
+  {n};
 """

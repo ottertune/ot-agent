@@ -13,6 +13,7 @@ from driver.pipeline import (
     schedule_or_update_job,
     DB_LEVEL_MONITOR_JOB_ID,
     TABLE_LEVEL_MONITOR_JOB_ID,
+    QUERY_MONITOR_JOB_ID,
 )
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
@@ -113,6 +114,23 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how many tables to collect table level stats",
     )
+    parser.add_argument(
+        "--disable-query-monitoring",
+        type=str,
+        default="False",
+        help="Whether to disable query monitoring.",
+    )
+    parser.add_argument(
+        "--override-query-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect query data (in seconds)",
+    )
+    parser.add_argument(
+        "--override-num-query-to-collect",
+        type=int,
+        help="Override file setting for how many query to collect",
+    )
+
     return parser.parse_args()
 
 
@@ -130,6 +148,13 @@ def schedule_table_level_monitor_job(config) -> None:
     schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
 
 
+def schedule_query_monitor_job(config) -> None:
+    """
+    The polling loop for query monitoring
+    """
+    schedule_or_update_job(scheduler, config, QUERY_MONITOR_JOB_ID)
+
+
 def get_config(args):
     """
     Build configuration from file, command line overrides, rds info,
@@ -141,6 +166,8 @@ def get_config(args):
         num_table_to_collect_stats=args.override_num_table_to_collect_stats,
         table_level_monitor_interval=args.override_table_level_monitor_interval,
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
+        query_monitor_interval=args.override_query_monitor_interval,
+        num_query_to_collect=args.override_num_query_to_collect,
     )
 
     config_builder.from_file(args.config)\
@@ -174,6 +201,8 @@ def run() -> None:
     schedule_db_level_monitor_job(config)
     if not config.disable_table_level_stats or not config.disable_index_stats:
         schedule_table_level_monitor_job(config)
+    if not config.disable_query_monitoring:
+        schedule_query_monitor_job(config)
     scheduler.start()
 
 

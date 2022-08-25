@@ -22,6 +22,7 @@ from driver.collector.pg_table_level_stats_sqls import (
     PG_STAT_USER_INDEXES_TEMPLATE,
     PG_STATIO_USER_INDEXES_TEMPLATE,
     PG_INDEX_TEMPLATE,
+    PG_QUERY_STATS_SQL_TEMPLATE,
 )
 
 # database-wide statistics from pg_stat_database view
@@ -131,6 +132,11 @@ SELECT
   min(n_live_tup) as min_row_num
 FROM
   pg_stat_user_tables;
+"""
+
+# Query to check pg_stat_statements module
+PG_STAT_STATEMENTS_MODULE_QUERY = """
+SELECT count(*) FROM pg_extension where extname='pg_stat_statements';
 """
 
 # process statistics for vacuum processes from pg_stat_activity view
@@ -377,7 +383,7 @@ class PostgresCollector(BaseDbCollector):
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
     def get_target_table_info(self,
-                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+                              num_table_to_collect_stats: int) -> Dict[str, Any]:
         target_tables_tuple = self._cmd(
             TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
         )[0]
@@ -587,6 +593,40 @@ class PostgresCollector(BaseDbCollector):
                 [index[0], index[1]] for index in target_indexes_tuple]
         return metrics
 
+    def collect_query_metrics(self, num_query_to_collect_stats: int):
+        """Collect query statistics
+        Returns:
+            {
+                'pg_stat_statements': {
+                    'columns':[
+                    ],
+                    'rows': [
+                    ],
+                },
+            }
+        Raises:
+            PostgresCollectorException: Failed to execute the sql query to get metrics
+        """
+        columns = []
+        rows = []
+        try:
+            rows, columns = self._cmd(
+                PG_QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats),
+            )
+        except PostgresCollectorException as ex:
+            logging.error(
+                "Failed to load pg_stat_statements module, you need to add "
+                "pg_stat_statements in parameter shared_preload_libraries: %s",
+                ex,
+            )
+
+        return {
+            "pg_stat_statements": {
+                "columns": columns,
+                "rows": rows
+            },
+        }
+
     def _calculate_bloat_ratios(
         self,
         padding_size_dict: Dict[int, int],
@@ -746,11 +786,8 @@ class PostgresCollector(BaseDbCollector):
             True if module is loaded successfully, otherwise return False.
         """
 
-        check_module_sql = (
-            "SELECT count(*) FROM pg_extension where extname='pg_stat_statements';"
-        )
         load_module_sql = "CREATE EXTENSION pg_stat_statements;"
-        module_exists = self._cmd(check_module_sql)[0][0][0] == 1
+        module_exists = self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY)[0][0][0] == 1
         if not module_exists:
             try:
                 self._conn.cursor().execute(load_module_sql)

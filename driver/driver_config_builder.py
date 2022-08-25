@@ -49,6 +49,8 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     num_table_to_collect_stats: StrictInt
     table_level_monitor_interval: StrictInt
     num_index_to_collect_stats: StrictInt
+    query_monitor_interval: StrictInt
+    num_query_to_collect: StrictInt
     metric_source: List[str]
 
     @validator("table_level_monitor_interval")
@@ -91,6 +93,28 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
             )
         return val
 
+    @validator("query_monitor_interval")
+    # pylint: disable=no-self-argument, no-self-use
+    def check_query_monitor_interval(cls, val: int) -> int:
+        """Validate that query_monitor_interval is greater than 5 minutes"""
+        if val < 300:
+            raise ValueError(
+                "Invalid driver option query_monitor_interval, value >= 300"
+                f" is expected, but {val} is found"
+            )
+        return val
+
+    @validator("num_query_to_collect")
+    # pylint: disable=no-self-argument, no-self-use
+    def check_num_query_to_collect(cls, val: int) -> int:
+        """Validate that num_query_to_collect is not negative"""
+        if val < 0:
+            raise ValueError(
+                "Invalid driver option num_query_to_collect, non-negative value"
+                f" is expected, but {val} is found"
+            )
+        return val
+
 
 class Overrides(NamedTuple):
     """
@@ -101,6 +125,8 @@ class Overrides(NamedTuple):
     num_table_to_collect_stats: int
     table_level_monitor_interval: int
     num_index_to_collect_stats: int
+    query_monitor_interval: int
+    num_query_to_collect: int
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -128,6 +154,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
 
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
+    disable_query_monitoring: StrictBool = False
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -183,6 +210,9 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     table_level_monitor_interval: int
     disable_index_stats: bool
     num_index_to_collect_stats: int
+    disable_query_monitoring: bool
+    query_monitor_interval: int
+    num_query_to_collect: int
 
     db_non_default_parameters: List[str]
 
@@ -228,6 +258,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 organization_id=args.organization_id,
                 disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
                 disable_index_stats = args.disable_index_stats.lower() == "true",
+                disable_query_monitoring = args.disable_query_monitoring.lower() == "true",
             )
         except ValidationError as ex:
             msg = (
