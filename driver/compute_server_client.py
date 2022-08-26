@@ -1,10 +1,10 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
-import json
 import zlib
 from typing import List, Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
+import simplejson as json
 
 from driver.exceptions import ComputeServerClientException
 
