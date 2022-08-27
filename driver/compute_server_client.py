@@ -139,7 +139,7 @@ class ComputeServerClient:
         """
         url = f"{self._server_url}/query_observation/"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, indent=2).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
 
         try:
             response = self._req_session.post(
