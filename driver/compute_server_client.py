@@ -138,16 +138,16 @@ class ComputeServerClient:
             ComputeServerClientException: Failed to post the observation.
         """
         url = f"{self._server_url}/query_observation/"
+        headers = self._generate_headers(data["organization_id"])
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
         compressed_data = zlib.compress(json.dumps(data, indent=2).encode('utf-8'))
 
         try:
             response = self._req_session.post(
                 url, data=compressed_data, timeout=TIMEOUT_SEC,
-                headers={
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Content-Encoding": "gzip",
-                },
+                headers=headers,
             )
             response.raise_for_status()
         except Exception as ex:
