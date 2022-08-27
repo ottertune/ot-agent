@@ -142,7 +142,7 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, indent=2).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
 
         try:
             response = self._req_session.post(
