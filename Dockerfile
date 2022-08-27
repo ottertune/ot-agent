@@ -41,6 +41,6 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --disable-table-level-stats $OTTERTUNE_DISABLE_TABLE_LEVEL_STATS \
   --override-num-index-to-collect-stats $OTTERTUNE_OVERRIDE_NUM_INDEX_TO_COLLECT_STATS \
   --disable-index-stats $OTTERTUNE_DISABLE_INDEX_STATS \
-  --disable-query-monitoring $OTTERTUNE_DISABLE_QUERY_STATS \
+  --disable-query-monitoring $OTTERTUNE_DISABLE_QUERY_MONITORING \
   --override-query-monitor-interval $OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL \
   --override-num-query-to-collect $OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT
