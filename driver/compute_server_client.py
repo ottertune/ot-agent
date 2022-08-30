@@ -143,8 +143,8 @@ class ComputeServerClient:
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
         compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
-        # Allow a longer timeout for query observation due to its potential large data volume
-        query_observation_timeout = TIMEOUT_SEC * 2
+        # query observation use its own timeout settings due to the potential large data volume
+        query_observation_timeout = 90
         try:
             response = self._req_session.post(
                 url, data=compressed_data, timeout=query_observation_timeout,
