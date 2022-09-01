@@ -52,3 +52,7 @@ class BaseDbCollector(ABC):
     @abstractmethod
     def get_version(self) -> str:
         """Get database version"""
+
+    @abstractmethod
+    def collect_schema(self) -> Dict[str, Any]:
+        """Collect schema"""

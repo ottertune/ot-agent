@@ -82,6 +82,13 @@ LIMIT
     {n};
 """
 
+QUERY_COLUMNS_SQL_TEMPLATE = """
+SELECT
+    table_name, table_schema, column_name, ordinal_position, column_default,
+    is_nullable,  data_type, collation_name, column_comment
+FROM
+    information_schema.columns
+"""
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -490,6 +497,19 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "events_statements_summary_by_digest": {
                 "columns": query_columns,
                 "rows": query_rows,
+            }
+        }
+
+    def collect_schema(self) -> Dict[str, Any]:
+        """Collect schema"""
+
+        column_schema_values, column_schema_columns = self._cmd(QUERY_COLUMNS_SQL_TEMPLATE)
+        column_schema_rows = [list(row) for row in column_schema_values]
+
+        return {
+            "columns" : {
+                "columns" : column_schema_columns,
+                "rows" : column_schema_rows
             }
         }
 

@@ -12,6 +12,7 @@ from driver.database import (
     collect_db_level_observation_for_on_prem,
     collect_table_level_observation_for_on_prem,
     collect_query_observation_for_on_prem,
+    collect_schema_observation_for_on_prem
 )
 
 
@@ -43,6 +44,8 @@ def driver_pipeline(
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == QUERY_MONITOR_JOB_ID:
         _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+    elif job_id == SCHEMA_MONITOR_JOB_ID:
+        _schema_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(
@@ -102,6 +105,24 @@ def _query_monitor_driver_pipeline_for_on_prem(
     """
     query_observation = collect_query_observation_for_on_prem(config)
     compute_server_client.post_query_observation(query_observation)
+
+
+def _schema_monitor_driver_pipeline_for_on_prem(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects schemas every day
+    Args:
+        config: Driver configuration.
+        compute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    schema_observation = collect_schema_observation_for_on_prem(config)
+    compute_server_client.post_schema_observation(schema_observation)
+
 
 
 def _get_interval(config: DriverConfig, job_id: str) -> int:

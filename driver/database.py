@@ -7,6 +7,7 @@ from typing import Dict, Any
 
 from driver.compute_server_client import (
     DBLevelObservation,
+    SchemaObservation,
     TableLevelObservation,
     QueryObservation,
 )
@@ -72,6 +73,22 @@ def collect_query_observation_for_on_prem(config: DriverConfig) -> QueryObservat
     observation = collect_query_observation_from_database(config._asdict())
     return observation
 
+def collect_schema_observation_for_on_prem(config: DriverConfig) -> SchemaObservation:
+    """
+    Get the query observation data for the target cloud database.
+
+    Args:
+        config: driver configuration for cloud deployment.
+    Returns:
+        Query observation data from the target database.
+    Raises:
+        DriverConfigException: invalid database configuration.
+        DbCollectorException: database type is not supported.
+        MysqlCollectorException: unable to connect to MySQL database or get version.
+        PostgresCollectorException: unable to connect to Postgres database or get version.
+    """
+    observation = collect_schema_observation_from_database(config._asdict())
+    return observation
 
 def collect_data_from_metric_sources(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     """Get data from various metric sources"""
@@ -193,6 +210,37 @@ def collect_query_observation_from_database(config: Dict[str, Any]) -> QueryObse
 
     observation: QueryObservation = {
         "data": query_metrics,
+        "summary": summary,
+        "db_key": config["db_key"],
+        "organization_id": config["organization_id"],
+    }
+    return observation
+
+def collect_schema_observation_from_database(config: Dict[str, Any]) -> QueryObservation:
+    """
+    Collect schema metrics from databases and compress the data
+
+    Args:
+        config: driver configuration.
+    Returns:
+        Collected data from the target database.
+    Raises:
+        DriverConfigException: invalid database configuration.
+        DbCollectorException: database type is not supported.
+        MysqlCollectorException: unable to connect to MySQL database or get version.
+        PostgresCollectorException: unable to connect to Postgres database or get version.
+    """
+    with get_collector(config) as collector:
+        observation_time = int(time.time())
+        schema = collector.collect_schema()
+        version = collector.get_version()
+        summary: Dict[str, Any] = {
+            "version": version,
+            "observation_time": observation_time,
+        }
+
+    observation: SchemaObservation = {
+        "data": schema,
         "summary": summary,
         "db_key": config["db_key"],
         "organization_id": config["organization_id"],
