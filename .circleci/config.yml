@@ -178,3 +178,10 @@ workflows:
       - ot/tag-repo-nightly:
           context: "GitHub CLI"
           repo-name: "ot-agent"
+    triggers:
+      - schedule:
+          cron: "0 4 * * 1-5"
+          filters:
+            branches:
+              only:
+                - main
