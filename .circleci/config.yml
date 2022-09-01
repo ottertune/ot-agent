@@ -137,7 +137,16 @@ workflows:
       - postgres_test:
           name: "Test Postgres"
           context: "AWS CLI"
-
+      - ot/docker-push:
+          name: "Build Nightly Image"
+          registry-url-env-name: AWS_PUBLIC_ECR_URL
+          repo-name: "agent"
+          context: "AWS CLI"
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^nightly-.*/
       - ot/docker-push:
           name: "Build Release Image Dockerhub"
           container-destination: "dockerhub"
