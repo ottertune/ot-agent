@@ -139,6 +139,7 @@ workflows:
           context: "AWS CLI"
       - ot/docker-push:
           name: "Build Nightly Image"
+          container-destination: "public-ecr"
           registry-url-env-name: AWS_PUBLIC_ECR_URL
           repo-name: "agent"
           context: "AWS CLI"
