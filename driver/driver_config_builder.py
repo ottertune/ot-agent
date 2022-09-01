@@ -52,6 +52,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
+    schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
     def check_table_level_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
@@ -114,6 +115,15 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
+    @validator("schema_monitor_interval")
+    def check_schema_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that schema_monitor_interval is greater than 5 minutes"""
+        if val < 300:
+            raise ValueError(
+                "Invalid driver option schema_monitor_interval, value >= 300"
+                f" is expected, but {val} is found"
+            )
+        return val
 
 
 class Overrides(NamedTuple):
@@ -127,6 +137,8 @@ class Overrides(NamedTuple):
     num_index_to_collect_stats: int
     query_monitor_interval: int
     num_query_to_collect: int
+    schema_monitor_interval: int
+
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -216,6 +228,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     query_monitor_interval: int
     num_query_to_collect: int
     disable_schema_monitoring: bool
+    schema_monitor_interval: int
     db_non_default_parameters: List[str]
 
 

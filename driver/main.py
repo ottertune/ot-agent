@@ -137,6 +137,11 @@ def _get_args() -> argparse.Namespace:
         default="False",
         help="Whether to disable schema monitoring."
     )
+    parser.add_argument(
+        "--override-schema-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect schema data (in seconds)",
+    )
     
     return parser.parse_args()
 
@@ -182,6 +187,7 @@ def get_config(args):
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
+        schema_monitor_interval=args.override_schema_monitor_interval,
     )
 
     config_builder.from_file(args.config)\

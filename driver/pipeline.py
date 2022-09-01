@@ -113,6 +113,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.table_level_monitor_interval)
     elif QUERY_MONITOR_JOB_ID in job_id:
         interval_s = int(config.query_monitor_interval)
+    elif SCHEMA_MONITOR_JOB_ID in job_id:
+        interval_s = int(config.schema_monitor_interval)
     else:
         raise ValueError(f"Job {job_id} is not supported")
     return interval_s
