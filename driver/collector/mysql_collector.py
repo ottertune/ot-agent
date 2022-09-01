@@ -98,6 +98,15 @@ FROM
     information_schema.statistics
 """
 
+QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    constraint_schema, constraint_name, unique_constraint_schema,
+    unique_constraint_name, update_rule, delete_rule, table_name,
+    referenced_table_name
+FROM
+    information_schema.referential_constraints
+"""
+
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
 
@@ -517,6 +526,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         index_schema_values, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
         index_schema_rows = [list(row) for row in index_schema_values]
 
+        foreign_key_schema_values, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_rows = [list(row) for row in foreign_key_schema_values]
+
         return {
             "columns" : {
                 "columns" : column_schema_columns,
@@ -525,6 +537,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "indexes" : {
                 "columns" : index_schema_columns,
                 "rows" : index_schema_rows
+            },
+            "foreign_keys" : {
+                "columns" : foreign_key_schema_columns,
+                "rows" : foreign_key_schema_rows
             }
         }
 
