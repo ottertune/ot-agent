@@ -130,7 +130,13 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how many query to collect",
     )
-
+    parser.add_argument(
+        "--disable-schema-monitoring",
+        type=str,
+        default="False",
+        help="Whether to disable schema monitoring."
+    )
+    
     return parser.parse_args()
 
 
@@ -203,6 +209,10 @@ def run() -> None:
         schedule_table_level_monitor_job(config)
     if not config.disable_query_monitoring:
         schedule_query_monitor_job(config)
+    if not config.disable_schema_monitoring:
+        print("Enabled!")
+    else: 
+        print("Disabled!")
     scheduler.start()
 
 

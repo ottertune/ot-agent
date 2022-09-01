@@ -155,6 +155,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
     disable_query_monitoring: StrictBool = False
+    disable_schema_monitoring:StrictBool = False
+
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -213,7 +215,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_query_monitoring: bool
     query_monitor_interval: int
     num_query_to_collect: int
-
+    disable_schema_monitoring: bool
     db_non_default_parameters: List[str]
 
 
@@ -259,6 +261,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
                 disable_index_stats = args.disable_index_stats.lower() == "true",
                 disable_query_monitoring = args.disable_query_monitoring.lower() == "true",
+                disable_schema_monitoring = args.disable_schema_monitoring.lower() == "true",
             )
         except ValidationError as ex:
             msg = (
