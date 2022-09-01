@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import (
+    SCHEMA_MONITOR_JOB_ID,
     schedule_or_update_job,
     DB_LEVEL_MONITOR_JOB_ID,
     TABLE_LEVEL_MONITOR_JOB_ID,
@@ -160,6 +161,13 @@ def schedule_query_monitor_job(config) -> None:
     """
     schedule_or_update_job(scheduler, config, QUERY_MONITOR_JOB_ID)
 
+def schedule_schema_monitor_job(config) -> None:
+    """
+    The polling loop for query monitoring
+    """
+    schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
+
+
 
 def get_config(args):
     """
@@ -210,9 +218,7 @@ def run() -> None:
     if not config.disable_query_monitoring:
         schedule_query_monitor_job(config)
     if not config.disable_schema_monitoring:
-        print("Enabled!")
-    else: 
-        print("Disabled!")
+        schedule_schema_monitor_job(config)
     scheduler.start()
 
 

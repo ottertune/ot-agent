@@ -44,3 +44,4 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --disable-query-monitoring $OTTERTUNE_DISABLE_QUERY_MONITORING \
   --override-query-monitor-interval $OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL \
   --override-num-query-to-collect $OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT
+  --disable-schema-monitoring $OTTERTUNE_DISABLE_SCEHMA_MONITORING \

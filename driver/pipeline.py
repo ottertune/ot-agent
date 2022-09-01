@@ -20,6 +20,7 @@ DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
 QUERY_MONITOR_JOB_ID = "query_monitor_job"
+SCHEMA_MONITOR_JOB_ID = "schema_monitor_job"
 
 
 def driver_pipeline(
