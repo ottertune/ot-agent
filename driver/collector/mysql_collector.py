@@ -82,12 +82,20 @@ LIMIT
     {n};
 """
 
-QUERY_COLUMNS_SQL_TEMPLATE = """
+QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
 SELECT
     table_name, table_schema, column_name, ordinal_position, column_default,
     is_nullable,  data_type, collation_name, column_comment
 FROM
     information_schema.columns
+"""
+
+QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    index_name, non_unique, column_name, collation, sub_part, index_type,
+    nullable, packed, table_schema, table_name
+FROM
+    information_schema.statistics
 """
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
@@ -503,13 +511,20 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
     def collect_schema(self) -> Dict[str, Any]:
         """Collect schema"""
 
-        column_schema_values, column_schema_columns = self._cmd(QUERY_COLUMNS_SQL_TEMPLATE)
+        column_schema_values, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE)
         column_schema_rows = [list(row) for row in column_schema_values]
+
+        index_schema_values, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        index_schema_rows = [list(row) for row in index_schema_values]
 
         return {
             "columns" : {
                 "columns" : column_schema_columns,
                 "rows" : column_schema_rows
+            },
+            "indexes" : {
+                "columns" : index_schema_columns,
+                "rows" : index_schema_rows
             }
         }
 
