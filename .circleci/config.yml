@@ -173,8 +173,3 @@ workflows:
               ignore: /.*/
             tags:
               only: /^([0-9]+)\.([0-9]+)\.([0-9]+)(-[a-zA-Z0-9_]+)?/
-  nightly:
-    jobs:
-      - ot/tag-repo-nightly:
-          context: "GitHub CLI"
-          repo-name: "ot-agent"
