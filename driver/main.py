@@ -168,7 +168,7 @@ def schedule_query_monitor_job(config) -> None:
 
 def schedule_schema_monitor_job(config) -> None:
     """
-    The polling loop for query monitoring
+    The polling loop for schema monitoring
     """
     schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
 
