@@ -238,8 +238,39 @@ ON
 WHERE
     c.oid = i.indrelid AND i.indexrelid = c2.oid
 ORDER BY
-    i.indisprimary DESC, c2.relname;
+    i.indisprimary DESC, c2.relname
 
+"""
+
+QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    conrelid as table_id,
+    conname as constraint_name,
+    pg_get_constraintdef(r.oid, true) as constraint_expression
+FROM
+    pg_constraint r
+WHERE
+    r.contype = 'f' AND conparentid = 0
+ORDER BY
+    conrelid, conname
+"""
+
+QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    n.nspname as schema,
+    c.oid as table_id,
+    c.relname as table_name,
+    c.relkind as type,
+    pg_get_userbyid(c.relowner) as owner,
+    c.relpersistence as persistence,
+    obj_description(c.oid, 'pg_class') as description
+FROM pg_class c
+     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind IN ('r','p','v','m','f','')
+      AND n.nspname <> 'pg_catalog'
+      AND n.nspname <> 'information_schema'
+      AND n.nspname !~ '^pg_toast'
+ORDER BY 1,2
 """
 
 class PostgresCollector(BaseDbCollector):
@@ -694,14 +725,17 @@ class PostgresCollector(BaseDbCollector):
         }
 
     def collect_schema(self) -> Dict[str, Any]:
-
+        """Collect schema"""
         version_float = float(".".join(self._version_str.split(".")[:2]))
         generate_query= ""
         if version_float >= 13:
             generate_query = "a.attgenerated as generated"
-        """Collect schema"""
+
         column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query))
         index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
+        table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
+
         return {
             "columns" : {
                 "columns" : column_schema_columns,
@@ -710,6 +744,14 @@ class PostgresCollector(BaseDbCollector):
             "indexes" : {
                 "columns" : index_schema_columns,
                 "rows" : index_schema_rows
+            },
+            "foriegn_keys" : {
+                "columns" :  foreign_key_schema_columns,
+                "rows" : foreign_key_schema_rows
+            },
+            "tables" : {
+                "columns" : table_schema_columns,
+                "rows" : table_schema_rows
             }
         }
 
