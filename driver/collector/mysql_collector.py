@@ -88,6 +88,8 @@ SELECT
     is_nullable,  data_type, collation_name, column_comment
 FROM
     information_schema.columns
+ORDER BY
+    table_schema, table_name, column_name
 """
 
 QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
