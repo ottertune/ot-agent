@@ -175,6 +175,72 @@ WHERE
   relid in (SELECT relid from pg_stat_progress_vacuum);
 """
 
+QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    a.attrelid as table_id,
+    a.attname as name,
+    format_type(a.atttypid, a.atttypmod) as type,
+    (SELECT
+        pg_get_expr(d.adbin, d.adrelid, true)
+    FROM
+        pg_attrdef d
+    WHERE
+        d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
+    ) as default_val,
+    a.attnotnull as nullable,
+    (SELECT
+        c.collname
+    FROM
+        pg_collation c, pg_type t
+    WHERE
+  c.oid = a.attcollation AND t.oid = a.atttypid AND a.attcollation <>      t.typcollation
+             ) as collation,
+    a.attidentity as identity,
+    a.attstorage as storage_type,
+    {generate_query}
+    CASE WHEN
+        a.attstattarget=-1
+    THEN NULL
+    ELSE
+        a.attstattarget
+    END AS stats_target,
+    col_description(a.attrelid, a.attnum) as description
+FROM
+    pg_attribute a
+WHERE
+    a.attnum > 0 AND NOT a.attisdropped
+ORDER BY
+    a.attnum
+"""
+
+QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    c.oid as table_id,
+    i.indexrelid as index_id,
+    c2.relname as index_name,
+    i.indisprimary as is_primary,
+    i.indisunique as is_unique,
+    i.indisclustered as is_clustered,
+    i.indisvalid as is_valid,
+    pg_get_indexdef(i.indexrelid, 0, true) as index_expression,
+    pg_get_constraintdef(con.oid, true) as index_constraint,
+    contype as constraint_tyep,
+    condeferrable as constraint_deferrable,
+    condeferred as constraint_deferred_by_default,
+    i.indisreplident as index_replica_identity,
+    c2.reltablespace as table_space
+FROM
+    pg_class c, pg_class c2, pg_index i
+LEFT JOIN
+    pg_constraint con
+ON
+    (conrelid = i.indrelid AND conindid = i.indexrelid AND contype IN   ('p','u','x'))
+WHERE
+    c.oid = i.indrelid AND i.indexrelid = c2.oid
+ORDER BY
+    i.indisprimary DESC, c2.relname;
+
+"""
 
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
@@ -626,6 +692,28 @@ class PostgresCollector(BaseDbCollector):
                 "rows": rows
             },
         }
+
+    def collect_schema(self) -> Dict[str, Any]:
+
+        version_float = float(".".join(self._version_str.split(".")[:2]))
+        generate_query= ""
+        if version_float >= 13:
+            generate_query = "a.attgenerated as generated"
+        """Collect schema"""
+        column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query))
+        index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        return {
+            "columns" : {
+                "columns" : column_schema_columns,
+                "rows" : column_schema_rows
+            },
+            "indexes" : {
+                "columns" : index_schema_columns,
+                "rows" : index_schema_rows
+            }
+        }
+
+
 
     def _calculate_bloat_ratios(
         self,
