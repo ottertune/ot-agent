@@ -113,6 +113,15 @@ ORDER BY
     constraint_schema, table_name, constraint_name
 """
 
+QUERY_TABLE_KEY_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    table_schema, table_name,table_type,engine, version, row_format,
+    table_rows, max_data_length, table_collation, create_options,
+    table_comment FROM information_schema.tables
+ORDER BY
+    table_schema, table_name
+"""
+
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
 
@@ -535,6 +544,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         foreign_key_schema_values, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
         foreign_key_schema_rows = [list(row) for row in foreign_key_schema_values]
 
+        table_schema_values, table_schema_columns = self._cmd(QUERY_TABLE_KEY_SCHEMA_SQL_TEMPLATE)
+        table_schema_rows = [list(row) for row in table_schema_values]
+
         return {
             "columns" : {
                 "columns" : column_schema_columns,
@@ -547,6 +559,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "foreign_keys" : {
                 "columns" : foreign_key_schema_columns,
                 "rows" : foreign_key_schema_rows
+            },
+            "tables" : {
+                "columns" : table_schema_columns,
+                "rows" : table_schema_rows
             }
         }
 
