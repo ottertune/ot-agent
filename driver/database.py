@@ -75,7 +75,7 @@ def collect_query_observation_for_on_prem(config: DriverConfig) -> QueryObservat
 
 def collect_schema_observation_for_on_prem(config: DriverConfig) -> SchemaObservation:
     """
-    Get the query observation data for the target cloud database.
+    Get the schema observation data for the target cloud database.
 
     Args:
         config: driver configuration for cloud deployment.
