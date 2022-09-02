@@ -80,7 +80,7 @@ def collect_schema_observation_for_on_prem(config: DriverConfig) -> SchemaObserv
     Args:
         config: driver configuration for cloud deployment.
     Returns:
-        Query observation data from the target database.
+        Schema observation data from the target database.
     Raises:
         DriverConfigException: invalid database configuration.
         DbCollectorException: database type is not supported.
