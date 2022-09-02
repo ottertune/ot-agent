@@ -122,6 +122,13 @@ ORDER BY
     table_schema, table_name
 """
 
+QUERY_VIEW_SCHEMA_SQL_TEMPLATE = """
+SELECT table_schema, table_name, view_definition, is_updatable, check_option,
+    security_type FROM information_schema.views
+ORDER BY table_schema, table_name,
+    view_definition
+"""
+
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
 
@@ -547,6 +554,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         table_schema_values, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
         table_schema_rows = [list(row) for row in table_schema_values]
 
+        view_schema_values, view_schema_columns = self._cmd(QUERY_VIEW_SCHEMA_SQL_TEMPLATE)
+        view_schema_rows = [list(row) for row in view_schema_values]
+
         return {
             "columns" : {
                 "columns" : column_schema_columns,
@@ -563,6 +573,10 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "tables" : {
                 "columns" : table_schema_columns,
                 "rows" : table_schema_rows
+            },
+            "views" : {
+                "columns" : view_schema_columns,
+                "rows" : view_schema_rows
             }
         }
 
