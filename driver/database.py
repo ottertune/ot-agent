@@ -216,7 +216,7 @@ def collect_query_observation_from_database(config: Dict[str, Any]) -> QueryObse
     }
     return observation
 
-def collect_schema_observation_from_database(config: Dict[str, Any]) -> QueryObservation:
+def collect_schema_observation_from_database(config: Dict[str, Any]) -> SchemaObservation:
     """
     Collect schema metrics from databases and compress the data
 
