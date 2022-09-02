@@ -273,6 +273,15 @@ WHERE c.relkind IN ('r','p','v','m','f','')
 ORDER BY 1,2
 """
 
+QUERY_VIEW_SCEHMA_SQL_TEMPLATE = """
+SELECT
+          schemaname, viewname, viewowner, definition
+FROM
+    pg_views
+WHERE
+    schemaname <> 'pg_catalog'
+AND schemaname <> 'information_schema'
+"""
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
 
@@ -735,6 +744,7 @@ class PostgresCollector(BaseDbCollector):
         index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
         foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
         table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
+        view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE)
 
         return {
             "columns" : {
@@ -752,6 +762,10 @@ class PostgresCollector(BaseDbCollector):
             "tables" : {
                 "columns" : table_schema_columns,
                 "rows" : table_schema_rows
+            },
+            "views" : {
+                "columns": view_schema_columns,
+                "rows" : view_schema_rows
             }
         }
 
