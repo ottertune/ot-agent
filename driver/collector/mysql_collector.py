@@ -84,7 +84,7 @@ LIMIT
 
 QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    table_name, table_schema, column_name, ordinal_position, column_default,
+    table_schema, table_name,  column_name, ordinal_position, column_default,
     is_nullable,  data_type, collation_name, column_comment
 FROM
     information_schema.columns
@@ -94,19 +94,23 @@ ORDER BY
 
 QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    index_name, non_unique, column_name, collation, sub_part, index_type,
-    nullable, packed, table_schema, table_name
+    table_schema, table_name, index_name, non_unique,
+    column_name, collation, sub_part, index_type,
+    nullable, packed
 FROM
     information_schema.statistics
+ORDER BY
+    table_schema, table_name, index_name
 """
 
 QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    constraint_schema, constraint_name, unique_constraint_schema,
-    unique_constraint_name, update_rule, delete_rule, table_name,
-    referenced_table_name
+    constraint_schema, table_name, constraint_name, unique_constraint_schema,
+    unique_constraint_name, update_rule, delete_rule, referenced_table_name
 FROM
     information_schema.referential_constraints
+ORDER BY 
+    constraint_schema, table_name, constraint_name
 """
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
