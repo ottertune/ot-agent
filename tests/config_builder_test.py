@@ -47,7 +47,9 @@ def _test_config_data() -> Dict[str, Any]:
         "query_monitor_interval": 3600,
         "metric_source": [
             "cloudwatch",
-        ]
+        ],
+        "schema_monitor_interval": 300,
+
     }
 
     partial_config_from_server: Dict[str, Any] = {
