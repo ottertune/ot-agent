@@ -229,3 +229,14 @@ def test_get_cloudwatch_metric_file_aurora_postgres12() -> None:
                 "./driver/config/cloudwatch_metrics/"
                 "rds_aurora_postgresql-12.json"
             )
+
+
+def test_partial_config_from_file_invalid_schema_interval(
+    test_config_data: Dict[str, Any]
+) -> None:
+    # wrong type server_url fetched from env, string is expected, but int found
+    test_data_from_file = test_config_data["file"]
+    test_data_from_file["schema_monitor_interval"] = 60
+    with pytest.raises(ValidationError) as ex:
+        PartialConfigFromFile(**test_data_from_file)
+    assert "schema_monitor_interval" in str(ex.value)
