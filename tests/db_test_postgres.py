@@ -402,7 +402,7 @@ def test_postgres_collect_schema(
     version = get_postgres_version(conn)
     collector = PostgresCollector(conn, version)
     schema = collector.collect_schema()
-    assert len(schema["columns"]) > 0
-    assert len(schema["indexes"]) > 0
-    assert len(schema["tables"]) > 0
-    assert len(schema["views"]) > 0
+    assert len(schema["columns"]["rows"]) > 0
+    assert len(schema["indexes"]["rows"]) > 0
+    assert len(schema["tables"]["rows"]) > 0
+    assert len(schema["views"]["rows"]) > 0
