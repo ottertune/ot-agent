@@ -142,7 +142,7 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how often to collect schema data (in seconds)",
     )
-    
+
     return parser.parse_args()
 
 

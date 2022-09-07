@@ -4,7 +4,8 @@
 from apscheduler.schedulers.background import BlockingScheduler
 import mock
 
-from driver.pipeline import DB_LEVEL_MONITOR_JOB_ID, TABLE_LEVEL_MONITOR_JOB_ID, SCHEMA_MONITOR_JOB_ID
+from driver.pipeline import DB_LEVEL_MONITOR_JOB_ID, TABLE_LEVEL_MONITOR_JOB_ID, \
+    SCHEMA_MONITOR_JOB_ID
 
 
 import driver.pipeline as module_under_test

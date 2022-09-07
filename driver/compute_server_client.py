@@ -184,7 +184,7 @@ class ComputeServerClient:
         # schema observation use its own timeout settings due to the potential large data volume
         schema_observation_timeout = 90
 
-        with open("sample.json", "w") as outfile:
+        with open("sample.json", "w", encoding="utf-8") as outfile:
             outfile.write(json.dumps(data, indent=2, default=str))
         try:
             response = self._req_session.post(
