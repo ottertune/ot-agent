@@ -392,3 +392,17 @@ def test_postgres_collect_query_metrics(
     # pg_stat_statements currently doesn't work for integration test.
     # So this is a placeholder.
     assert metrics["pg_stat_statements"]
+
+
+def test_postgres_collect_schema(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    schema = collector.collect_schema()
+    assert len(schema["columns"]) > 0
+    assert len(schema["indexes"]) > 0
+    assert len(schema["tables"]) > 0
+    assert len(schema["views"]) > 0
