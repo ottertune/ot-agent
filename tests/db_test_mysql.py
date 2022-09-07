@@ -365,3 +365,23 @@ def test_mysql_collect_query_metrics(
     metrics = collector.collect_query_metrics(num_query_to_collect_stats)
 
     assert metrics["events_statements_summary_by_digest"]["rows"]
+
+def test_mysql_collect_schema(
+    mysql_user: str,
+    mysql_password: str,
+    mysql_host: str,
+    mysql_port: str,
+    mysql_database: str,
+) -> None:
+    conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
+    conn = connect_mysql(conf)
+
+    time.sleep(1)
+    version = get_mysql_version(conn)
+    collector = MysqlCollector(conn, version)
+    schema = collector.collect_schema()
+
+    assert len(schema["columns"]["rows"]) > 0
+    assert len(schema["indexes"]["rows"]) > 0
+    assert len(schema["tables"]["rows"]) > 0
+    assert len(schema["views"]["rows"]) > 0
