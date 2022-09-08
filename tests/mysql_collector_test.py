@@ -33,6 +33,13 @@ class SqlData:
     replica_status_meta: List[List[str]]
     table_level_stats: List[List[Union[int, str]]]
     table_level_stats_meta: List[List[str]]
+    column_level_stats: List[List[Union[int, str]]]
+    column_level_stats_meta: List[List[str]]
+    foreign_keys_level_stats: List[List[Union[int, str]]]
+    foreign_keys_level_stats_meta: List[List[str]]
+    view_level_stats: List[List[Union[int, str]]]
+    view_level_stats_meta: List[List[str]]
+
 
     def __init__(self) -> None:
         self.global_status = [
@@ -110,6 +117,7 @@ class SqlData:
                 "BTREE"
             ]
         ]
+
         self.index_stats_meta = [
             ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
@@ -238,6 +246,65 @@ class SqlData:
             ["FIRST_SEEN"],
             ["LAST_SEEN"],
         ]
+        self.column_level_stats_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+            ["column_comment"],
+            ["ordinal_position"],
+            ["column_default"],
+            ["is_nullable"],
+            ["data_type"],
+            ["collation_name"],
+        ]
+        self.column_level_stats = [[
+          "information_schema",
+          "CHECK_CONSTRAINTS",
+          "CHECK_CLAUSE",
+          4,
+          None,
+          "NO",
+          "longtext",
+          "utf8_bin",
+          ""
+        ]]
+        self.foreign_keys_level_stats_meta = [
+            ["constraint_schema"],
+            ["table_name"],
+            ["constraint_name"],
+            ["unique_constraint_schema"],
+            ["unique_constraint_name"],
+            ["update_rule"],
+            ["delete_rule"],
+            ["referenced_table_name"]
+        ]
+        self.foreign_keys_level_stats = [[
+            "main",
+            "Pets",
+            "Pets_FK",
+            "main",
+            "PRIMARY",
+            "NO ACTION",
+            "NO ACTION",
+            "Customers"
+        ]]
+        self.view_level_stats_meta = [
+            ["table_schema"],
+            ["table_name"],
+            ["view_definition"],
+            ["is_updatable"],
+            ["check_option"],
+            ["security_type"]
+        ]
+        self.view_level_stats = [[
+            "sys",
+            "schema_redundant_indexes",
+            "select `sys`.`redundant_keys`.`table_schema` AS `table_schema`,`sys`.`redundant_keys`.`table_name` AS `table_name`,`sys`.`redundant_keys`.`index_name` AS `redundant_index_name`,`sys`.`redundant_keys`.`index_columns` AS `redundant_index_columns`,`sys`.`redundant_keys`.`non_unique` AS `redundant_index_non_unique`,`sys`.`dominant_keys`.`index_name` AS `dominant_index_name`,`sys`.`dominant_keys`.`index_columns` AS `dominant_index_columns`,`sys`.`dominant_keys`.`non_unique` AS `dominant_index_non_unique`,if(((0 <> `sys`.`redundant_keys`.`subpart_exists`) or (0 <> `sys`.`dominant_keys`.`subpart_exists`)),1,0) AS `subpart_exists`,concat('ALTER TABLE `',`sys`.`redundant_keys`.`table_schema`,'`.`',`sys`.`redundant_keys`.`table_name`,'` DROP INDEX `',`sys`.`redundant_keys`.`index_name`,'`') AS `sql_drop_index` from (`sys`.`x$schema_flattened_keys` `redundant_keys` join `sys`.`x$schema_flattened_keys` `dominant_keys` on(((`sys`.`redundant_keys`.`table_schema` = `sys`.`dominant_keys`.`table_schema`) and (`sys`.`redundant_keys`.`table_name` = `sys`.`dominant_keys`.`table_name`)))) where ((`sys`.`redundant_keys`.`index_name` <> `sys`.`dominant_keys`.`index_name`) and (((`sys`.`redundant_keys`.`index_columns` = `sys`.`dominant_keys`.`index_columns`) and ((`sys`.`redundant_keys`.`non_unique` > `sys`.`dominant_keys`.`non_unique`) or ((`sys`.`redundant_keys`.`non_unique` = `sys`.`dominant_keys`.`non_unique`) and (if((`sys`.`redundant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`redundant_keys`.`index_name`) > if((`sys`.`dominant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`dominant_keys`.`index_name`))))) or ((locate(concat(`sys`.`redundant_keys`.`index_columns`,','),`sys`.`dominant_keys`.`index_columns`) = 1) and (`sys`.`redundant_keys`.`non_unique` = 1)) or ((locate(concat(`sys`.`dominant_keys`.`index_columns`,','),`sys`.`redundant_keys`.`index_columns`) = 1) and (`sys`.`dominant_keys`.`non_unique` = 0))))",
+            "NO",
+            "NONE",
+            "INVOKER"
+        ]]
+
+
 
     def expected_default_result(self) -> Dict[str, Any]:
         """
@@ -340,6 +407,15 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
             result.value = data.query_stats
             result.meta = data.query_stats_meta
+        elif "information_schema.column" in sql.lower():
+            result.value = data.column_level_stats
+            result.meta = data.column_level_stats_meta
+        elif "information_schema.referential_constraints" in sql.lower():
+            result.value = data.foreign_keys_level_stats
+            result.meta = data.foreign_keys_level_stats_meta
+        elif "information_schema.views" in sql.lower():
+            result.value = data.view_level_stats
+            result.meta = data.view_level_stats_meta
 
     return sql_fn
 
@@ -678,3 +754,18 @@ def test_collect_query_metric_success(mock_conn: MagicMock) -> NoReturn:
                    ]
                ]}
            }
+
+
+def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    res = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, res)
+    mock_cursor.fetchall.side_effect = lambda: res.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
+    collector = MysqlCollector(mock_conn, "7.9.9")
+    schema = collector.collect_schema()
+    assert len(schema["columns"]["rows"]) > 0
+    assert len(schema["indexes"]["rows"]) > 0
+    assert len(schema["tables"]["rows"]) > 0
+    assert len(schema["views"]["rows"]) > 0

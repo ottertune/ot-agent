@@ -117,14 +117,18 @@ QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
 SELECT
     table_schema, table_name,table_type,engine, version, row_format,
     table_rows, max_data_length, table_collation, create_options,
-    table_comment FROM information_schema.tables
+    table_comment
+FROM
+    information_schema.tables
 ORDER BY
     table_schema, table_name
 """
 
 QUERY_VIEW_SCHEMA_SQL_TEMPLATE = """
 SELECT table_schema, table_name, view_definition, is_updatable, check_option,
-    security_type FROM information_schema.views
+    security_type
+FROM
+    information_schema.views
 ORDER BY table_schema, table_name,
     view_definition
 """
