@@ -756,7 +756,7 @@ def test_collect_query_metric_success(mock_conn: MagicMock) -> NoReturn:
            }
 
 
-def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
