@@ -10,7 +10,8 @@ from driver.database import (
     collect_db_level_data_from_database,
     collect_table_level_data_from_database,
 )
-from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
+from tests.useful_literals import COLUMN_SCHEMA_MYSQL_COLUMNS, FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS, TABLE_LEVEL_MYSQL_COLUMNS,\
+    VIEW_SCHEMA_MYSQL_COLUMNS, TABLE_SCHEMA_MYSQL_COLUMNS
 
 # pylint: disable=ungrouped-imports
 from driver.collector.mysql_collector import MysqlCollector
@@ -381,7 +382,21 @@ def test_mysql_collect_schema(
     collector = MysqlCollector(conn, version)
     schema = collector.collect_schema()
 
-    assert len(schema["columns"]["rows"]) > 0
-    assert len(schema["indexes"]["rows"]) > 0
-    assert len(schema["tables"]["rows"]) > 0
-    assert len(schema["views"]["rows"]) > 0
+    _verify_mysql_schema(schema)
+
+def _verify_mysql_schema(schema: Dict[str, Any]) -> None:
+    assert schema["columns"]["columns"] == COLUMN_SCHEMA_MYSQL_COLUMNS
+    for row in schema["columns"]["rows"]:
+        assert len(row) == len(COLUMN_SCHEMA_MYSQL_COLUMNS)
+
+    assert schema["foreign_keys"]["columns"] == FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS
+    for row in schema["foreign_keys"]["rows"]:
+        assert len(row) == len(FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS)
+
+    assert schema["tables"]["columns"] == TABLE_SCHEMA_MYSQL_COLUMNS
+    for row in schema["tables"]["rows"]:
+        assert len(row) == len(TABLE_SCHEMA_MYSQL_COLUMNS)
+
+    assert schema["views"]["columns"] == VIEW_SCHEMA_MYSQL_COLUMNS
+    for row in schema["views"]["rows"]:
+        assert len(row) == len(VIEW_SCHEMA_MYSQL_COLUMNS)
