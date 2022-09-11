@@ -88,6 +88,10 @@ SELECT
     is_nullable,  data_type, collation_name, column_comment
 FROM
     information_schema.columns
+WHERE
+  TABLE_SCHEMA
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
     table_schema, table_name, column_name
 """
@@ -99,6 +103,10 @@ SELECT
     nullable, packed
 FROM
     information_schema.statistics
+WHERE
+  TABLE_SCHEMA
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
     table_schema, table_name, index_name
 """
@@ -109,6 +117,10 @@ SELECT
     unique_constraint_name, update_rule, delete_rule, referenced_table_name
 FROM
     information_schema.referential_constraints
+WHERE
+    constraint_schema
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY 
     constraint_schema, table_name, constraint_name
 """
@@ -120,6 +132,10 @@ SELECT
     table_comment
 FROM
     information_schema.tables
+WHERE
+  table_schema
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
     table_schema, table_name
 """
@@ -129,6 +145,10 @@ SELECT table_schema, table_name, view_definition, is_updatable, check_option,
     security_type
 FROM
     information_schema.views
+WHERE
+  table_schema
+NOT IN
+  ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY table_schema, table_name,
     view_definition
 """
