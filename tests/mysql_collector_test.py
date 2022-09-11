@@ -10,7 +10,7 @@ from mysql.connector import errorcode
 from driver.collector.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
 from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
-
+from tests.db_test_mysql import _verify_mysql_schema
 # pylint: disable=missing-function-docstring,too-many-instance-attributes
 
 
@@ -33,12 +33,12 @@ class SqlData:
     replica_status_meta: List[List[str]]
     table_level_stats: List[List[Union[int, str]]]
     table_level_stats_meta: List[List[str]]
-    column_level_stats: List[List[Union[int, str]]]
-    column_level_stats_meta: List[List[str]]
-    foreign_keys_level_stats: List[List[Union[int, str]]]
-    foreign_keys_level_stats_meta: List[List[str]]
-    view_level_stats: List[List[Union[int, str]]]
-    view_level_stats_meta: List[List[str]]
+    column_schema: List[List[Union[int, str]]]
+    column_schema_meta: List[List[str]]
+    foreign_keys_schema: List[List[Union[int, str]]]
+    foreign_keys_schema_meta: List[List[str]]
+    view_schema: List[List[Union[int, str]]]
+    view_schema_meta: List[List[str]]
 
 
     def __init__(self) -> None:
@@ -246,17 +246,44 @@ class SqlData:
             ["FIRST_SEEN"],
             ["LAST_SEEN"],
         ]
-        self.column_level_stats_meta = [
+        self.table_schema_meta = [
             ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
-            ["column_comment"],
-            ["ordinal_position"],
-            ["column_default"],
-            ["is_nullable"],
-            ["data_type"],
-            ["collation_name"],
+            ["TABLE_TYPE"],
+            ["ENGINE"],
+            ["VERSION"],
+            ["ROW_FORMAT"],
+            ["TABLE_ROWS"],
+            ["MAX_DATA_LENGTH"],
+            ["TABLE_COLLATION"],
+            ["CREATE_OPTIONS"],
+            ["TABLE_COMMENT"]
         ]
-        self.column_level_stats = [[
+        self.table_schema = [[
+            "main",
+            "Customers",
+            "BASE TABLE",
+            "InnoDB",
+            10,
+            "Dynamic",
+            0,
+            0,
+            "utf8mb4_0900_ai_ci",
+            "",
+            ""
+        ]]
+        self.column_schema_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+            ["COLUMN_NAME"],
+            ["ORDINAL_POSITION"],
+            ["COLUMN_DEFAULT"],
+            ["IS_NULLABLE"],
+            ["DATA_TYPE"],
+            ["COLLATION_NAME"],
+            ["COLUMN_COMMENT"],
+        ]
+        self.column_schema = [[
           "information_schema",
           "CHECK_CONSTRAINTS",
           "CHECK_CLAUSE",
@@ -267,17 +294,17 @@ class SqlData:
           "utf8_bin",
           ""
         ]]
-        self.foreign_keys_level_stats_meta = [
-            ["constraint_schema"],
-            ["table_name"],
-            ["constraint_name"],
-            ["unique_constraint_schema"],
-            ["unique_constraint_name"],
-            ["update_rule"],
-            ["delete_rule"],
-            ["referenced_table_name"]
+        self.foreign_keys_schema_meta = [
+            ["CONSTRAINT_SCHEMA"],
+            ["TABLE_NAME"],
+            ["CONSTRAINT_NAME"],
+            ["UNIQUE_CONSTRAINT_SCHEMA"],
+            ["UNIQUE_CONSTRAINT_NAME"],
+            ["UPDATE_RULE"],
+            ["DELETE_RULE"],
+            ["REFERENCED_TABLE_NAME"]
         ]
-        self.foreign_keys_level_stats = [[
+        self.foreign_keys_schema = [[
             "main",
             "Pets",
             "Pets_FK",
@@ -287,15 +314,15 @@ class SqlData:
             "NO ACTION",
             "Customers"
         ]]
-        self.view_level_stats_meta = [
-            ["table_schema"],
-            ["table_name"],
-            ["view_definition"],
-            ["is_updatable"],
-            ["check_option"],
-            ["security_type"]
+        self.view_schema_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+            ["VIEW_DEFINITION"],
+            ["IS_UPDATABLE"],
+            ["CHECK_OPTION"],
+            ["SECURITY_TYPE"]
         ]
-        self.view_level_stats = [[
+        self.view_schema = [[
             "sys",
             "schema_redundant_indexes",
             "select `sys`.`redundant_keys`.`table_schema` AS `table_schema`,`sys`.`redundant_keys`.`table_name` AS `table_name`,`sys`.`redundant_keys`.`index_name` AS `redundant_index_name`,`sys`.`redundant_keys`.`index_columns` AS `redundant_index_columns`,`sys`.`redundant_keys`.`non_unique` AS `redundant_index_non_unique`,`sys`.`dominant_keys`.`index_name` AS `dominant_index_name`,`sys`.`dominant_keys`.`index_columns` AS `dominant_index_columns`,`sys`.`dominant_keys`.`non_unique` AS `dominant_index_non_unique`,if(((0 <> `sys`.`redundant_keys`.`subpart_exists`) or (0 <> `sys`.`dominant_keys`.`subpart_exists`)),1,0) AS `subpart_exists`,concat('ALTER TABLE `',`sys`.`redundant_keys`.`table_schema`,'`.`',`sys`.`redundant_keys`.`table_name`,'` DROP INDEX `',`sys`.`redundant_keys`.`index_name`,'`') AS `sql_drop_index` from (`sys`.`x$schema_flattened_keys` `redundant_keys` join `sys`.`x$schema_flattened_keys` `dominant_keys` on(((`sys`.`redundant_keys`.`table_schema` = `sys`.`dominant_keys`.`table_schema`) and (`sys`.`redundant_keys`.`table_name` = `sys`.`dominant_keys`.`table_name`)))) where ((`sys`.`redundant_keys`.`index_name` <> `sys`.`dominant_keys`.`index_name`) and (((`sys`.`redundant_keys`.`index_columns` = `sys`.`dominant_keys`.`index_columns`) and ((`sys`.`redundant_keys`.`non_unique` > `sys`.`dominant_keys`.`non_unique`) or ((`sys`.`redundant_keys`.`non_unique` = `sys`.`dominant_keys`.`non_unique`) and (if((`sys`.`redundant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`redundant_keys`.`index_name`) > if((`sys`.`dominant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`dominant_keys`.`index_name`))))) or ((locate(concat(`sys`.`redundant_keys`.`index_columns`,','),`sys`.`dominant_keys`.`index_columns`) = 1) and (`sys`.`redundant_keys`.`non_unique` = 1)) or ((locate(concat(`sys`.`dominant_keys`.`index_columns`,','),`sys`.`redundant_keys`.`index_columns`) = 1) and (`sys`.`dominant_keys`.`non_unique` = 0))))",
@@ -395,7 +422,7 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql in ("SHOW REPLICA STATUS;", "SHOW SLAVE STATUS;"):
             result.value = data.replica_status
             result.meta = data.replica_status_meta
-        elif "information_schema.TABLES".lower() in sql.lower():
+        elif "information_schema.TABLES".lower() in sql.lower() and "DATA_FREE".lower() in sql.lower():
             result.value = data.table_level_stats
             result.meta = data.table_level_stats_meta
         elif "information_schema.STATISTICS".lower() in sql.lower():
@@ -407,15 +434,18 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
             result.value = data.query_stats
             result.meta = data.query_stats_meta
+        elif "information_schema.TABLES".lower() in sql.lower() and "table_comment" in sql.lower():
+            result.value = data.table_schema
+            result.meta = data.table_schema_meta
         elif "information_schema.column" in sql.lower():
-            result.value = data.column_level_stats
-            result.meta = data.column_level_stats_meta
+            result.value = data.column_schema
+            result.meta = data.column_schema_meta
         elif "information_schema.referential_constraints" in sql.lower():
-            result.value = data.foreign_keys_level_stats
-            result.meta = data.foreign_keys_level_stats_meta
+            result.value = data.foreign_keys_schema
+            result.meta = data.foreign_keys_schema_meta
         elif "information_schema.views" in sql.lower():
-            result.value = data.view_level_stats
-            result.meta = data.view_level_stats_meta
+            result.value = data.view_schema
+            result.meta = data.view_schema_meta
 
     return sql_fn
 
@@ -765,7 +795,4 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
     schema = collector.collect_schema()
-    assert len(schema["columns"]["rows"]) > 0
-    assert len(schema["indexes"]["rows"]) > 0
-    assert len(schema["tables"]["rows"]) > 0
-    assert len(schema["views"]["rows"]) > 0
+    _verify_mysql_schema(schema)
