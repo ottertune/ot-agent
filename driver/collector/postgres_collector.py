@@ -234,10 +234,12 @@ SELECT
     condeferrable as constraint_deferrable,
     condeferred as constraint_deferred_by_default,
     i.indisreplident as index_replica_identity,
-    c2.reltablespace as table_space
+    c2.reltablespace as table_space,
+    am.amname as index_type
 FROM
-    pg_class c LEFT JOIN pg_namespace n ON n.oid = c.relnamespace, pg_class c2, pg_index i
-LEFT JOIN
+    pg_class c LEFT JOIN pg_namespace n ON n.oid = c.relnamespace,
+    pg_class c2 LEFT JOIN pg_am am ON am.oid=c2.relam,
+    pg_index i LEFT JOIN
     pg_constraint con
 ON
     (conrelid = i.indrelid AND conindid = i.indexrelid AND contype IN   ('p','u','x'))
