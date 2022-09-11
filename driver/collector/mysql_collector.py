@@ -88,12 +88,12 @@ SELECT
     is_nullable,  data_type, collation_name, column_comment
 FROM
     information_schema.columns
-WHERE
-  TABLE_SCHEMA
+WHERE 
+    table_schema
 NOT IN
-  ('information_schema', 'performance_schema', 'mysql', 'sys')
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
-    table_schema, table_name, column_name
+    table_schema, table_name, column_name;
 """
 
 QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
@@ -103,12 +103,12 @@ SELECT
     nullable, packed
 FROM
     information_schema.statistics
-WHERE
-  TABLE_SCHEMA
+WHERE 
+    table_schema
 NOT IN
-  ('information_schema', 'performance_schema', 'mysql', 'sys')
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
-    table_schema, table_name, index_name
+    table_schema, table_name, index_name;
 """
 
 QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
@@ -117,12 +117,12 @@ SELECT
     unique_constraint_name, update_rule, delete_rule, referenced_table_name
 FROM
     information_schema.referential_constraints
-WHERE
+WHERE 
     constraint_schema
 NOT IN
-  ('information_schema', 'performance_schema', 'mysql', 'sys')
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY 
-    constraint_schema, table_name, constraint_name
+    constraint_schema, table_name, constraint_name;
 """
 
 QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
@@ -133,11 +133,11 @@ SELECT
 FROM
     information_schema.tables
 WHERE
-  table_schema
+    table_schema
 NOT IN
-  ('information_schema', 'performance_schema', 'mysql', 'sys')
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
 ORDER BY
-    table_schema, table_name
+    table_schema, table_name;
 """
 
 QUERY_VIEW_SCHEMA_SQL_TEMPLATE = """
@@ -145,12 +145,11 @@ SELECT table_schema, table_name, view_definition, is_updatable, check_option,
     security_type
 FROM
     information_schema.views
-WHERE
-  table_schema
+WHERE 
+    table_schema
 NOT IN
-  ('information_schema', 'performance_schema', 'mysql', 'sys')
-ORDER BY table_schema, table_name,
-    view_definition
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY table_schema, table_name, view_definition;
 """
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
