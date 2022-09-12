@@ -206,11 +206,17 @@ SELECT
     END AS stats_target,
     col_description(a.attrelid, a.attnum) as description
 FROM
-    pg_attribute a
+    pg_attribute a 
+    LEFT JOIN pg_class c ON c.oid = a.attrelid
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE
-    a.attnum > 0 AND NOT a.attisdropped
+    a.attnum > 0
+    AND NOT a.attisdropped
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
 ORDER BY
-    a.attnum
+    a.attnum;
 """
 
 QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
@@ -224,22 +230,27 @@ SELECT
     i.indisvalid as is_valid,
     pg_get_indexdef(i.indexrelid, 0, true) as index_expression,
     pg_get_constraintdef(con.oid, true) as index_constraint,
-    contype as constraint_tyep,
+    contype as constraint_type,
     condeferrable as constraint_deferrable,
     condeferred as constraint_deferred_by_default,
     i.indisreplident as index_replica_identity,
-    c2.reltablespace as table_space
+    c2.reltablespace as table_space,
+    am.amname as index_type
 FROM
-    pg_class c, pg_class c2, pg_index i
-LEFT JOIN
+    pg_class c LEFT JOIN pg_namespace n ON n.oid = c.relnamespace,
+    pg_class c2 LEFT JOIN pg_am am ON am.oid=c2.relam,
+    pg_index i LEFT JOIN
     pg_constraint con
 ON
     (conrelid = i.indrelid AND conindid = i.indexrelid AND contype IN   ('p','u','x'))
 WHERE
-    c.oid = i.indrelid AND i.indexrelid = c2.oid
+    c.oid = i.indrelid
+    AND i.indexrelid = c2.oid
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
 ORDER BY
-    i.indisprimary DESC, c2.relname
-
+    i.indisprimary DESC, c2.relname;
 """
 
 QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
@@ -249,10 +260,15 @@ SELECT
     pg_get_constraintdef(r.oid, true) as constraint_expression
 FROM
     pg_constraint r
+    LEFT JOIN pg_class c ON c.oid = r.conrelid
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE
     r.contype = 'f' AND conparentid = 0
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
 ORDER BY
-    conrelid, conname
+    conrelid, conname;
 """
 
 QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
@@ -270,17 +286,18 @@ WHERE c.relkind IN ('r','p','v','m','f','')
       AND n.nspname <> 'pg_catalog'
       AND n.nspname <> 'information_schema'
       AND n.nspname !~ '^pg_toast'
-ORDER BY 1,2
+ORDER BY 1,2;
 """
 
 QUERY_VIEW_SCEHMA_SQL_TEMPLATE = """
 SELECT
-          schemaname, viewname, viewowner, definition
+    schemaname, viewname, viewowner, definition
 FROM
     pg_views
 WHERE
     schemaname <> 'pg_catalog'
 AND schemaname <> 'information_schema'
+AND schemaname !~ '^pg_toast';
 """
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
