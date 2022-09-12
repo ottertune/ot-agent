@@ -61,4 +61,5 @@ def test_schedule_or_update_job_same_job_twice(
     module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
+    # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
