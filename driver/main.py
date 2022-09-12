@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import (
+    SCHEMA_MONITOR_JOB_ID,
     schedule_or_update_job,
     DB_LEVEL_MONITOR_JOB_ID,
     TABLE_LEVEL_MONITOR_JOB_ID,
@@ -130,6 +131,17 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how many query to collect",
     )
+    parser.add_argument(
+        "--disable-schema-monitoring",
+        type=str,
+        default="False",
+        help="Whether to disable schema monitoring."
+    )
+    parser.add_argument(
+        "--override-schema-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect schema data (in seconds)",
+    )
 
     return parser.parse_args()
 
@@ -154,6 +166,13 @@ def schedule_query_monitor_job(config) -> None:
     """
     schedule_or_update_job(scheduler, config, QUERY_MONITOR_JOB_ID)
 
+def schedule_schema_monitor_job(config) -> None:
+    """
+    The polling loop for schema monitoring
+    """
+    schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
+
+
 
 def get_config(args):
     """
@@ -168,6 +187,7 @@ def get_config(args):
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
+        schema_monitor_interval=args.override_schema_monitor_interval,
     )
 
     config_builder.from_file(args.config)\
@@ -203,6 +223,8 @@ def run() -> None:
         schedule_table_level_monitor_job(config)
     if not config.disable_query_monitoring:
         schedule_query_monitor_job(config)
+    if not config.disable_schema_monitoring:
+        schedule_schema_monitor_job(config)
     scheduler.start()
 
 

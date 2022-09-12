@@ -37,3 +37,116 @@ TABLE_LEVEL_MYSQL_COLUMNS = [
     "INDEX_LENGTH",
     "DATA_FREE",
 ]
+
+TABLE_SCHEMA_MYSQL_COLUMNS = [
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "TABLE_TYPE",
+    "ENGINE",
+    "VERSION",
+    "ROW_FORMAT",
+    "TABLE_ROWS",
+    "MAX_DATA_LENGTH",
+    "TABLE_COLLATION",
+    "CREATE_OPTIONS",
+    "TABLE_COMMENT"
+]
+
+
+COLUMN_SCHEMA_MYSQL_COLUMNS = [
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "COLUMN_NAME",
+    "ORDINAL_POSITION",
+    "COLUMN_DEFAULT",
+    "IS_NULLABLE",
+    "DATA_TYPE",
+    "COLLATION_NAME",
+    "COLUMN_COMMENT",
+]
+
+INDEX_SCHEMA_MYSQL_COLUMNS = [
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "INDEX_NAME",
+    "NON_UNIQUE",
+    "COLUMN_NAME",
+    "COLLATION",
+    "SUB_PART",
+    "INDEX_TYPE",
+    "NULLABLE",
+    "PACKED",
+]
+
+FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS = [
+    "CONSTRAINT_SCHEMA",
+    "TABLE_NAME",
+    "CONSTRAINT_NAME",
+    "UNIQUE_CONSTRAINT_SCHEMA",
+    "UNIQUE_CONSTRAINT_NAME",
+    "UPDATE_RULE",
+    "DELETE_RULE",
+    "REFERENCED_TABLE_NAME"
+]
+
+VIEW_SCHEMA_MYSQL_COLUMNS = [
+    "TABLE_SCHEMA",
+    "TABLE_NAME",
+    "VIEW_DEFINITION",
+    "IS_UPDATABLE",
+    "CHECK_OPTION",
+    "SECURITY_TYPE"
+]
+
+TABLE_SCHEMA_POSTGRES_COLUMNS = [
+    "schema",
+    "table_id",
+    "table_name",
+    "type",
+    "owner",
+    "persistence",
+    "description"
+]
+
+COLUMN_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "name",
+    "type",
+    "default_val",
+    "nullable",
+    "collation",
+    "identity",
+    "storage_type",
+    "stats_target",
+    "description"
+]
+
+FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "constraint_name",
+    "constraint_expression"
+]
+VIEW_SCHEMA_POSTGRES_COLUMNS = [
+    "schemaname",
+    "viewname",
+    "viewowner",
+    "definition"
+]
+
+INDEX_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "index_id",
+    "index_name",
+    "is_primary",
+    "is_unique",
+    "is_clustered",
+    "is_valid",
+    "index_expression",
+    "index_constraint",
+    "constraint_type",
+    "constraint_deferrable",
+    "constraint_deferred_by_default",
+    "index_replica_identity",
+    "table_space",
+    "index_type"
+]

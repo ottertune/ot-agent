@@ -6,7 +6,7 @@
 # This section is required for connecting to the ottertune compute server
 
 # URL of the OtterTune server that the driver communicates with
-server_url: 'https://api.ottertune.com'
+server_url: "https://api.ottertune.com"
 
 # ====================================================================
 #  METRICS OPTIONS
@@ -26,3 +26,4 @@ num_table_to_collect_stats: 1000
 num_index_to_collect_stats: 10000
 query_monitor_interval: 3600
 num_query_to_collect: 10000
+schema_monitor_interval: 3600

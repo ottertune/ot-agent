@@ -12,6 +12,7 @@ from driver.database import (
     collect_db_level_observation_for_on_prem,
     collect_table_level_observation_for_on_prem,
     collect_query_observation_for_on_prem,
+    collect_schema_observation_for_on_prem
 )
 
 
@@ -20,6 +21,7 @@ DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
 QUERY_MONITOR_JOB_ID = "query_monitor_job"
+SCHEMA_MONITOR_JOB_ID = "schema_monitor_job"
 
 
 def driver_pipeline(
@@ -42,6 +44,8 @@ def driver_pipeline(
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == QUERY_MONITOR_JOB_ID:
         _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+    elif job_id == SCHEMA_MONITOR_JOB_ID:
+        _schema_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(
@@ -103,6 +107,24 @@ def _query_monitor_driver_pipeline_for_on_prem(
     compute_server_client.post_query_observation(query_observation)
 
 
+def _schema_monitor_driver_pipeline_for_on_prem(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects schemas every day
+    Args:
+        config: Driver configuration.
+        compute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    schema_observation = collect_schema_observation_for_on_prem(config)
+    compute_server_client.post_schema_observation(schema_observation)
+
+
+
 def _get_interval(config: DriverConfig, job_id: str) -> int:
     """Get the scheduled time interval (sec) based on job id."""
 
@@ -112,6 +134,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.table_level_monitor_interval)
     elif QUERY_MONITOR_JOB_ID in job_id:
         interval_s = int(config.query_monitor_interval)
+    elif SCHEMA_MONITOR_JOB_ID in job_id:
+        interval_s = int(config.schema_monitor_interval)
     else:
         raise ValueError(f"Job {job_id} is not supported")
     return interval_s
@@ -124,9 +148,12 @@ def _start_job(
     logging.info("Initializing driver pipeline (job %s)...", job_id)
 
     kwargs = {}
-    if job_id in (DB_LEVEL_MONITOR_JOB_ID,
-                  TABLE_LEVEL_MONITOR_JOB_ID,
-                  QUERY_MONITOR_JOB_ID):
+    if job_id in (
+        DB_LEVEL_MONITOR_JOB_ID,
+        TABLE_LEVEL_MONITOR_JOB_ID,
+        QUERY_MONITOR_JOB_ID,
+        SCHEMA_MONITOR_JOB_ID,
+    ):
         kwargs["next_run_time"] = datetime.now()
 
     scheduler.add_job(

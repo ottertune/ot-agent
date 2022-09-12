@@ -52,6 +52,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
+    schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
     def check_table_level_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
@@ -114,6 +115,15 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
+    @validator("schema_monitor_interval")
+    def check_schema_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+        """Validate that schema_monitor_interval is greater than 5 minutes"""
+        if val < 300:
+            raise ValueError(
+                "Invalid driver option schema_monitor_interval, value >= 300"
+                f" is expected, but {val} is found"
+            )
+        return val
 
 
 class Overrides(NamedTuple):
@@ -127,6 +137,8 @@ class Overrides(NamedTuple):
     num_index_to_collect_stats: int
     query_monitor_interval: int
     num_query_to_collect: int
+    schema_monitor_interval: int
+
 
 
 class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -155,6 +167,8 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
     disable_query_monitoring: StrictBool = False
+    disable_schema_monitoring:StrictBool = False
+
 
 
 class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
@@ -213,7 +227,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_query_monitoring: bool
     query_monitor_interval: int
     num_query_to_collect: int
-
+    disable_schema_monitoring: bool
+    schema_monitor_interval: int
     db_non_default_parameters: List[str]
 
 
@@ -259,6 +274,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
                 disable_index_stats = args.disable_index_stats.lower() == "true",
                 disable_query_monitoring = args.disable_query_monitoring.lower() == "true",
+                disable_schema_monitoring = args.disable_schema_monitoring.lower() == "true",
             )
         except ValidationError as ex:
             msg = (

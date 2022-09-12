@@ -50,11 +50,15 @@ def _test_response_data() -> Dict[str, Any]:
         summary=observation_summary,
         organization_id="test_org"
     )
-
+    schema: Dict[str,Any] = dict(
+        summary=observation_summary,
+        organization_id="test_org"
+    )
     return dict(
         server_url=server_url,
         api_key=api_key,
         observation=observation,
+        schema=schema
     )
 
 
@@ -107,4 +111,57 @@ def test_post_db_level_observation_connection_error(test_data: Dict[str, Any]) -
     )
     with pytest.raises(ComputeServerClientException) as ex:
         client.post_db_level_observation(test_data["observation"])
+    assert "Connection Error" in str(ex.value)
+
+
+@responses.activate
+def test_post_schema_observation_success(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/schema_observation/",
+        status=200,
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    client.post_schema_observation(test_data["schema"])
+
+
+
+@responses.activate
+def test_post_schema_observation_session_not_found(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/schema_observation/",
+        status=404,
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    with pytest.raises(ComputeServerClientException) as ex:
+        client.post_schema_observation(test_data["schema"])
+    assert "404" in str(ex.value)
+
+
+@responses.activate
+def test_post_schema_observation_connection_error(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/schema_observation/",
+        body=ConnectionError("Connection Error"),
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    with pytest.raises(ComputeServerClientException) as ex:
+        client.post_schema_observation(test_data["schema"])
     assert "Connection Error" in str(ex.value)

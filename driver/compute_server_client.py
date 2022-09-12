@@ -20,7 +20,7 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
 }
 
 # TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.3.15"
+AGENT_VERSION = "0.3.16"
 
 
 class DBLevelObservation(TypedDict):
@@ -50,6 +50,17 @@ class TableLevelObservation(TypedDict):
 
 class QueryObservation(TypedDict):
     """Query observation data collected from the target database."""
+
+    data: Dict[str, Any]
+    summary: Dict[
+        str, Any
+    ]  # summary information like observation time, database version, etc
+    db_key: str
+    organization_id: str
+
+
+class SchemaObservation(TypedDict):
+    """Schema observation data collected from the target database."""
 
     data: Dict[str, Any]
     summary: Dict[
@@ -142,7 +153,7 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
         # query observation use its own timeout settings due to the potential large data volume
         query_observation_timeout = 90
         try:
@@ -153,4 +164,31 @@ class ComputeServerClient:
             response.raise_for_status()
         except Exception as ex:
             msg = "Failed to post the query observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+
+
+    def post_schema_observation(self, data: SchemaObservation) -> None:
+        """Post **COMPRESSED** schema observation to the server
+        Args:
+            session_id: Session that the data is uploaded to.
+            data: Collected data from the target database.
+        Raises:
+            ComputeServerClientException: Failed to post the observation.
+        """
+        url = f"{self._server_url}/schema_observation/"
+        headers = self._generate_headers(data["organization_id"])
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        headers["Content-Encoding"] = "gzip"
+        # pylint: disable=c-extension-no-member
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
+        # schema observation use its own timeout settings due to the potential large data volume
+        schema_observation_timeout = 90
+        try:
+            response = self._req_session.post(
+                url, data=compressed_data, timeout=schema_observation_timeout,
+                headers=headers,
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the schema observation to the server"
             raise ComputeServerClientException(msg, ex) from ex

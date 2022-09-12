@@ -175,7 +175,131 @@ WHERE
   relid in (SELECT relid from pg_stat_progress_vacuum);
 """
 
+QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    a.attrelid as table_id,
+    a.attname as name,
+    format_type(a.atttypid, a.atttypmod) as type,
+    (SELECT
+        pg_get_expr(d.adbin, d.adrelid, true)
+    FROM
+        pg_attrdef d
+    WHERE
+        d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef
+    ) as default_val,
+    a.attnotnull as nullable,
+    (SELECT
+        c.collname
+    FROM
+        pg_collation c, pg_type t
+    WHERE
+  c.oid = a.attcollation AND t.oid = a.atttypid AND a.attcollation <>      t.typcollation
+             ) as collation,
+    a.attidentity as identity,
+    a.attstorage as storage_type,
+    {generate_query}
+    CASE WHEN
+        a.attstattarget=-1
+    THEN NULL
+    ELSE
+        a.attstattarget
+    END AS stats_target,
+    col_description(a.attrelid, a.attnum) as description
+FROM
+    pg_attribute a 
+    LEFT JOIN pg_class c ON c.oid = a.attrelid
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE
+    a.attnum > 0
+    AND NOT a.attisdropped
+    AND c.relkind IN ('r','p','v','m','f','')
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
+ORDER BY
+    a.attnum;
+"""
 
+QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    c.oid as table_id,
+    i.indexrelid as index_id,
+    c2.relname as index_name,
+    i.indisprimary as is_primary,
+    i.indisunique as is_unique,
+    i.indisclustered as is_clustered,
+    i.indisvalid as is_valid,
+    pg_get_indexdef(i.indexrelid, 0, true) as index_expression,
+    pg_get_constraintdef(con.oid, true) as index_constraint,
+    contype as constraint_type,
+    condeferrable as constraint_deferrable,
+    condeferred as constraint_deferred_by_default,
+    i.indisreplident as index_replica_identity,
+    c2.reltablespace as table_space,
+    am.amname as index_type
+FROM
+    pg_class c LEFT JOIN pg_namespace n ON n.oid = c.relnamespace,
+    pg_class c2 LEFT JOIN pg_am am ON am.oid=c2.relam,
+    pg_index i LEFT JOIN
+    pg_constraint con
+ON
+    (conrelid = i.indrelid AND conindid = i.indexrelid AND contype IN   ('p','u','x'))
+WHERE
+    c.oid = i.indrelid
+    AND i.indexrelid = c2.oid
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
+ORDER BY
+    i.indisprimary DESC, c2.relname;
+"""
+
+QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    conrelid as table_id,
+    conname as constraint_name,
+    pg_get_constraintdef(r.oid, true) as constraint_expression
+FROM
+    pg_constraint r
+    LEFT JOIN pg_class c ON c.oid = r.conrelid
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE
+    r.contype = 'f' {conparentid_predicate}
+    AND n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
+ORDER BY
+    conrelid, conname;
+"""
+
+QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    n.nspname as schema,
+    c.oid as table_id,
+    c.relname as table_name,
+    c.relkind as type,
+    pg_get_userbyid(c.relowner) as owner,
+    c.relpersistence as persistence,
+    obj_description(c.oid, 'pg_class') as description
+FROM pg_class c
+     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind IN ('r','p','v','m','f','')
+      AND n.nspname <> 'pg_catalog'
+      AND n.nspname <> 'information_schema'
+      AND n.nspname !~ '^pg_toast'
+ORDER BY 1,2;
+"""
+
+QUERY_VIEW_SCEHMA_SQL_TEMPLATE = """
+SELECT
+    schemaname, viewname, viewowner, definition
+FROM
+    pg_views
+WHERE
+    schemaname <> 'pg_catalog'
+AND schemaname <> 'information_schema'
+AND schemaname !~ '^pg_toast';
+"""
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
 
@@ -626,6 +750,47 @@ class PostgresCollector(BaseDbCollector):
                 "rows": rows
             },
         }
+
+    def collect_schema(self) -> Dict[str, Any]:
+        """Collect schema"""
+        version_float = float(".".join(self._version_str.split(".")[:2]))
+        generate_query= ""
+        conparentid_predicate = ""
+        if version_float >= 13:
+            generate_query = "a.attgenerated as generated,"
+        if version_float >= 11:
+            conparentid_predicate = "AND conparentid = 0"
+
+        column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query))
+        index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(conparentid_predicate=conparentid_predicate))
+        table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
+        view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE)
+
+        return {
+            "columns" : {
+                "columns" : column_schema_columns,
+                "rows" : column_schema_rows
+            },
+            "indexes" : {
+                "columns" : index_schema_columns,
+                "rows" : index_schema_rows
+            },
+            "foreign_keys" : {
+                "columns" :  foreign_key_schema_columns,
+                "rows" : foreign_key_schema_rows
+            },
+            "tables" : {
+                "columns" : table_schema_columns,
+                "rows" : table_schema_rows
+            },
+            "views" : {
+                "columns": view_schema_columns,
+                "rows" : view_schema_rows
+            }
+        }
+
+
 
     def _calculate_bloat_ratios(
         self,

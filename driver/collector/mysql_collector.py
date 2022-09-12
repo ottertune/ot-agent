@@ -82,6 +82,75 @@ LIMIT
     {n};
 """
 
+QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    TABLE_SCHEMA, TABLE_NAME,  COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT,
+    IS_NULLABLE,  DATA_TYPE, COLLATION_NAME, COLUMN_COMMENT
+FROM
+    information_schema.columns
+WHERE 
+    table_schema
+NOT IN
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY
+    table_schema, table_name, column_name;
+"""
+
+QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE,
+    COLUMN_NAME, COLLATION, SUB_PART, INDEX_TYPE,
+    NULLABLE, PACKED
+FROM
+    information_schema.statistics
+WHERE 
+    table_schema
+NOT IN
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY
+    table_schema, table_name, index_name;
+"""
+
+QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_SCHEMA,
+    UNIQUE_CONSTRAINT_NAME, UPDATE_RULE, DELETE_RULE, REFERENCED_TABLE_NAME
+FROM
+    information_schema.referential_constraints
+WHERE 
+    constraint_schema
+NOT IN
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY 
+    constraint_schema, table_name, constraint_name;
+"""
+
+QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
+SELECT
+    TABLE_SCHEMA, TABLE_NAME,TABLE_TYPE,ENGINE, VERSION, ROW_FORMAT,
+    TABLE_ROWS, MAX_DATA_LENGTH, TABLE_COLLATION, CREATE_OPTIONS,
+    TABLE_COMMENT
+FROM
+    information_schema.tables
+WHERE
+    table_schema
+NOT IN
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY
+    table_schema, table_name;
+"""
+
+QUERY_VIEW_SCHEMA_SQL_TEMPLATE = """
+SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION, IS_UPDATABLE, CHECK_OPTION,
+    SECURITY_TYPE
+FROM
+    information_schema.views
+WHERE 
+    table_schema
+NOT IN
+    ('information_schema', 'performance_schema', 'mysql', 'sys')
+ORDER BY table_schema, table_name, view_definition;
+"""
 
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
@@ -490,6 +559,47 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "events_statements_summary_by_digest": {
                 "columns": query_columns,
                 "rows": query_rows,
+            }
+        }
+
+    def collect_schema(self) -> Dict[str, Any]:
+        """Collect schema"""
+
+        column_schema_values, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE)
+        column_schema_rows = [list(row) for row in column_schema_values]
+
+        index_schema_values, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        index_schema_rows = [list(row) for row in index_schema_values]
+
+        foreign_key_schema_values, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_rows = [list(row) for row in foreign_key_schema_values]
+
+        table_schema_values, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
+        table_schema_rows = [list(row) for row in table_schema_values]
+
+        view_schema_values, view_schema_columns = self._cmd(QUERY_VIEW_SCHEMA_SQL_TEMPLATE)
+        view_schema_rows = [list(row) for row in view_schema_values]
+
+        return {
+            "columns" : {
+                "columns" : column_schema_columns,
+                "rows" : column_schema_rows
+            },
+            "indexes" : {
+                "columns" : index_schema_columns,
+                "rows" : index_schema_rows
+            },
+            "foreign_keys" : {
+                "columns" : foreign_key_schema_columns,
+                "rows" : foreign_key_schema_rows
+            },
+            "tables" : {
+                "columns" : table_schema_columns,
+                "rows" : table_schema_rows
+            },
+            "views" : {
+                "columns" : view_schema_columns,
+                "rows" : view_schema_rows
             }
         }
 

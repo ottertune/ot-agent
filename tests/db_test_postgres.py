@@ -9,7 +9,10 @@ from driver.database import (
     collect_table_level_data_from_database,
 )
 from driver.collector.postgres_collector import PostgresCollector
-from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+from tests.useful_literals import COLUMN_SCHEMA_POSTGRES_COLUMNS, \
+        FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS, TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, \
+        TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS, \
+        INDEX_SCHEMA_POSTGRES_COLUMNS
 
 # pylint: disable=missing-function-docstring
 
@@ -392,3 +395,35 @@ def test_postgres_collect_query_metrics(
     # pg_stat_statements currently doesn't work for integration test.
     # So this is a placeholder.
     assert metrics["pg_stat_statements"]
+
+
+def test_postgres_collect_schema(
+    pg_user: str, pg_password: str, pg_host: str, pg_port: str, pg_database: str
+) -> None:
+    conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
+    conn = connect_postgres(conf)
+    version = get_postgres_version(conn)
+    collector = PostgresCollector(conn, version)
+    schema = collector.collect_schema()
+    _verify_postgres_schema(schema)
+
+def _verify_postgres_schema(schema: Dict[str, Any]) -> None:
+    assert schema["columns"]["columns"] == COLUMN_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["columns"]["rows"]:
+        assert len(row) == len(COLUMN_SCHEMA_POSTGRES_COLUMNS)
+
+    assert schema["foreign_keys"]["columns"] == FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["foreign_keys"]["rows"]:
+        assert len(row) == len(FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS)
+
+    assert schema["tables"]["columns"] == TABLE_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["tables"]["rows"]:
+        assert len(row) == len(TABLE_SCHEMA_POSTGRES_COLUMNS)
+
+    assert schema["views"]["columns"] == VIEW_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["views"]["rows"]:
+        assert len(row) == len(VIEW_SCHEMA_POSTGRES_COLUMNS)
+
+    assert schema["indexes"]["columns"] == INDEX_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["indexes"]["rows"]:
+        assert len(row) == len(INDEX_SCHEMA_POSTGRES_COLUMNS)
