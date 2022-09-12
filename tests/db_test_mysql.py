@@ -407,6 +407,6 @@ def _verify_mysql_schema(schema: Dict[str, Any]) -> None:
     for row in schema["views"]["rows"]:
         assert len(row) == len(VIEW_SCHEMA_MYSQL_COLUMNS)
 
-    assert schema["views"]["columns"] == INDEX_SCHEMA_MYSQL_COLUMNS
-    for row in schema["views"]["rows"]:
+    assert schema["indexes"]["columns"] == INDEX_SCHEMA_MYSQL_COLUMNS
+    for row in schema["indexes"]["rows"]:
         assert len(row) == len(INDEX_SCHEMA_MYSQL_COLUMNS)
