@@ -258,6 +258,16 @@ class SqlData:
             "pg_statio_user_tables": [[4, 4]],
             "pg_stat_user_indexes": [[5, 5]],
             "pg_statio_user_indexes": [[6, 6]],
+            "index_schema": [
+            ],
+            "column_schema": [
+            ],
+            "foreign_key_schema": [
+            ],
+            "table_schema" : [
+            ],
+            "view_schema" : [
+            ]
         }
         self.metas = {
             "pg_stat_archiver": [["global"], ["global_count"]],
@@ -682,19 +692,19 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
             result.value = data.views["pg_stat_user_tables_raw"]
             result.meta = data.metas["pg_stat_user_tables_raw"]
         elif sql == QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=""):
-            result.value = []
+            result.value = data.aggregated_views["column_schema"]
             result.meta = data.aggregated_metas["column_schema"]
         elif sql == QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE:
-            result.value = []
+            result.value = data.aggregated_views["foreign_key_schema"]
             result.meta = data.aggregated_metas["foreign_key_schema"]
         elif sql == QUERY_INDEX_SCHEMA_SQL_TEMPLATE:
-            result.value = []
+            result.value = data.aggregated_views["index_schema"]
             result.meta = data.aggregated_metas["index_schema"]
         elif sql == QUERY_TABLE_SCHEMA_SQL_TEMPLATE:
-            result.value = []
+            result.value = data.aggregated_views["table_schema"]
             result.meta = data.aggregated_metas["table_schema"]
         elif sql == QUERY_VIEW_SCEHMA_SQL_TEMPLATE:
-            result.value = []
+            result.value = data.aggregated_views["view_schema"]
             result.meta = data.aggregated_metas["view_schema"]
         else:
             raise Exception(f"Unknown sql: {sql}")
