@@ -148,9 +148,12 @@ def _start_job(
     logging.info("Initializing driver pipeline (job %s)...", job_id)
 
     kwargs = {}
-    if job_id in (DB_LEVEL_MONITOR_JOB_ID,
-                  TABLE_LEVEL_MONITOR_JOB_ID,
-                  QUERY_MONITOR_JOB_ID):
+    if job_id in (
+        DB_LEVEL_MONITOR_JOB_ID,
+        TABLE_LEVEL_MONITOR_JOB_ID,
+        QUERY_MONITOR_JOB_ID,
+        SCHEMA_MONITOR_JOB_ID,
+    ):
         kwargs["next_run_time"] = datetime.now()
 
     scheduler.add_job(

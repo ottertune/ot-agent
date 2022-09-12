@@ -212,6 +212,7 @@ FROM
 WHERE
     a.attnum > 0
     AND NOT a.attisdropped
+    AND c.relkind IN ('r','p','v','m','f','')
     AND n.nspname <> 'pg_catalog'
     AND n.nspname <> 'information_schema'
     AND n.nspname !~ '^pg_toast'
@@ -756,7 +757,7 @@ class PostgresCollector(BaseDbCollector):
         generate_query= ""
         conparentid_predicate = ""
         if version_float >= 13:
-            generate_query = "a.attgenerated as generated"
+            generate_query = "a.attgenerated as generated,"
         if version_float >= 11:
             conparentid_predicate = "AND conparentid = 0"
 
