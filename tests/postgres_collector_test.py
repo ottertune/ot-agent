@@ -21,6 +21,11 @@ from driver.collector.postgres_collector import (
     VACUUM_PROGRESS_STAT,
     VACUUM_ACTIVITY_STAT,
     VACUUM_USER_TABLES_STAT,
+    QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE,
+    QUERY_INDEX_SCHEMA_SQL_TEMPLATE,
+    QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE,
+    QUERY_TABLE_SCHEMA_SQL_TEMPLATE,
+    QUERY_VIEW_SCEHMA_SQL_TEMPLATE
 )
 from driver.collector.pg_table_level_stats_sqls import (
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
@@ -36,7 +41,7 @@ from driver.collector.pg_table_level_stats_sqls import (
 
 from driver.exceptions import PostgresCollectorException
 from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
-
+from tests.db_test_postgres import _verify_postgres_schema
 
 # pylint: disable=missing-function-docstring,too-many-lines
 
@@ -405,6 +410,56 @@ class SqlData:
             "pg_statio_user_tables": [["local_count"], ["local_count2"]],
             "pg_stat_user_indexes": [["local_count"], ["local_count2"]],
             "pg_statio_user_indexes": [["local_count"], ["local_count2"]],
+            "index_schema": [
+                ["table_id"],
+                ["index_id"],
+                ["index_name"],
+                ["is_primary"],
+                ["is_unique"],
+                ["is_clustered"],
+                ["is_valid"],
+                ["index_expression"],
+                ["index_constraint"],
+                ["constraint_type"],
+                ["constraint_deferrable"],
+                ["constraint_deferred_by_default"],
+                ["index_replica_identity"],
+                ["table_space"],
+                ["index_type"]
+            ],
+            "column_schema": [
+                ["table_id"],
+                ["name"],
+                ["type"],
+                ["default_val"],
+                ["nullable"],
+                ["collation"],
+                ["identity"],
+                ["storage_type"],
+                ["stats_target"],
+                ["description"]
+            ],
+            "foreign_key_schema": [
+                ["table_id"],
+                ["constraint_name"],
+                ["constraint_expression"]
+            ],
+            "table_schema" : [
+                ["schema"],
+                ["table_id"],
+                ["table_name"],
+                ["type"],
+                ["owner"],
+                ["persistence"],
+                ["description"]
+            ],
+            "view_schema" : [
+                ["schemaname"],
+                ["viewname"],
+                ["viewowner"],
+                ["definition"]
+            ]
+
         }
         self.local_metrics = {
             "database": {
@@ -626,6 +681,21 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == VACUUM_USER_TABLES_STAT:
             result.value = data.views["pg_stat_user_tables_raw"]
             result.meta = data.metas["pg_stat_user_tables_raw"]
+        elif sql == QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=""):
+            result.value = []
+            result.meta = data.aggregated_metas["column_schema"]
+        elif sql == QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE:
+            result.value = []
+            result.meta = data.aggregated_metas["foreign_key_schema"]
+        elif sql == QUERY_INDEX_SCHEMA_SQL_TEMPLATE:
+            result.value = []
+            result.meta = data.aggregated_metas["index_schema"]
+        elif sql == QUERY_TABLE_SCHEMA_SQL_TEMPLATE:
+            result.value = []
+            result.meta = data.aggregated_metas["table_schema"]
+        elif sql == QUERY_VIEW_SCEHMA_SQL_TEMPLATE:
+            result.value = []
+            result.meta = data.aggregated_metas["view_schema"]
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -1117,3 +1187,14 @@ def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
     )
     # pylint: disable=protected-access
     assert collector._anonymize_query({"query": "vacuum tl1;"})["query"] == "vacuum tl1"
+
+def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector(mock_conn, "9.6.3")
+    schema = collector.collect_schema()
+    _verify_postgres_schema(schema)
