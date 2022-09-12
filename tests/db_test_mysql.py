@@ -10,8 +10,14 @@ from driver.database import (
     collect_db_level_data_from_database,
     collect_table_level_data_from_database,
 )
-from tests.useful_literals import COLUMN_SCHEMA_MYSQL_COLUMNS, FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS, \
-    TABLE_LEVEL_MYSQL_COLUMNS, VIEW_SCHEMA_MYSQL_COLUMNS, TABLE_SCHEMA_MYSQL_COLUMNS
+from tests.useful_literals import (
+    COLUMN_SCHEMA_MYSQL_COLUMNS,
+    FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS,
+    TABLE_LEVEL_MYSQL_COLUMNS,
+    VIEW_SCHEMA_MYSQL_COLUMNS,
+    TABLE_SCHEMA_MYSQL_COLUMNS,
+    INDEX_SCHEMA_MYSQL_COLUMNS,
+)
 
 # pylint: disable=ungrouped-imports
 from driver.collector.mysql_collector import MysqlCollector
@@ -400,3 +406,7 @@ def _verify_mysql_schema(schema: Dict[str, Any]) -> None:
     assert schema["views"]["columns"] == VIEW_SCHEMA_MYSQL_COLUMNS
     for row in schema["views"]["rows"]:
         assert len(row) == len(VIEW_SCHEMA_MYSQL_COLUMNS)
+
+    assert schema["views"]["columns"] == INDEX_SCHEMA_MYSQL_COLUMNS
+    for row in schema["views"]["rows"]:
+        assert len(row) == len(INDEX_SCHEMA_MYSQL_COLUMNS)

@@ -153,7 +153,7 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
         # query observation use its own timeout settings due to the potential large data volume
         query_observation_timeout = 90
         try:
@@ -180,12 +180,9 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, indent=2, default=str).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
         # schema observation use its own timeout settings due to the potential large data volume
         schema_observation_timeout = 90
-
-        with open("sample.json", "w", encoding="utf-8") as outfile:
-            outfile.write(json.dumps(data, indent=2, default=str))
         try:
             response = self._req_session.post(
                 url, data=compressed_data, timeout=schema_observation_timeout,
