@@ -119,3 +119,21 @@ VIEW_SCHEMA_POSTGRES_COLUMNS = [
     "viewowner",
     "definition"
 ]
+
+INDEX_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "index_id",
+    "index_name",
+    "is_primary",
+    "is_unique",
+    "is_clustered",
+    "is_valid",
+    "index_expression",
+    "index_constraint",
+    "constraint_type",
+    "constraint_deferrable",
+    "constraint_deferred_by_default",
+    "index_replica_identity",
+    "table_space",
+    "index_type"
+]

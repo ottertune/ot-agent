@@ -10,7 +10,8 @@ from driver.database import (
 )
 from driver.collector.postgres_collector import PostgresCollector
 from tests.useful_literals import COLUMN_SCHEMA_POSTGRES_COLUMNS, FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS, \
-        TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS
+        TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS, \
+        INDEX_SCHEMA_POSTGRES_COLUMNS
 
 # pylint: disable=missing-function-docstring
 
@@ -421,3 +422,7 @@ def _verify_postgres_schema(schema: Dict[str, Any]) -> None:
     assert schema["views"]["columns"] == VIEW_SCHEMA_POSTGRES_COLUMNS
     for row in schema["views"]["rows"]:
         assert len(row) == len(VIEW_SCHEMA_POSTGRES_COLUMNS)
+
+    assert schema["indexes"]["columns"] == INDEX_SCHEMA_POSTGRES_COLUMNS
+    for row in schema["indexes"]["rows"]:
+        assert len(row) == len(INDEX_SCHEMA_POSTGRES_COLUMNS)
