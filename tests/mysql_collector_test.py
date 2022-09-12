@@ -330,6 +330,8 @@ class SqlData:
             "INVOKER"
         ]]
         self.index_schema_meta = [
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
             ["INDEX_NAME"],
             ["NON_UNIQUE"],
             ["COLUMN_NAME"],
@@ -338,8 +340,6 @@ class SqlData:
             ["INDEX_TYPE"],
             ["NULLABLE"],
             ["PACKED"],
-            ["TABLE_SCHEMA"],
-            ["TABLE_NAME"],
         ]
         self.index_schema = [[
             "PRIMARY",
@@ -844,8 +844,8 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
         },
         "indexes" : {
             "columns" : [
-                "INDEX_NAME", "NON_UNIQUE", "COLUMN_NAME", "COLLATION", "SUB_PART",
-                "INDEX_TYPE", "NULLABLE", "PACKED", "TABLE_SCHEMA", "TABLE_NAME",
+                "TABLE_SCHEMA", "TABLE_NAME", "INDEX_NAME", "NON_UNIQUE", "COLUMN_NAME",
+                "COLLATION", "SUB_PART", "INDEX_TYPE", "NULLABLE", "PACKED"
             ],
             "rows" : [
                 [
