@@ -10,8 +10,8 @@ from driver.database import (
     collect_db_level_data_from_database,
     collect_table_level_data_from_database,
 )
-from tests.useful_literals import COLUMN_SCHEMA_MYSQL_COLUMNS, FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS, TABLE_LEVEL_MYSQL_COLUMNS,\
-    VIEW_SCHEMA_MYSQL_COLUMNS, TABLE_SCHEMA_MYSQL_COLUMNS
+from tests.useful_literals import COLUMN_SCHEMA_MYSQL_COLUMNS, FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS, \
+    TABLE_LEVEL_MYSQL_COLUMNS, VIEW_SCHEMA_MYSQL_COLUMNS, TABLE_SCHEMA_MYSQL_COLUMNS
 
 # pylint: disable=ungrouped-imports
 from driver.collector.mysql_collector import MysqlCollector

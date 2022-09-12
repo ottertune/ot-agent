@@ -9,8 +9,9 @@ from driver.database import (
     collect_table_level_data_from_database,
 )
 from driver.collector.postgres_collector import PostgresCollector
-from tests.useful_literals import COLUMN_SCHEMA_POSTGRES_COLUMNS, FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS, \
-        TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS, \
+from tests.useful_literals import COLUMN_SCHEMA_POSTGRES_COLUMNS, \
+        FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS, TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, \
+        TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS, \
         INDEX_SCHEMA_POSTGRES_COLUMNS
 
 # pylint: disable=missing-function-docstring

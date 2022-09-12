@@ -10,7 +10,6 @@ from mysql.connector import errorcode
 from driver.collector.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
 from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
-from tests.db_test_mysql import _verify_mysql_schema
 # pylint: disable=missing-function-docstring,too-many-instance-attributes
 
 
@@ -428,6 +427,7 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
     """
 
     def sql_fn(sql: str) -> NoReturn:
+        # pylint: disable=too-many-branches
         if sql == MysqlCollector.METRICS_SQL:
             result.value = data.global_status
         elif sql == MysqlCollector.METRICS_INNODB_SQL:
