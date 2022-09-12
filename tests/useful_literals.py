@@ -84,3 +84,38 @@ VIEW_SCHEMA_MYSQL_COLUMNS = [
     "CHECK_OPTION",
     "SECURITY_TYPE"
 ]
+
+TABLE_SCHEMA_POSTGRES_COLUMNS = [
+    "schema",
+    "table_id",
+    "table_name",
+    "type",
+    "owner",
+    "persistence",
+    "description"
+]
+
+COLUMN_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "name",
+    "type",
+    "default_val",
+    "nullable",
+    "collation",
+    "identity",
+    "storage_type",
+    "stats_target",
+    "description"
+]
+
+FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS = [
+    "table_id",
+    "constraint_name",
+    "constraint_expression"
+]
+VIEW_SCHEMA_POSTGRES_COLUMNS = [
+    "schemaname",
+    "viewname",
+    "viewowner",
+    "definition"
+]

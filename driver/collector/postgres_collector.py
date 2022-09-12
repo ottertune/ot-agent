@@ -755,7 +755,7 @@ class PostgresCollector(BaseDbCollector):
                 "columns" : index_schema_columns,
                 "rows" : index_schema_rows
             },
-            "foriegn_keys" : {
+            "foreign_keys" : {
                 "columns" :  foreign_key_schema_columns,
                 "rows" : foreign_key_schema_rows
             },
