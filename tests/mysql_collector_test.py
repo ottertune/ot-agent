@@ -32,7 +32,7 @@ class SqlData:
     replica_status_meta: List[List[str]]
     table_level_stats: List[List[Union[int, str]]]
     table_level_stats_meta: List[List[str]]
-    column_schema: List[List[Union[int, str]]]
+    column_schema: List[List[Union[int, str, None]]]
     column_schema_meta: List[List[str]]
     foreign_keys_schema: List[List[Union[int, str]]]
     foreign_keys_schema_meta: List[List[str]]

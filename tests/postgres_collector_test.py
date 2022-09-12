@@ -41,7 +41,6 @@ from driver.collector.pg_table_level_stats_sqls import (
 
 from driver.exceptions import PostgresCollectorException
 from tests.useful_literals import TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
-from tests.db_test_postgres import _verify_postgres_schema
 
 # pylint: disable=missing-function-docstring,too-many-lines
 
@@ -1246,4 +1245,93 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(mock_conn, "9.6.3")
     schema = collector.collect_schema()
-    _verify_postgres_schema(schema)
+    assert schema == {
+        "columns" : {
+            "columns" : [
+                "table_id", "name", "type", "default_val", "nullable", "collation",
+                "identity", "storage_type", "stats_target", "description",
+            ],
+            "rows" : [
+                [
+                    66764,
+                    "last_value",
+                    "bigint",
+                    None,
+                    True,
+                    None,
+                    "",
+                    "p",
+                    None,
+                    None,
+                ],
+            ]
+        },
+        "indexes" : {
+            "columns" : [
+                "table_id", "index_id", "index_name", "is_primary", "is_unique", "is_clustered",
+                "is_valid", "index_expression", "index_constraint", "constraint_type",
+                "constraint_deferrable", "constraint_deferred_by_default",
+                "index_replica_identity", "table_space", "index_type",
+            ],
+            "rows" : [
+                [
+                    33955,
+                    33967,
+                    "customers_pk",
+                    True,
+                    True,
+                    False,
+                    True,
+                    "CREATE UNIQUE INDEX customers_pk ON customers USING btree (uuid)",
+                    "PRIMARY KEY (uuid)",
+                    "p",
+                    False,
+                    False,
+                    False,
+                    0,
+                    "btree",
+                ],
+            ]
+        },
+        "foreign_keys" : {
+            "columns" : [
+                "table_id", "constraint_name", "constraint_expression",
+            ],
+            "rows" : [
+                [
+                    33961,
+                    "dogs_fk",
+                    "FOREIGN KEY (owner) REFERENCES customers(uuid) ON DELETE CASCADE",
+                ],
+            ]
+        },
+        "tables" : {
+            "columns" : [
+                "schema", "table_id", "table_name", "type", "owner", "persistence", "description",
+            ],
+            "rows" : [
+                [
+                    "public",
+                    33955,
+                    "customers",
+                    "r",
+                    "postgres",
+                    "p",
+                    None,
+                ],
+            ]
+        },
+        "views" : {
+            "columns" : [
+                "schemaname", "viewname", "viewowner", "definition",
+            ],
+            "rows" : [
+                [
+                    "public",
+                    "pg_stat_statements",
+                    "rdsadmin",
+                    " SELECT...",
+                ],
+            ]
+        }
+    }
