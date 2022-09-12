@@ -84,8 +84,8 @@ LIMIT
 
 QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    table_schema, table_name,  column_name, ordinal_position, column_default,
-    is_nullable,  data_type, collation_name, column_comment
+    TABLE_SCHEMA, TABLE_NAME,  COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT,
+    IS_NULLABLE,  DATA_TYPE, COLLATION_NAME, COLUMN_COMMENT
 FROM
     information_schema.columns
 WHERE 
@@ -98,9 +98,9 @@ ORDER BY
 
 QUERY_INDEX_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    table_schema, table_name, index_name, non_unique,
-    column_name, collation, sub_part, index_type,
-    nullable, packed
+    TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, NON_UNIQUE,
+    COLUMN_NAME, COLLATION, SUB_PART, INDEX_TYPE,
+    NULLABLE, PACKED
 FROM
     information_schema.statistics
 WHERE 
@@ -113,8 +113,8 @@ ORDER BY
 
 QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    constraint_schema, table_name, constraint_name, unique_constraint_schema,
-    unique_constraint_name, update_rule, delete_rule, referenced_table_name
+    CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, UNIQUE_CONSTRAINT_SCHEMA,
+    UNIQUE_CONSTRAINT_NAME, UPDATE_RULE, DELETE_RULE, REFERENCED_TABLE_NAME
 FROM
     information_schema.referential_constraints
 WHERE 
@@ -127,9 +127,9 @@ ORDER BY
 
 QUERY_TABLE_SCHEMA_SQL_TEMPLATE = """
 SELECT
-    table_schema, table_name,table_type,engine, version, row_format,
-    table_rows, max_data_length, table_collation, create_options,
-    table_comment
+    TABLE_SCHEMA, TABLE_NAME,TABLE_TYPE,ENGINE, VERSION, ROW_FORMAT,
+    TABLE_ROWS, MAX_DATA_LENGTH, TABLE_COLLATION, CREATE_OPTIONS,
+    TABLE_COMMENT
 FROM
     information_schema.tables
 WHERE
@@ -141,8 +141,8 @@ ORDER BY
 """
 
 QUERY_VIEW_SCHEMA_SQL_TEMPLATE = """
-SELECT table_schema, table_name, view_definition, is_updatable, check_option,
-    security_type
+SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION, IS_UPDATABLE, CHECK_OPTION,
+    SECURITY_TYPE
 FROM
     information_schema.views
 WHERE 

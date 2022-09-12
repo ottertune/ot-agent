@@ -263,7 +263,7 @@ FROM
     LEFT JOIN pg_class c ON c.oid = r.conrelid
     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE
-    r.contype = 'f' AND conparentid = 0
+    r.contype = 'f' {conparentid_predicate}
     AND n.nspname <> 'pg_catalog'
     AND n.nspname <> 'information_schema'
     AND n.nspname !~ '^pg_toast'
@@ -754,12 +754,15 @@ class PostgresCollector(BaseDbCollector):
         """Collect schema"""
         version_float = float(".".join(self._version_str.split(".")[:2]))
         generate_query= ""
+        conparentid_predicate = ""
         if version_float >= 13:
             generate_query = "a.attgenerated as generated"
+        if version_float >= 11:
+            conparentid_predicate = "AND conparentid = 0"
 
         column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query))
         index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
-        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(conparentid_predicate=conparentid_predicate))
         table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
         view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE)
 

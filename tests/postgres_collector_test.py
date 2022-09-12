@@ -732,7 +732,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=""):
             result.value = data.views["column_schema"]
             result.meta = data.aggregated_metas["column_schema"]
-        elif sql == QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE:
+        elif sql == QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(
+            conparentid_predicate="AND conparentid = 0",
+        ):
             result.value = data.views["foreign_key_schema"]
             result.meta = data.aggregated_metas["foreign_key_schema"]
         elif sql == QUERY_INDEX_SCHEMA_SQL_TEMPLATE:
@@ -1243,7 +1245,7 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "11")
     schema = collector.collect_schema()
     assert schema == {
         "columns" : {
