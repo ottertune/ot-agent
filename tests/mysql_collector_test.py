@@ -257,7 +257,7 @@ class SqlData:
             ["MAX_DATA_LENGTH"],
             ["TABLE_COLLATION"],
             ["CREATE_OPTIONS"],
-            ["TABLE_COMMENT"]
+            ["TABLE_COMMENT"],
         ]
         self.table_schema = [[
             "main",
@@ -273,8 +273,8 @@ class SqlData:
             ""
         ]]
         self.column_schema_meta = [
-            ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
+            ["TABLE_SCHEMA"],
             ["COLUMN_NAME"],
             ["ORDINAL_POSITION"],
             ["COLUMN_DEFAULT"],
@@ -284,8 +284,8 @@ class SqlData:
             ["COLUMN_COMMENT"],
         ]
         self.column_schema = [[
-          "information_schema",
           "CHECK_CONSTRAINTS",
+          "information_schema",
           "CHECK_CLAUSE",
           4,
           None,
@@ -302,7 +302,7 @@ class SqlData:
             ["UNIQUE_CONSTRAINT_NAME"],
             ["UPDATE_RULE"],
             ["DELETE_RULE"],
-            ["REFERENCED_TABLE_NAME"]
+            ["REFERENCED_TABLE_NAME"],
         ]
         self.foreign_keys_schema = [[
             "main",
@@ -320,15 +320,39 @@ class SqlData:
             ["VIEW_DEFINITION"],
             ["IS_UPDATABLE"],
             ["CHECK_OPTION"],
-            ["SECURITY_TYPE"]
+            ["SECURITY_TYPE"],
         ]
         self.view_schema = [[
             "sys",
             "schema_redundant_indexes",
-            "select `sys`.`redundant_keys`.`table_schema` AS `table_schema`,`sys`.`redundant_keys`.`table_name` AS `table_name`,`sys`.`redundant_keys`.`index_name` AS `redundant_index_name`,`sys`.`redundant_keys`.`index_columns` AS `redundant_index_columns`,`sys`.`redundant_keys`.`non_unique` AS `redundant_index_non_unique`,`sys`.`dominant_keys`.`index_name` AS `dominant_index_name`,`sys`.`dominant_keys`.`index_columns` AS `dominant_index_columns`,`sys`.`dominant_keys`.`non_unique` AS `dominant_index_non_unique`,if(((0 <> `sys`.`redundant_keys`.`subpart_exists`) or (0 <> `sys`.`dominant_keys`.`subpart_exists`)),1,0) AS `subpart_exists`,concat('ALTER TABLE `',`sys`.`redundant_keys`.`table_schema`,'`.`',`sys`.`redundant_keys`.`table_name`,'` DROP INDEX `',`sys`.`redundant_keys`.`index_name`,'`') AS `sql_drop_index` from (`sys`.`x$schema_flattened_keys` `redundant_keys` join `sys`.`x$schema_flattened_keys` `dominant_keys` on(((`sys`.`redundant_keys`.`table_schema` = `sys`.`dominant_keys`.`table_schema`) and (`sys`.`redundant_keys`.`table_name` = `sys`.`dominant_keys`.`table_name`)))) where ((`sys`.`redundant_keys`.`index_name` <> `sys`.`dominant_keys`.`index_name`) and (((`sys`.`redundant_keys`.`index_columns` = `sys`.`dominant_keys`.`index_columns`) and ((`sys`.`redundant_keys`.`non_unique` > `sys`.`dominant_keys`.`non_unique`) or ((`sys`.`redundant_keys`.`non_unique` = `sys`.`dominant_keys`.`non_unique`) and (if((`sys`.`redundant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`redundant_keys`.`index_name`) > if((`sys`.`dominant_keys`.`index_name` = 'PRIMARY'),'',`sys`.`dominant_keys`.`index_name`))))) or ((locate(concat(`sys`.`redundant_keys`.`index_columns`,','),`sys`.`dominant_keys`.`index_columns`) = 1) and (`sys`.`redundant_keys`.`non_unique` = 1)) or ((locate(concat(`sys`.`dominant_keys`.`index_columns`,','),`sys`.`redundant_keys`.`index_columns`) = 1) and (`sys`.`dominant_keys`.`non_unique` = 0))))",
+            "select `sys`.`redundant_keys`.`ta",
             "NO",
             "NONE",
             "INVOKER"
+        ]]
+        self.index_schema_meta = [
+            ["INDEX_NAME"],
+            ["NON_UNIQUE"],
+            ["COLUMN_NAME"],
+            ["COLLATION"],
+            ["SUB_PART"],
+            ["INDEX_TYPE"],
+            ["NULLABLE"],
+            ["PACKED"],
+            ["TABLE_SCHEMA"],
+            ["TABLE_NAME"],
+        ]
+        self.index_schema = [[
+            "PRIMARY",
+            0,
+            "O_D_ID",
+            "A",
+            None,
+            "BTREE",
+            "",
+            None,
+            "tpcc",
+            "WAREHOUSE",
         ]]
 
 
@@ -422,10 +446,10 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql in ("SHOW REPLICA STATUS;", "SHOW SLAVE STATUS;"):
             result.value = data.replica_status
             result.meta = data.replica_status_meta
-        elif "information_schema.TABLES".lower() in sql.lower() and "DATA_FREE".lower() in sql.lower():
+        elif "information_schema.TABLES".lower() in sql.lower() and "data_free" in sql.lower():
             result.value = data.table_level_stats
             result.meta = data.table_level_stats_meta
-        elif "information_schema.STATISTICS".lower() in sql.lower():
+        elif "information_schema.STATISTICS".lower() in sql.lower() and "packed" not in sql.lower():
             result.value = data.index_stats
             result.meta = data.index_stats_meta
         elif "mysql.innodb_index_stats".lower() in sql.lower():
@@ -434,7 +458,7 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
             result.value = data.query_stats
             result.meta = data.query_stats_meta
-        elif "information_schema.TABLES".lower() in sql.lower() and "table_comment" in sql.lower():
+        elif "information_schema.tables".lower() in sql.lower() and "table_comment" in sql.lower():
             result.value = data.table_schema
             result.meta = data.table_schema_meta
         elif "information_schema.column" in sql.lower():
@@ -446,6 +470,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "information_schema.views" in sql.lower():
             result.value = data.view_schema
             result.meta = data.view_schema_meta
+        elif "information_schema.statistics" in sql.lower() and "packed" in sql.lower():
+            result.value = data.index_schema
+            result.meta = data.index_schema_meta
 
     return sql_fn
 
@@ -795,4 +822,100 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
     schema = collector.collect_schema()
-    _verify_mysql_schema(schema)
+    assert schema == {
+        "columns" : {
+            "columns" : [
+                "TABLE_NAME", "TABLE_SCHEMA", "COLUMN_NAME", "ORDINAL_POSITION",
+                "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "COLLATION_NAME", "COLUMN_COMMENT",
+            ],
+            "rows" : [
+                [
+                    "CHECK_CONSTRAINTS",
+                    "information_schema",
+                    "CHECK_CLAUSE",
+                    4,
+                    None,
+                    "NO",
+                    "longtext",
+                    "utf8_bin",
+                    "",
+                ],
+            ]
+        },
+        "indexes" : {
+            "columns" : [
+                "INDEX_NAME", "NON_UNIQUE", "COLUMN_NAME", "COLLATION", "SUB_PART",
+                "INDEX_TYPE", "NULLABLE", "PACKED", "TABLE_SCHEMA", "TABLE_NAME",
+            ],
+            "rows" : [
+                [
+                    "PRIMARY",
+                    0,
+                    "O_D_ID",
+                    "A",
+                    None,
+                    "BTREE",
+                    "",
+                    None,
+                    "tpcc",
+                    "WAREHOUSE",
+                ],
+            ]
+        },
+        "foreign_keys" : {
+            "columns" : [
+                "CONSTRAINT_SCHEMA", "TABLE_NAME", "CONSTRAINT_NAME", "UNIQUE_CONSTRAINT_SCHEMA",
+                "UNIQUE_CONSTRAINT_NAME", "UPDATE_RULE", "DELETE_RULE", "REFERENCED_TABLE_NAME",
+            ],
+            "rows" : [
+                [
+                    "main",
+                    "Pets",
+                    "Pets_FK",
+                    "main",
+                    "PRIMARY",
+                    "NO ACTION",
+                    "NO ACTION",
+                    "Customers",
+                ],
+            ]
+        },
+        "tables" : {
+            "columns" : [
+                "TABLE_SCHEMA", "TABLE_NAME", "TABLE_TYPE", "ENGINE", "VERSION", "ROW_FORMAT",
+                "TABLE_ROWS", "MAX_DATA_LENGTH", "TABLE_COLLATION", "CREATE_OPTIONS",
+                "TABLE_COMMENT",
+            ],
+            "rows" : [
+                [
+                    "main",
+                    "Customers",
+                    "BASE TABLE",
+                    "InnoDB",
+                    10,
+                    "Dynamic",
+                    0,
+                    0,
+                    "utf8mb4_0900_ai_ci",
+                    "",
+                    "",
+                ],
+            ]
+        },
+        "views" : {
+            "columns" : [
+                "TABLE_SCHEMA", "TABLE_NAME", "VIEW_DEFINITION", "IS_UPDATABLE", "CHECK_OPTION",
+                "SECURITY_TYPE",
+            ],
+            "rows" : [
+                [
+                    "sys",
+                    "schema_redundant_indexes",
+                    "select `sys`.`redundant_keys`.`ta",
+                    "NO",
+                    "NONE",
+                    "INVOKER",
+                ],
+            ]
+        }
+    }
