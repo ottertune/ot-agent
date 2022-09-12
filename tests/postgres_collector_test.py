@@ -258,16 +258,55 @@ class SqlData:
             "pg_statio_user_tables": [[4, 4]],
             "pg_stat_user_indexes": [[5, 5]],
             "pg_statio_user_indexes": [[6, 6]],
-            "index_schema": [
-            ],
-            "column_schema": [
-            ],
-            "foreign_key_schema": [
-            ],
-            "table_schema" : [
-            ],
-            "view_schema" : [
-            ]
+            "column_schema": [[
+                66764,
+                "last_value",
+                "bigint",
+                None,
+                True,
+                None,
+                "",
+                "p",
+                None,
+                None
+            ]],
+            "index_schema": [[
+                33955,
+                33967,
+                "customers_pk",
+                True,
+                True,
+                False,
+                True,
+                "CREATE UNIQUE INDEX customers_pk ON customers USING btree (uuid)",
+                "PRIMARY KEY (uuid)",
+                "p",
+                False,
+                False,
+                False,
+                0,
+                "btree"
+            ]],
+            "foreign_key_schema": [[
+                33961,
+                "dogs_fk",
+                "FOREIGN KEY (owner) REFERENCES customers(uuid) ON DELETE CASCADE"
+            ]],
+            "table_schema" : [[
+                "public",
+                33955,
+                "customers",
+                "r",
+                "postgres",
+                "p",
+                None
+            ]],
+            "view_schema" : [[
+                "public",
+                "pg_stat_statements",
+                "rdsadmin",
+                " SELECT..."
+            ]]
         }
         self.metas = {
             "pg_stat_archiver": [["global"], ["global_count"]],
