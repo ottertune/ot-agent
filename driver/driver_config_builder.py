@@ -296,9 +296,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
 
         if self.config["db_type"] == "postgres":
             if not db_name:
-                msg = ("Must supply database name for Postgres via environment variable: "
-                       "POSTGRES_OTTERTUNE_DB_NAME")
-                raise DriverConfigException(msg)
+                # Default to postgres
+                db_name = "postgres"
         elif self.config["db_type"] == "mysql":
             if db_name:
                 msg = "Ignoring POSTGRES_OTTERTUNE_DB_NAME as this agent is connected to a MySql db"
