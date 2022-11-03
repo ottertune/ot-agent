@@ -52,6 +52,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
+    postgres_db_list: Optional[List[str]]
     schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
@@ -230,6 +231,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_schema_monitoring: bool
     schema_monitor_interval: int
     db_non_default_parameters: List[str]
+    postgres_db_list: Optional[List[str]]
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -294,12 +296,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             msg = "Builder must know db type before from_env_vars, try running from_rds first"
             raise DriverConfigException(msg)
 
-        if self.config["db_type"] == "postgres":
-            if not db_name:
-                msg = ("Must supply database name for Postgres via environment variable: "
-                       "POSTGRES_OTTERTUNE_DB_NAME")
-                raise DriverConfigException(msg)
-        elif self.config["db_type"] == "mysql":
+        if self.config["db_type"] == "mysql":
             if db_name:
                 msg = "Ignoring POSTGRES_OTTERTUNE_DB_NAME as this agent is connected to a MySql db"
                 logging.warning(msg)
