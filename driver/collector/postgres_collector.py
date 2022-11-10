@@ -523,8 +523,8 @@ class PostgresCollector(BaseDbCollector):
             "target_tables_str": target_tables_str,
         }
 
-    def collect_table_level_metrics(self,
-                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
+    def collect_table_level_metrics_single(self,
+                                    target_table_info: Dict[str, Any], logical_db: str) -> Dict[str, Any]:
         """Collect table level statistics
         Returns:
             {
@@ -597,7 +597,7 @@ class PostgresCollector(BaseDbCollector):
 
         for field, sql_template in self.TABLE_LEVEL_STATS_SQLS.items():
             rows, columns = self._cmd(
-                sql_template.format(table_list=target_tables_str),
+                sql_template.format(table_list=target_tables_str), logical_db
             )
             metrics[field] = {
                 "columns": columns,
@@ -613,7 +613,7 @@ class PostgresCollector(BaseDbCollector):
             raw_padding_info, _ = self._cmd(
                 PADDING_HELPER_TEMPLATE.format(
                     table_list=target_tables_str,
-                )
+                ), logical_db
             )
             padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
             bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(
@@ -624,6 +624,10 @@ class PostgresCollector(BaseDbCollector):
             )
 
         return metrics
+
+    def collect_table_level_metrics(self,
+                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
+        return self.collect_table_level_metrics_single(target_table_info, self._main_logical_db)
 
     def collect_index_metrics(self,
                               target_table_info: Dict[str, Any],
