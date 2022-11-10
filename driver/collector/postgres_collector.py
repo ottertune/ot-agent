@@ -300,6 +300,7 @@ WHERE
 AND schemaname <> 'information_schema'
 AND schemaname !~ '^pg_toast';
 """
+
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
 
@@ -625,8 +626,15 @@ class PostgresCollector(BaseDbCollector):
 
         return metrics
 
+
     def collect_table_level_metrics(self,
                                     target_table_info: Dict[str, Any]) -> Dict[str, Any]:
+        results:Dict[str, Any] = {}
+        for logical_db in self._conns:
+            results[logical_db] = {"name": logical_db, "data": self.collect_table_level_metrics_single(target_table_info, logical_db)}
+
+        self._add_logical_db_columns(results)
+
         return self.collect_table_level_metrics_single(target_table_info, self._main_logical_db)
 
     def collect_index_metrics(self,
@@ -1012,3 +1020,12 @@ class PostgresCollector(BaseDbCollector):
                 query = query.strip()
                 row["query"] = query.lower()
         return row
+
+    @staticmethod
+    def _add_logical_db_columns(results: Dict[str, any]) -> Dict[str, any]:
+        modded_results = {}
+        for logical_db_name in results:
+            # print(results[logical_db_name])
+            for data_item in results[logical_db_name]["data"]:
+                print(data_item)
+
