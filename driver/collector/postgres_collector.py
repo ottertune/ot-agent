@@ -352,7 +352,8 @@ class PostgresCollector(BaseDbCollector):
 
     def __init__(
         self,
-        conn,
+        conns,
+        main_logical_db: str,
         version: str,
     ) -> None:
         """
@@ -361,11 +362,12 @@ class PostgresCollector(BaseDbCollector):
         directly and instead use the collector_factory.get_collector method instead.
 
         Args:
-            conn: The connection to the database
+            conns: The connections to the database (one for each logical database)
             options: Options used to define which tables to use for metric collection
         """
-        self._conn = conn
+        self._conns = conns
         self._version_str = version
+        self._main_logical_db = main_logical_db
         version_float = float(".".join(version.split(".")[:2]))
         # pylint: disable=invalid-name
         if version_float >= 9.4:
@@ -401,7 +403,7 @@ class PostgresCollector(BaseDbCollector):
         """
 
         try:
-            cursor = self._conn.cursor()
+            cursor = self._conns[self._main_logical_db].cursor()
             cursor.execute(sql)
             res = cursor.fetchall()
             columns = cursor.description
@@ -955,11 +957,11 @@ class PostgresCollector(BaseDbCollector):
         module_exists = self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY)[0][0][0] == 1
         if not module_exists:
             try:
-                self._conn.cursor().execute(load_module_sql)
-                self._conn.commit()
+                self._conns[self._main_logical_db].cursor().execute(load_module_sql)
+                self._conns[self._main_logical_db].commit()
             except Exception as ex:  # pylint: disable=broad-except
                 logging.error("Failed to load pg_stat_statements module: %s", ex)
-                self._conn.rollback()
+                self._conns[self._main_logical_db].rollback()
                 return False
         return True
 
