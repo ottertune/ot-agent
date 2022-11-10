@@ -259,9 +259,10 @@ def get_collector(
                 pg_conf_logical["dbname"] = logical_database
                 conns[logical_database] = connect_postgres(pg_conf_logical)
 
-            conn = connect_postgres(pg_conf)
-            version = get_postgres_version(conn)
-            collector = PostgresCollector(conns, "postgres",version)
+            main_db = pg_conf["dbname"]
+            conns[main_db] = connect_postgres(pg_conf)
+            version = get_postgres_version(conns[main_db])
+            collector = PostgresCollector(conns, main_db ,version)
         else:
             error_message = (
                 f"Database type {driver_conf['db_type']} is not supported in driver"
