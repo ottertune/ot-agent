@@ -391,7 +391,7 @@ class PostgresCollector(BaseDbCollector):
                 "FROM pg_stat_statements;"
             )
 
-    def _cmd(self, sql: str):  # type: ignore
+    def _cmd(self, sql: str, logical_db: str = None):  # type: ignore
         """Run the command line (sql query), and fetch the returned results
 
         Args:
@@ -401,9 +401,10 @@ class PostgresCollector(BaseDbCollector):
         Raises:
             PostgresCollectorException: Failed to execute the sql query
         """
-
+        if logical_db is None:
+            logical_db = self._main_logical_db
         try:
-            cursor = self._conns[self._main_logical_db].cursor()
+            cursor = self._conns[logical_db].cursor()
             cursor.execute(sql)
             res = cursor.fetchall()
             columns = cursor.description
