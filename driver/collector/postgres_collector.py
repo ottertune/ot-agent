@@ -1025,7 +1025,6 @@ class PostgresCollector(BaseDbCollector):
     def _add_logical_db_columns(results: Dict[str, any]) -> Dict[str, any]:
         modded_results = {}
         for logical_db_name in results:
-            # print(results[logical_db_name])
             for data_item in results[logical_db_name]["data"]:
                 print(data_item)
 
