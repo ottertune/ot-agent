@@ -633,9 +633,7 @@ class PostgresCollector(BaseDbCollector):
         for logical_db in self._conns:
             results[logical_db] = {"name": logical_db, "data": self.collect_table_level_metrics_single(target_table_info, logical_db)}
 
-        self._add_logical_db_columns(results)
-
-        return self.collect_table_level_metrics_single(target_table_info, self._main_logical_db)
+        return self._add_logical_db_columns(results, self._main_logical_db)
 
     def collect_index_metrics(self,
                               target_table_info: Dict[str, Any],
@@ -1022,10 +1020,14 @@ class PostgresCollector(BaseDbCollector):
         return row
 
     @staticmethod
-    def _add_logical_db_columns(results: Dict[str, any]) -> Dict[str, any]:
+    def _add_logical_db_columns(results: Dict[str, any], main_logical_db) -> Dict[str, any]:
         modded_results = {}
+        for data_item in results[main_logical_db]["data"]:
+            modded_results[data_item] = {"columns": results[main_logical_db]["data"][data_item]["columns"]+["logical_database_name"], "rows": list()}
         for logical_db_name in results:
-            # print(results[logical_db_name])
             for data_item in results[logical_db_name]["data"]:
-                print(data_item)
+                for row in results[logical_db_name]["data"][data_item]["rows"]:
+                    row.append(logical_db_name)
+                modded_results[data_item]["rows"].extend(results[logical_db_name]["data"][data_item]["rows"])
 
+        return {"data" : modded_results}
