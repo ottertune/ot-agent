@@ -631,13 +631,13 @@ class PostgresCollector(BaseDbCollector):
                                     target_table_info: Dict[str, Any]) -> Dict[str, Any]:
         results:Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = {"name": logical_db, "data": self.collect_table_level_metrics_single(target_table_info, logical_db)}
+            results[logical_db] = self.collect_table_level_metrics_single(target_table_info, logical_db)
 
         return self._add_logical_db_columns(results, self._main_logical_db)
 
-    def collect_index_metrics(self,
+    def collect_index_metrics_single(self,
                               target_table_info: Dict[str, Any],
-                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+                              num_index_to_collect_stats: int, logical_db: str) -> Dict[str, Any]:
         """Collect index statistics
         Returns:
             {
@@ -703,7 +703,7 @@ class PostgresCollector(BaseDbCollector):
 
         target_indexes_tuple: List[List[int]] = self._cmd(
             TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str,
-                                                      n=num_index_to_collect_stats),
+                                                      n=num_index_to_collect_stats), logical_db
         )[0]
         # pyre-ignore[9]
         target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
@@ -713,7 +713,7 @@ class PostgresCollector(BaseDbCollector):
 
         for field, sql_template in self.INDEX_STATS_SQLS.items():
             rows, columns = self._cmd(
-                sql_template.format(index_list = target_indexes_str),
+                sql_template.format(index_list = target_indexes_str), logical_db
             )
             metrics[field] = {
                 "columns": columns,
@@ -729,6 +729,15 @@ class PostgresCollector(BaseDbCollector):
             metrics["indexes_size"]["rows"] = [
                 [index[0], index[1]] for index in target_indexes_tuple]
         return metrics
+
+    def collect_index_metrics(self,
+                                    target_table_info: Dict[str, Any], num_index_to_collect_stats: int) -> Dict[str, Any]:
+        results:Dict[str, Any] = {}
+        for logical_db in self._conns:
+            results[logical_db] = self.collect_index_metrics_single(target_table_info, num_index_to_collect_stats, logical_db)
+
+        return self._add_logical_db_columns(results, self._main_logical_db)
+
 
     def collect_query_metrics(self, num_query_to_collect_stats: int):
         """Collect query statistics
@@ -1022,12 +1031,12 @@ class PostgresCollector(BaseDbCollector):
     @staticmethod
     def _add_logical_db_columns(results: Dict[str, any], main_logical_db) -> Dict[str, any]:
         modded_results = {}
-        for data_item in results[main_logical_db]["data"]:
-            modded_results[data_item] = {"columns": results[main_logical_db]["data"][data_item]["columns"]+["logical_database_name"], "rows": list()}
+        for data_item in results[main_logical_db]:
+            modded_results[data_item] = {"columns": results[main_logical_db][data_item]["columns"]+["logical_database_name"], "rows": list()}
         for logical_db_name in results:
-            for data_item in results[logical_db_name]["data"]:
-                for row in results[logical_db_name]["data"][data_item]["rows"]:
+            for data_item in results[logical_db_name]:
+                for row in results[logical_db_name][data_item]["rows"]:
                     row.append(logical_db_name)
-                modded_results[data_item]["rows"].extend(results[logical_db_name]["data"][data_item]["rows"])
+                modded_results[data_item]["rows"].extend(results[logical_db_name][data_item]["rows"])
 
-        return {"data" : modded_results}
+        return modded_results
