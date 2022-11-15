@@ -27,4 +27,4 @@ num_index_to_collect_stats: 10000
 query_monitor_interval: 3600
 num_query_to_collect: 10000
 schema_monitor_interval: 3600
-postgres_db_list: ["postgres", "foo"]
+postgres_db_list: ["postgres"]
