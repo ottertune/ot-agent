@@ -392,7 +392,7 @@ class PostgresCollector(BaseDbCollector):
                 "FROM pg_stat_statements;"
             )
 
-    def _cmd(self, sql: str, logical_db: str = None):  # type: ignore
+    def _cmd(self, sql: str, logical_db):  # type: ignore
         """Run the command line (sql query), and fetch the returned results
 
         Args:
@@ -402,8 +402,6 @@ class PostgresCollector(BaseDbCollector):
         Raises:
             PostgresCollectorException: Failed to execute the sql query
         """
-        if logical_db is None:
-            logical_db = self._main_logical_db
         try:
             cursor = self._conns[logical_db].cursor()
             cursor.execute(sql)
@@ -448,7 +446,7 @@ class PostgresCollector(BaseDbCollector):
 
         knobs: Dict[str, Any] = {"global": {"global": {}}, "local": None}
 
-        knobs_info = self._cmd(self.KNOBS_SQL)[0]
+        knobs_info = self._cmd(self.KNOBS_SQL, self._main_logical_db)[0]
         knobs_json = {}
         for knob_tuple in knobs_info:
             val = knob_tuple[1]
@@ -507,13 +505,13 @@ class PostgresCollector(BaseDbCollector):
         Raises:
             PostgresCollectorException: Failed to execute the sql query to get row stats data
         """
-        raw_stats = self._cmd(self.ROW_NUMS_SQL)
+        raw_stats = self._cmd(self.ROW_NUMS_SQL, self._main_logical_db)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
     def get_target_table_info(self,
                               num_table_to_collect_stats: int) -> Dict[str, Any]:
         target_tables_tuple = self._cmd(
-            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats), self._main_logical_db
         )[0]
         target_tables = tuple(table[0] for table in target_tables_tuple)
         target_tables_str = str(target_tables) if len(target_tables) > 1 else (
@@ -757,7 +755,7 @@ class PostgresCollector(BaseDbCollector):
         rows = []
         try:
             rows, columns = self._cmd(
-                PG_QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats),
+                PG_QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats), self._main_logical_db
             )
         except PostgresCollectorException as ex:
             logging.error(
@@ -783,11 +781,11 @@ class PostgresCollector(BaseDbCollector):
         if version_float >= 11:
             conparentid_predicate = "AND conparentid = 0"
 
-        column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query))
-        index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
-        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(conparentid_predicate=conparentid_predicate))
-        table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
-        view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE)
+        column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query), self._main_logical_db)
+        index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE, self._main_logical_db)
+        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(conparentid_predicate=conparentid_predicate), self._main_logical_db)
+        table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE, self._main_logical_db)
+        view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE, self._main_logical_db)
 
         return {
             "columns" : {
@@ -864,7 +862,8 @@ class PostgresCollector(BaseDbCollector):
         factors, columns = self._cmd(
             TABLE_BLOAT_RATIO_FACTOR_TEMPLATE.format(
                 table_list=target_tables_str,
-            )
+            ),
+            self._main_logical_db
         )
         return {
             factor[0]: dict(zip(columns[1:], factor[1:]))
@@ -952,7 +951,7 @@ class PostgresCollector(BaseDbCollector):
             PostgresCollectorException: Failed to execute the sql query to get table data
         """
         metrics = []
-        ret, col = self._cmd(query)
+        ret, col = self._cmd(query, self._main_logical_db)
         if len(ret) > 0:
             for data in ret:
                 row = {}
@@ -974,7 +973,7 @@ class PostgresCollector(BaseDbCollector):
         """
 
         load_module_sql = "CREATE EXTENSION pg_stat_statements;"
-        module_exists = self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY)[0][0][0] == 1
+        module_exists = self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY, self._main_logical_db)[0][0][0] == 1
         if not module_exists:
             try:
                 self._conns[self._main_logical_db].cursor().execute(load_module_sql)
