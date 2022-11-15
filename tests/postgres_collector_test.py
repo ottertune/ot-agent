@@ -759,7 +759,7 @@ def _mock_conn(mock_connect: MagicMock) -> MagicMock:
 
 
 def test_get_version(mock_conn: MagicMock) -> NoReturn:
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     version = collector.get_version()
     assert version == "9.6.3"
 
@@ -776,14 +776,14 @@ def test_collect_knobs_success(mock_conn: MagicMock) -> NoReturn:
         },
         "local": None,
     }
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     assert collector.collect_knobs() == expected
 
 
 def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_knobs()
     assert "Failed to execute sql" in ex.value.message
@@ -794,7 +794,7 @@ def test_check_permission_success(mock_conn: MagicMock) -> NoReturn:
     # in check_permission for now
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     assert collector.check_permission() == (True, [], "")
 
 
@@ -805,14 +805,14 @@ def test_collect_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     assert collector.collect_metrics() == data.expected_default_result()
 
 
 def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_metrics()
     assert "Failed to execute sql" in ex.value.message
@@ -825,7 +825,7 @@ def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     assert collector.collect_table_row_number_stats() == {
         "num_tables": 2111,
         "num_empty_tables": 1925,
@@ -843,7 +843,7 @@ def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
 def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
         collector.collect_table_row_number_stats()
     assert "Failed to execute sql" in ex.value.message
@@ -856,7 +856,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     assert collector.collect_table_level_metrics(
         target_table_info=target_table_info
@@ -1069,7 +1069,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
 def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     with pytest.raises(PostgresCollectorException) as ex:
         target_table_info = collector.get_target_table_info(10)
         collector.collect_table_level_metrics(target_table_info)
@@ -1077,7 +1077,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
 
 
 def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     # pylint: disable=protected-access
     assert (
         collector._calculate_padding_size_for_table(
@@ -1150,7 +1150,7 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     assert collector.collect_query_metrics(1) == \
            {'pg_stat_statements': {'columns': ['userid',
                                                'dbid',
@@ -1189,7 +1189,7 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
 
 
 def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
-    collector = PostgresCollector(mock_conn, "9.6.3")
+    collector = PostgresCollector(mock_conn, "postgres", "9.6.3")
     # pylint: disable=protected-access
     assert (
         collector._anonymize_query({"query": "vacuum oorder;"})["query"]
@@ -1245,7 +1245,7 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "11")
+    collector = PostgresCollector(mock_conn, "postgres", "11")
     schema = collector.collect_schema()
     assert schema == {
         "columns" : {
