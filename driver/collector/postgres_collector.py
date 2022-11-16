@@ -1028,7 +1028,7 @@ class PostgresCollector(BaseDbCollector):
         return row
 
     @staticmethod
-    def _add_logical_db_columns(results: Dict[str, any], main_logical_db) -> Dict[str, any]:
+    def _add_logical_db_columns(results: Dict[str, Any], main_logical_db) -> Dict[str, Any]:
         modded_results = {}
         for data_item in results[main_logical_db]:
             modded_results[data_item] = {"columns": results[main_logical_db][data_item]["columns"]+["logical_database_name"], "rows": list()}
