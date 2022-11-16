@@ -1257,7 +1257,7 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector(mock_conn, "postgres", "11")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
     schema = collector.collect_schema()
     assert schema == {
         "columns" : {
