@@ -195,10 +195,10 @@ def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> 
     # pg_stat_user_tables_all_fields
     assert data[
         "pg_stat_user_tables_all_fields"
-    ]["columns"] == TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+    ]["columns"] == TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"]
     assert len(data["pg_stat_user_tables_all_fields"]["rows"]) == table_nums
     for row in data["pg_stat_user_tables_all_fields"]["rows"]:
-        assert len(row) == 22
+        assert len(row) == 23
 
     # pg_statio_user_tables_all_fields
     assert data["pg_statio_user_tables_all_fields"]["columns"] == [
@@ -213,10 +213,11 @@ def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> 
         "toast_blks_hit",
         "tidx_blks_read",
         "tidx_blks_hit",
+        "logical_database_name",
     ]
     assert len(data["pg_statio_user_tables_all_fields"]["rows"]) == table_nums
     for row in data["pg_statio_user_tables_all_fields"]["rows"]:
-        assert len(row) == 11
+        assert len(row) == 12
 
     # pg_stat_user_tables_table_sizes
     assert data["pg_stat_user_tables_table_sizes"]["columns"] == [
@@ -224,19 +225,21 @@ def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> 
         "indexes_size",
         "relation_size",
         "toast_size",
+        "logical_database_name",
     ]
     assert len(data["pg_stat_user_tables_table_sizes"]["rows"]) == table_nums
     for row in data["pg_stat_user_tables_table_sizes"]["rows"]:
-        assert len(row) == 4
+        assert len(row) == 5
 
     # table_bloat_ratios
     assert data["table_bloat_ratios"]["columns"] == [
         "relid",
         "bloat_ratio",
+        "logical_database_name",
     ]
     assert len(data["table_bloat_ratios"]["rows"]) == table_nums
     for row in data["table_bloat_ratios"]["rows"]:
-        assert len(row) == 2
+        assert len(row) == 3
 
 
 def test_collect_table_level_data_from_database(
