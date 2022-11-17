@@ -64,7 +64,7 @@ def test_postgres_collector_version(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     conn.close()
     assert collector.get_version() == version
 
@@ -75,7 +75,7 @@ def test_postgres_collector_permission(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     perm_res = collector.check_permission()
     conn.close()
     assert perm_res[1] == []
@@ -93,7 +93,7 @@ def test_postgres_collector_knobs(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     knobs = collector.collect_knobs()
     conn.close()
     # the knob json should not contain any field that cannot be converted to a string,
@@ -119,7 +119,7 @@ def test_postgres_collector_metrics(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     metrics = collector.collect_metrics()
     conn.close()
     # the metric json should not contain any field that cannot be converted to a string,
@@ -159,7 +159,7 @@ def test_postgres_collect_row_stats(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     row_stats = collector.collect_table_row_number_stats()
     conn.close()
     # the metric json should not contain any field that cannot be converted to a string,
@@ -332,7 +332,7 @@ def test_postgres_collect_table_level_metrics(
     )
 
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
     metrics = collector.collect_table_level_metrics(target_table_info)
     metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
@@ -374,7 +374,7 @@ def test_postgres_collect_index_metrics(
         "ANALYZE;"
     )
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
     metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
 
@@ -389,7 +389,7 @@ def test_postgres_collect_query_metrics(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     metrics = collector.collect_query_metrics(num_query_to_collect_stats)
 
     # pg_stat_statements currently doesn't work for integration test.
@@ -403,7 +403,7 @@ def test_postgres_collect_schema(
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
     version = get_postgres_version(conn)
-    collector = PostgresCollector(conn, pg_database, version)
+    collector = PostgresCollector({pg_database: conn}, pg_database, version)
     schema = collector.collect_schema()
     _verify_postgres_schema(schema)
 
