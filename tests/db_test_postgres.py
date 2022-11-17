@@ -53,7 +53,8 @@ def _get_driver_conf(
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
-        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2']
+        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2'],
+        "postgres_db_list" : [pg_database]
     }
     return conf
 
