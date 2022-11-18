@@ -54,7 +54,7 @@ def _get_driver_conf(
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
         "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2'],
-        "postgres_db_list" : [pg_database]
+        "postgres_db_list" : []
     }
     return conf
 
