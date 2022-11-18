@@ -729,7 +729,8 @@ class PostgresCollector(BaseDbCollector):
         return metrics
 
     def collect_index_metrics(self,
-                                    target_table_info: Dict[str, Any], num_index_to_collect_stats: int) -> Dict[str, Any]:
+                        target_table_info: Dict[str, Any],
+                        num_index_to_collect_stats: int) -> Dict[str, Any]:
         results:Dict[str, Any] = {}
         for logical_db in self._conns:
             results[logical_db] = self.collect_index_metrics_single(target_table_info, num_index_to_collect_stats, logical_db)
