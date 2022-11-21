@@ -253,9 +253,16 @@ def get_collector(
             collector = MysqlCollector(conn, version)
         elif driver_conf["db_type"] in ["postgres", "aurora_postgresql"]:
             pg_conf = create_db_config_postgres(driver_conf)
-            conn = connect_postgres(pg_conf)
-            version = get_postgres_version(conn)
-            collector = PostgresCollector(conn, version)
+            conns: Dict[str, Any] = {}
+            for logical_database in driver_conf["postgres_db_list"]:
+                pg_conf_logical = pg_conf.copy()
+                pg_conf_logical["dbname"] = logical_database
+                conns[logical_database] = connect_postgres(pg_conf_logical)
+
+            main_db = pg_conf["dbname"]
+            conns[main_db] = connect_postgres(pg_conf)
+            version = get_postgres_version(conns[main_db])
+            collector = PostgresCollector(conns, main_db ,version)
         else:
             error_message = (
                 f"Database type {driver_conf['db_type']} is not supported in driver"
