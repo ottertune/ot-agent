@@ -254,10 +254,11 @@ def get_collector(
         elif driver_conf["db_type"] in ["postgres", "aurora_postgresql"]:
             pg_conf = create_db_config_postgres(driver_conf)
             conns: Dict[str, Any] = {}
-            for logical_database in driver_conf["postgres_db_list"]:
-                pg_conf_logical = pg_conf.copy()
-                pg_conf_logical["dbname"] = logical_database
-                conns[logical_database] = connect_postgres(pg_conf_logical)
+            if driver_conf['postgres_db_list'] is not None:
+                for logical_database in driver_conf["postgres_db_list"]:
+                    pg_conf_logical = pg_conf.copy()
+                    pg_conf_logical["dbname"] = logical_database
+                    conns[logical_database] = connect_postgres(pg_conf_logical)
 
             main_db = pg_conf["dbname"]
             conns[main_db] = connect_postgres(pg_conf)
