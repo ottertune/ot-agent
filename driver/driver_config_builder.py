@@ -166,7 +166,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
-    enable_aws_iam_auth = False
+    enable_aws_iam_auth: StrictBool = False
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
     disable_query_monitoring: StrictBool = False
