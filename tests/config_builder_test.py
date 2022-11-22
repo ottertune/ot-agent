@@ -247,7 +247,7 @@ def test_from_derived_with_use_iam() -> None:
     with patch("driver.driver_config_builder.get_db_auth_token") as mocked_db_auth_token:
         mocked_db_auth_token.return_value = 'auth_token'
         config_builder.config.update({"db_user": 'test_user', 'db_password': 'password',
-                                      'db_host': 'localhost', 'db_port': 3306, 'use_aws_iam_auth': True})
+                                      'db_host': 'localhost', 'db_port': 3306, 'enable_aws_iam_auth': True})
         config_builder.from_derived()
 
         assert config_builder.config['db_password'] == 'auth_token'
@@ -258,7 +258,7 @@ def test_from_derived_not_use_iam() -> None:
     with patch("driver.driver_config_builder.get_db_auth_token") as mocked_db_auth_token:
         mocked_db_auth_token.return_value = 'auth_token'
         config_builder.config.update({"db_user": 'test_user', 'db_password': 'password',
-                                      'db_host': 'localhost', 'db_port': 3306, 'use_aws_iam_auth': False})
+                                      'db_host': 'localhost', 'db_port': 3306, 'enable_aws_iam_auth': False})
         config_builder.from_derived()
 
         assert config_builder.config['db_password'] == 'password'
