@@ -417,18 +417,6 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         self.config.update(supplied_overrides)
         return self
 
-    def from_derived(self) -> BaseDriverConfigBuilder:
-        """Generates parameters necessary, based on configurations from other parts of the builder"""
-        if self.config["enable_aws_iam_auth"]:
-            auth_token = get_db_auth_token(
-                self.config["db_user"],
-                self.config["db_host"],
-                self.config["db_port"],
-                self.rds_client,
-            )
-            self.config.update({"db_password": auth_token})
-        return self
-
     def get_config(self) -> DriverConfig:
         """Get driver configuration for on-prem deployment.
 

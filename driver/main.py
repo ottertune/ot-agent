@@ -203,8 +203,7 @@ def get_config(args):
                   .from_cloudwatch_metrics(args.db_identifier)\
                   .from_command_line(args)\
                   .from_env_vars()\
-                  .from_overrides(overrides)\
-                  .from_derived()
+                  .from_overrides(overrides)
 
     config = config_builder.get_config()
 
