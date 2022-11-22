@@ -24,6 +24,7 @@ from driver.aws.rds import (
     get_db_hostname,
     get_db_type,
     get_db_non_default_parameters,
+    get_db_auth_token,
 )
 from driver.aws.wrapper import AwsWrapper
 from driver.exceptions import DriverConfigException
@@ -165,6 +166,7 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     db_user: StrictStr
     db_password: StrictStr
 
+    enable_aws_iam_auth = False
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
     disable_query_monitoring: StrictBool = False
@@ -204,7 +206,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_port: int  # Database port, required
     db_version: str  # Database version number, key for what metrics to fetch, required
     db_user: str  # Database username, required
-    db_password: str  # Database password, required
+    db_password: str  # Database password, required if not using IAM auth
+    enable_aws_iam_auth: bool  # Flag for using IAM auth instead of password auth
 
     db_name: str  # Database name in DBMS to focus on, optional
 
@@ -265,11 +268,16 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def from_command_line(self, args) -> BaseDriverConfigBuilder:
         """build config options from command line arguments that aren't overriding other builders"""
         try:
+            enable_aws_iam_auth = args.enable_aws_iam_auth.lower() == "true"
+            db_password = args.db_password
+            if db_password is None and enable_aws_iam_auth == True:
+                db_password = ""
+
             from_cli = PartialConfigFromCommandline(
                 aws_region=args.aws_region,
                 db_identifier=args.db_identifier,
                 db_user=args.db_username,
-                db_password=args.db_password,
+                db_password=db_password,
                 api_key=args.api_key,
                 db_key=args.db_key,
                 organization_id=args.organization_id,
@@ -277,6 +285,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_index_stats = args.disable_index_stats.lower() == "true",
                 disable_query_monitoring = args.disable_query_monitoring.lower() == "true",
                 disable_schema_monitoring = args.disable_schema_monitoring.lower() == "true",
+                enable_aws_iam_auth=enable_aws_iam_auth,
             )
         except ValidationError as ex:
             msg = (
@@ -406,6 +415,18 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             k: v for k, v in overrides._asdict().items() if v is not None
         }
         self.config.update(supplied_overrides)
+        return self
+
+    def from_derived(self) -> BaseDriverConfigBuilder:
+        """Generates parameters necessary, based on configurations from other parts of the builder"""
+        if self.config["enable_aws_iam_auth"]:
+            auth_token = get_db_auth_token(
+                self.config["db_user"],
+                self.config["db_host"],
+                self.config["db_port"],
+                self.rds_client,
+            )
+            self.config.update({"db_password": auth_token})
         return self
 
     def get_config(self) -> DriverConfig:
