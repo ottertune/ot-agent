@@ -2,7 +2,7 @@
 Tests for the collector factory
 """
 from typing import Dict, Any, NoReturn
-from unittest.mock import MagicMock
+from unittest.mock import (MagicMock, patch)
 import mock
 import pytest
 import mysql.connector.connection
@@ -58,6 +58,30 @@ def test_db_config_mysql_success() -> None:
     db_conf_new = create_db_config_mysql(driver_conf)
     assert expected_db_conf == db_conf_new
 
+def test_db_config_mysql_iam_auth() -> None:
+    with patch('driver.collector.collector_factory.get_db_auth_token') as mocked_db_auth_token:
+        mocked_db_auth_token.return_value = 'auth_token'
+
+        driver_conf: Dict[str, Any] = {
+            "db_host": "localhost",
+            "db_port": "3306",
+            "db_user": "test_user",
+            "db_password": "test_password",
+            "db_name": "test_db",
+            "db_version": "8.0.22",
+            "aws_region": "us-east-1",
+            "enable_aws_iam_auth": True
+        }
+        expected_db_conf: Dict[str, Any] = {
+            "host": "localhost",
+            "port": "3306",
+            "user": "test_user",
+            "password": "auth_token",
+            "database": "test_db",
+            "charset": "utf8",
+        }
+        db_conf = create_db_config_mysql(driver_conf)
+        assert expected_db_conf == db_conf
 
 def test_db_config_mysql_invalid() -> None:
     driver_conf: Dict[str, Any] = {
@@ -111,6 +135,30 @@ def test_db_config_postgres_success() -> None:
     expected_db_conf["dbname"] = "postgres"
     db_conf_new = create_db_config_postgres(driver_conf)
     assert expected_db_conf == db_conf_new
+
+def test_db_config_postgres_iam_auth() -> None:
+    with patch('driver.collector.collector_factory.get_db_auth_token') as mocked_db_auth_token:
+        mocked_db_auth_token.return_value = 'auth_token'
+
+        driver_conf: Dict[str, Any] = {
+            "db_host": "localhost",
+            "db_port": "3306",
+            "db_user": "test_user",
+            "db_password": "test_password",
+            "db_name": "test_db",
+            "db_version": "8.0.22",
+            "aws_region": "us-east-1",
+            "enable_aws_iam_auth": True
+        }
+        expected_db_conf: Dict[str, Any] = {
+            "host": "localhost",
+            "port": "3306",
+            "user": "test_user",
+            "password": "auth_token",
+            "dbname": "test_db",
+        }
+        db_conf = create_db_config_postgres(driver_conf)
+        assert expected_db_conf == db_conf
 
 
 def test_db_config_postgres_invalid() -> None:

@@ -57,8 +57,9 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--db-password",
         type=str,
-        help="Password used for db connection",
-        required=True
+        help="Password used for db connection (Required unless --enable-aws-iam-auth is set to True)",
+        nargs="?",
+        default="",
     )
     parser.add_argument(
         "--api-key",
@@ -135,12 +136,18 @@ def _get_args() -> argparse.Namespace:
         "--disable-schema-monitoring",
         type=str,
         default="False",
-        help="Whether to disable schema monitoring."
+        help="Whether to disable schema monitoring.",
     )
     parser.add_argument(
         "--override-schema-monitor-interval",
         type=int,
         help="Override file setting for how often to collect schema data (in seconds)",
+    )
+    parser.add_argument(
+        "--enable-aws-iam-auth",
+        type=str,
+        default="False",
+        help="Use AWS IAM auth when connecting to DB",
     )
 
     return parser.parse_args()

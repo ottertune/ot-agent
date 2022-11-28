@@ -154,3 +154,11 @@ def get_db_non_default_parameters(
         )
 
     return db_non_default_parameters
+
+
+def get_db_auth_token(
+    db_username: str, hostname: str, port: int, client: RDSClient
+) -> str:
+    return client.generate_db_auth_token(
+        DBHostname=hostname, Port=port, DBUsername=db_username
+    )

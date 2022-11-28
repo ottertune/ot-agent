@@ -24,11 +24,8 @@ ENV OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL="3600"
 ENV OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT="10000"
 ENV OTTERTUNE_DISABLE_SCHEMA_MONITORING="False"
 ENV OTTERTUNE_OVERRIDE_SCHEMA_MONITOR_INTERVAL="3600"
+ENV OTTERTUNE_ENABLE_AWS_IAM_AUTH="False"
 
-
-RUN mkdir -p /ottertune/driver
-COPY . /ottertune/driver
-WORKDIR /ottertune/driver
 RUN   apt-get clean \
    && apt-get update \
    && apt-get install -yq gcc musl-dev python3-dev libpq-dev g++
@@ -36,7 +33,16 @@ RUN cp /usr/lib/ssl/openssl.cnf /usr/lib/ssl/openssl_cipher1.cnf && \
     sed -i "s/\(CipherString *= *\).*/\1DEFAULT@SECLEVEL=1 /" "/usr/lib/ssl/openssl_cipher1.cnf" && \
     sed -i "s/\(MinProtocol *= *\).*/\1TLSv1 /" "/usr/lib/ssl/openssl_cipher1.cnf"
 
+RUN mkdir -p /ottertune/driver
+WORKDIR /ottertune/driver
+# Only copy over requirements.txt so we can take advtantage of caching the
+# dependency installation steps.
+COPY ./requirements.txt /ottertune/driver/requirements.txt
+
 RUN pip install -r requirements.txt
+
+# Add source after installing deps to make iterating faster
+COPY . /ottertune/driver
 
 CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-region $AWS_REGION --db-identifier $OTTERTUNE_DB_IDENTIFIER  --db-username $OTTERTUNE_DB_USERNAME --db-password $OTTERTUNE_DB_PASSWORD --api-key $OTTERTUNE_API_KEY --db-key $OTTERTUNE_DB_KEY --organization-id $OTTERTUNE_ORG_ID --override-server-url $OTTERTUNE_OVERRIDE_SERVER_URL \
   --override-num-table-to-collect-stats $OTTERTUNE_OVERRIDE_NUM_TABLE_TO_COLLECT_STATS \
@@ -48,4 +54,5 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --override-query-monitor-interval $OTTERTUNE_OVERRIDE_QUERY_MONITOR_INTERVAL \
   --override-num-query-to-collect $OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT \
   --disable-schema-monitoring $OTTERTUNE_DISABLE_SCHEMA_MONITORING \
-  --override-schema-monitor-interval $OTTERTUNE_OVERRIDE_SCHEMA_MONITOR_INTERVAL
+  --override-schema-monitor-interval $OTTERTUNE_OVERRIDE_SCHEMA_MONITOR_INTERVAL \
+  --enable-aws-iam-auth $OTTERTUNE_ENABLE_AWS_IAM_AUTH

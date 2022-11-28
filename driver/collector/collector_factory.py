@@ -16,8 +16,18 @@ from driver.exceptions import (
     PostgresCollectorException,
     MysqlCollectorException,
 )
+from driver.aws.rds import (
+    get_db_auth_token,
+)
 from driver.collector.mysql_collector import MysqlCollector
 from driver.collector.postgres_collector import PostgresCollector
+from driver.aws.wrapper import AwsWrapper
+
+def get_db_password(driver_conf: Dict[str, Any]) -> str:
+    if driver_conf.get('enable_aws_iam_auth'):
+        rds_client = AwsWrapper.rds_client(driver_conf["aws_region"])
+        return get_db_auth_token(driver_conf["db_user"], driver_conf["db_host"], driver_conf["db_port"], rds_client)
+    return driver_conf["db_password"]
 
 
 def create_db_config_mysql(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
@@ -35,7 +45,7 @@ def create_db_config_mysql(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
             "host": driver_conf["db_host"],
             "port": driver_conf["db_port"],
             "user": driver_conf["db_user"],
-            "password": driver_conf["db_password"],
+            "password": get_db_password(driver_conf),
             "charset": "utf8",
         }
     except Exception as ex:
@@ -97,7 +107,7 @@ def create_db_config_postgres(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
             "host": driver_conf["db_host"],
             "port": driver_conf["db_port"],
             "user": driver_conf["db_user"],
-            "password": driver_conf["db_password"],
+            "password": get_db_password(driver_conf),
         }
     except Exception as ex:
         msg = "Invalid Postgres database configuration: parameter is not defined"
