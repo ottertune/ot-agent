@@ -57,7 +57,7 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--db-password",
         type=str,
-        help="Password used for db connection (Required unless --enable-aws-iam-auth is set to True)",
+        help="Password used for db connection (Required unless --enable-aws-iam-auth set to True)",
         nargs="?",
         default="",
     )

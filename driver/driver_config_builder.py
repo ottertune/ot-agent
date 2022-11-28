@@ -24,7 +24,6 @@ from driver.aws.rds import (
     get_db_hostname,
     get_db_type,
     get_db_non_default_parameters,
-    get_db_auth_token,
 )
 from driver.aws.wrapper import AwsWrapper
 from driver.exceptions import DriverConfigException
@@ -268,9 +267,9 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def from_command_line(self, args) -> BaseDriverConfigBuilder:
         """build config options from command line arguments that aren't overriding other builders"""
         try:
-            enable_aws_iam_auth = args.enable_aws_iam_auth.lower() == "true"
+            enable_aws_iam_auth = bool(args.enable_aws_iam_auth.lower() == "true")
             db_password = args.db_password
-            if db_password is None and enable_aws_iam_auth == True:
+            if db_password is None and enable_aws_iam_auth:
                 db_password = ""
 
             from_cli = PartialConfigFromCommandline(
