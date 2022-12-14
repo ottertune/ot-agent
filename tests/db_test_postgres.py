@@ -447,7 +447,6 @@ def test_pg_name_list_accepted(db_type: str,
     with get_collector(driver_conf) as collector:
         # pyre-ignore[16]
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
-        # pyre-ignore[16]
         assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access
 
     pg_database = "postgres"
@@ -455,7 +454,5 @@ def test_pg_name_list_accepted(db_type: str,
         db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
     )
     with get_collector(driver_conf) as collector:
-        # pyre-ignore[16]
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
-        # pyre-ignore[16]
         assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access
