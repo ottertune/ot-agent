@@ -1,4 +1,5 @@
 """Postgres database collector to get knob and metric data from the target database"""
+from locale import strcoll
 import re
 import math
 from datetime import datetime
@@ -508,10 +509,17 @@ class PostgresCollector(BaseDbCollector):
         raw_stats = self._cmd(self.ROW_NUMS_SQL, self._main_logical_db)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
-    def get_target_table_info(self,
-                              num_table_to_collect_stats: int) -> Dict[str, Any]:
+
+    def get_target_table_info(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
+        results:Dict[str, Any] = {}
+        for logical_db in self._conns:
+            results[logical_db] = self._get_target_table_info_single(num_table_to_collect_stats, logical_db)
+        
+        return results
+    
+    def _get_target_table_info_single(self, num_table_to_collect_stats: int, logical_db: str) -> Dict[str, Any]:
         target_tables_tuple = self._cmd(
-            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats), self._main_logical_db
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats), logical_db
         )[0]
         target_tables = tuple(table[0] for table in target_tables_tuple)
         target_tables_str = str(target_tables) if len(target_tables) > 1 else (
@@ -629,7 +637,7 @@ class PostgresCollector(BaseDbCollector):
                                     target_table_info: Dict[str, Any]) -> Dict[str, Any]:
         results:Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = self.collect_table_level_metrics_single(target_table_info, logical_db)
+            results[logical_db] = self.collect_table_level_metrics_single(target_table_info[logical_db], logical_db)
 
         return self._add_logical_db_columns(results, self._main_logical_db)
 
@@ -733,7 +741,7 @@ class PostgresCollector(BaseDbCollector):
                         num_index_to_collect_stats: int) -> Dict[str, Any]:
         results:Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = self.collect_index_metrics_single(target_table_info, num_index_to_collect_stats, logical_db)
+            results[logical_db] = self.collect_index_metrics_single(target_table_info[logical_db], num_index_to_collect_stats, logical_db)
 
         return self._add_logical_db_columns(results, self._main_logical_db)
 
@@ -1030,13 +1038,59 @@ class PostgresCollector(BaseDbCollector):
 
     @staticmethod
     def _add_logical_db_columns(results: Dict[str, Any], main_logical_db) -> Dict[str, Any]:
+        """
+        Sample intput results:
+        {
+            'table_bloat_ratios': {
+                'columns': [
+                    'relid',
+                    'bloat_ratio'
+                ],
+                'rows': [
+                    [
+                        18204,
+                        0
+                    ],
+                    [
+                        18213,
+                        0
+                    ]
+                ]
+            }
+        }
+        
+        Sample output:
+        {
+            'table_bloat_ratios': {
+                'columns': [
+                    'relid',
+                    'bloat_ratio',
+                    'logical_database_name'
+                ],
+                'rows': [
+                    [
+                        18204,
+                        0,
+                        'postgres'
+                    ],
+                    [
+                        18213,
+                        0,
+                        'postgres'
+                    ]
+                ]
+            }
+        }
+        """
         modded_results = {}
         for data_item in results[main_logical_db]:
             modded_results[data_item] = {"columns": results[main_logical_db][data_item]["columns"]+["logical_database_name"], "rows": list()}
         for logical_db_name in results:
             for data_item in results[logical_db_name]:
+                rows = []
                 for row in results[logical_db_name][data_item]["rows"]:
-                    row.append(logical_db_name)
-                modded_results[data_item]["rows"].extend(results[logical_db_name][data_item]["rows"])
+                    rows.append(row + [logical_db_name])
+
+                modded_results[data_item]["rows"].extend(rows)
 
         return modded_results
