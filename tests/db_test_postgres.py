@@ -3,7 +3,7 @@ import time
 from typing import Dict, Any
 import json
 
-from driver.collector.collector_factory import get_postgres_version, connect_postgres
+from driver.collector.collector_factory import get_collector, get_postgres_version, connect_postgres
 from driver.database import (
     collect_db_level_data_from_database,
     collect_table_level_data_from_database,
@@ -431,3 +431,28 @@ def _verify_postgres_schema(schema: Dict[str, Any]) -> None:
     assert schema["indexes"]["columns"] == INDEX_SCHEMA_POSTGRES_COLUMNS
     for row in schema["indexes"]["rows"]:
         assert len(row) == len(INDEX_SCHEMA_POSTGRES_COLUMNS)
+
+def test_pg_name_list_accepted(db_type: str,
+    pg_user: str,
+    pg_password: str,
+    pg_host: str,
+    pg_port: str,
+    pg_database: str,
+) -> None:
+    # pylint: disable=too-many-arguments
+    pg_database = "postgres, postgres"
+    driver_conf = _get_driver_conf(
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
+    )
+    with get_collector(driver_conf) as collector:
+        # pyre-ignore[16]
+        assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
+        assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access
+
+    pg_database = "postgres"
+    driver_conf = _get_driver_conf(
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
+    )
+    with get_collector(driver_conf) as collector:
+        assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
+        assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access

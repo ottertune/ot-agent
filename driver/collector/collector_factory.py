@@ -1,12 +1,13 @@
 """Driver collector methods"""
 
 from contextlib import contextmanager
-from typing import Dict, Any, Generator
+from typing import Dict, Any, Generator, Union
 import os
 
 from mysql.connector.constants import ClientFlag  # for SSL
 import mysql.connector
 import mysql.connector.connection as mysql_conn
+import logging
 import psycopg2
 
 from driver.collector.base_collector import BaseDbCollector
@@ -23,10 +24,16 @@ from driver.collector.mysql_collector import MysqlCollector
 from driver.collector.postgres_collector import PostgresCollector
 from driver.aws.wrapper import AwsWrapper
 
+
 def get_db_password(driver_conf: Dict[str, Any]) -> str:
-    if driver_conf.get('enable_aws_iam_auth'):
+    if driver_conf.get("enable_aws_iam_auth"):
         rds_client = AwsWrapper.rds_client(driver_conf["aws_region"])
-        return get_db_auth_token(driver_conf["db_user"], driver_conf["db_host"], driver_conf["db_port"], rds_client)
+        return get_db_auth_token(
+            driver_conf["db_user"],
+            driver_conf["db_host"],
+            driver_conf["db_port"],
+            rds_client,
+        )
     return driver_conf["db_password"]
 
 
@@ -222,7 +229,7 @@ def get_postgres_version(conn) -> str:
 @contextmanager
 def get_collector(
     driver_conf: Dict[str, Any],
-) -> Generator[BaseDbCollector, None, None]:
+) -> Union[Generator[BaseDbCollector, None, None], Generator[PostgresCollector, None, None]]:
     """Get the database collector according to database type
 
     Callers should use in a "with" block to ensure connection object is closed.
@@ -242,6 +249,7 @@ def get_collector(
     """
     try:
         conn = None
+        conns: Dict[str, Any] = {}
 
         # wrap test code together here. long term we will want to refactor to instead have all the
         # code that calls externalities able to be redirected to mock endpoints outside container in
@@ -264,16 +272,16 @@ def get_collector(
         elif driver_conf["db_type"] in ["postgres", "aurora_postgresql"]:
             pg_conf = create_db_config_postgres(driver_conf)
             conns: Dict[str, Any] = {}
-            if driver_conf['postgres_db_list'] is not None:
-                for logical_database in driver_conf["postgres_db_list"]:
-                    pg_conf_logical = pg_conf.copy()
-                    pg_conf_logical["dbname"] = logical_database
-                    conns[logical_database] = connect_postgres(pg_conf_logical)
 
-            main_db = pg_conf["dbname"]
-            conns[main_db] = connect_postgres(pg_conf)
+            logging.info("Receiving dbname: %s", pg_conf["dbname"])
+            db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
+            for logical_database in db_names:
+                pg_conf_logical = pg_conf.copy()
+                pg_conf_logical["dbname"] = logical_database
+                conns[logical_database] = connect_postgres(pg_conf_logical)
+            main_db = db_names[0]
             version = get_postgres_version(conns[main_db])
-            collector = PostgresCollector(conns, main_db ,version)
+            collector = PostgresCollector(conns, main_db, version)
         else:
             error_message = (
                 f"Database type {driver_conf['db_type']} is not supported in driver"
@@ -284,3 +292,6 @@ def get_collector(
     finally:
         if conn:
             conn.close()
+        if conns:
+            for _conn in conns.values():
+                _conn.close()
