@@ -1,7 +1,7 @@
 """Driver collector methods"""
 
 from contextlib import contextmanager
-from typing import Dict, Any, Generator
+from typing import Dict, Any, Generator, Union
 import os
 
 from mysql.connector.constants import ClientFlag  # for SSL
@@ -229,7 +229,7 @@ def get_postgres_version(conn) -> str:
 @contextmanager
 def get_collector(
     driver_conf: Dict[str, Any],
-) -> Generator[BaseDbCollector, None, None]:
+) -> Union[Generator[BaseDbCollector, None, None], Generator[PostgresCollector, None, None]]:
     """Get the database collector according to database type
 
     Callers should use in a "with" block to ensure connection object is closed.
