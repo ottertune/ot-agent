@@ -25,7 +25,7 @@ from driver.collector.postgres_collector import (
     QUERY_INDEX_SCHEMA_SQL_TEMPLATE,
     QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE,
     QUERY_TABLE_SCHEMA_SQL_TEMPLATE,
-    QUERY_VIEW_SCEHMA_SQL_TEMPLATE
+    QUERY_VIEW_SCEHMA_SQL_TEMPLATE,
 )
 from driver.collector.pg_table_level_stats_sqls import (
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
@@ -249,55 +249,39 @@ class SqlData:
                 0,
                 0,
             ],
-            "column_schema": [[
-                66764,
-                "last_value",
-                "bigint",
-                None,
-                True,
-                None,
-                "",
-                "p",
-                None,
-                None
-            ]],
-            "index_schema": [[
-                33955,
-                33967,
-                "customers_pk",
-                True,
-                True,
-                False,
-                True,
-                "CREATE UNIQUE INDEX customers_pk ON customers USING btree (uuid)",
-                "PRIMARY KEY (uuid)",
-                "p",
-                False,
-                False,
-                False,
-                0,
-                "btree"
-            ]],
-            "foreign_key_schema": [[
-                33961,
-                "dogs_fk",
-                "FOREIGN KEY (owner) REFERENCES customers(uuid) ON DELETE CASCADE"
-            ]],
-            "table_schema" : [[
-                "public",
-                33955,
-                "customers",
-                "r",
-                "postgres",
-                "p",
-                None
-            ]],
-            "view_schema" : [[
-                "public",
-                "pg_stat_statements",
-                "rdsadmin",
-                " SELECT..."
-            ]]
+            "column_schema": [
+                [66764, "last_value", "bigint", None, True, None, "", "p", None, None]
+            ],
+            "index_schema": [
+                [
+                    33955,
+                    33967,
+                    "customers_pk",
+                    True,
+                    True,
+                    False,
+                    True,
+                    "CREATE UNIQUE INDEX customers_pk ON customers USING btree (uuid)",
+                    "PRIMARY KEY (uuid)",
+                    "p",
+                    False,
+                    False,
+                    False,
+                    0,
+                    "btree",
+                ]
+            ],
+            "foreign_key_schema": [
+                [
+                    33961,
+                    "dogs_fk",
+                    "FOREIGN KEY (owner) REFERENCES customers(uuid) ON DELETE CASCADE",
+                ]
+            ],
+            "table_schema": [
+                ["public", 33955, "customers", "r", "postgres", "p", None]
+            ],
+            "view_schema": [["public", "pg_stat_statements", "rdsadmin", " SELECT..."]],
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -449,7 +433,7 @@ class SqlData:
                 ["temp_blks_written"],
                 ["blk_read_time"],
                 ["blk_write_time"],
-            ]
+            ],
         }
         self.aggregated_metas = {
             "pg_stat_database": [["local_count"], ["local_count2"]],
@@ -473,7 +457,7 @@ class SqlData:
                 ["constraint_deferred_by_default"],
                 ["index_replica_identity"],
                 ["table_space"],
-                ["index_type"]
+                ["index_type"],
             ],
             "column_schema": [
                 ["table_id"],
@@ -485,29 +469,28 @@ class SqlData:
                 ["identity"],
                 ["storage_type"],
                 ["stats_target"],
-                ["description"]
+                ["description"],
             ],
             "foreign_key_schema": [
                 ["table_id"],
                 ["constraint_name"],
-                ["constraint_expression"]
+                ["constraint_expression"],
             ],
-            "table_schema" : [
+            "table_schema": [
                 ["schema"],
                 ["table_id"],
                 ["table_name"],
                 ["type"],
                 ["owner"],
                 ["persistence"],
-                ["description"]
+                ["description"],
             ],
-            "view_schema" : [
+            "view_schema": [
                 ["schemaname"],
                 ["viewname"],
                 ["viewowner"],
-                ["definition"]
-            ]
-
+                ["definition"],
+            ],
         }
         self.local_metrics = {
             "database": {
@@ -648,8 +631,10 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == INDEX_STATIO:
             result.value = data.aggregated_views["pg_statio_user_indexes"]
             result.meta = data.aggregated_metas["pg_statio_user_indexes"]
-        elif sql == PG_STAT_STATEMENTS_MODULE_QUERY or \
-                'avg_time_ms FROM pg_stat_statements;' in sql:
+        elif (
+            sql == PG_STAT_STATEMENTS_MODULE_QUERY
+            or "avg_time_ms FROM pg_stat_statements;" in sql
+        ):
             result.value = data.views["pg_stat_statements"]
             result.meta = data.metas["pg_stat_statements"]
         elif sql == ROW_NUM_STAT:
@@ -714,10 +699,13 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif PG_INDEX_TEMPLATE[: PG_INDEX_TEMPLATE.index("IN")] in sql:
             result.value = data.views["pg_index_all_fields"]
             result.meta = data.metas["pg_index_all_fields"]
-        elif PG_QUERY_STATS_SQL_TEMPLATE[:PG_QUERY_STATS_SQL_TEMPLATE.index("LIMIT")] in sql:
+        elif (
+            PG_QUERY_STATS_SQL_TEMPLATE[: PG_QUERY_STATS_SQL_TEMPLATE.index("LIMIT")]
+            in sql
+        ):
             result.value = data.views["pg_stat_statements_all_fields"]
             result.meta = data.metas["pg_stat_statements_all_fields"]
-        elif sql == 'CREATE EXTENSION pg_stat_statements;':
+        elif sql == "CREATE EXTENSION pg_stat_statements;":
             result.value = []
             result.meta = []
         elif sql == VACUUM_ACTIVITY_STAT:
@@ -862,7 +850,8 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
         target_table_info=target_table_info
     ) == {
         "pg_stat_user_tables_all_fields": {
-            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"],
+            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+            + ["logical_database_name"],
             "rows": [
                 [
                     1544350,
@@ -887,7 +876,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     0,
                     1,
                     9,
-                    "postgres"
+                    "postgres",
                 ],
                 [
                     1544351,
@@ -912,7 +901,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     0,
                     0,
                     0,
-                    "postgres"
+                    "postgres",
                 ],
             ],
         },
@@ -929,7 +918,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 "toast_blks_hit",
                 "tidx_blks_read",
                 "tidx_blks_hit",
-                "logical_database_name"
+                "logical_database_name",
             ],
             "rows": [
                 [
@@ -944,7 +933,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     None,
                     None,
                     None,
-                    "postgres"
+                    "postgres",
                 ],
                 [
                     1544351,
@@ -958,7 +947,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                     None,
                     None,
                     None,
-                    "postgres"
+                    "postgres",
                 ],
             ],
         },
@@ -971,22 +960,12 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 "logical_database_name",
             ],
             "rows": [
-                [
-                    1544350,
-                    3761643520,
-                    2487918592,
-                    630784,
-                    "postgres"
-                ],
+                [1544350, 3761643520, 2487918592, 630784, "postgres"],
                 [1544351, 0, 0, 0, "postgres"],
             ],
         },
         "table_bloat_ratios": {
-            "columns": [
-                "relid",
-                "bloat_ratio",
-                "logical_database_name"
-            ],
+            "columns": ["relid", "bloat_ratio", "logical_database_name"],
             "rows": [
                 [
                     1234,
@@ -1069,10 +1048,17 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
                 "idx_tup_fetch",
                 "logical_database_name",
             ],
-            "rows": [[24882, 24889, "public", "test1", "test1_pkey", 3, 2, 2, "postgres"]],
+            "rows": [
+                [24882, 24889, "public", "test1", "test1_pkey", 3, 2, 2, "postgres"]
+            ],
         },
         "pg_statio_user_indexes_all_fields": {
-            "columns": ["indexrelid", "idx_blks_read", "idx_blks_hit", "logical_database_name"],
+            "columns": [
+                "indexrelid",
+                "idx_blks_read",
+                "idx_blks_hit",
+                "logical_database_name",
+            ],
             "rows": [[24889, 3, 7, "postgres"]],
         },
     }
@@ -1163,41 +1149,48 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
-    assert collector.collect_query_metrics(1) == \
-           {'pg_stat_statements': {'columns': ['userid',
-                                               'dbid',
-                                               'queryid',
-                                               'query',
-                                               'calls',
-                                               'rows',
-                                               'shared_blks_hit',
-                                               'shared_blks_read',
-                                               'shared_blks_dirtied',
-                                               'shared_blks_written',
-                                               'local_blks_hit',
-                                               'local_blks_read',
-                                               'local_blks_dirtied',
-                                               'temp_blks_read',
-                                               'temp_blks_written',
-                                               'blk_read_time',
-                                               'blk_write_time',],
-                                   'rows': [10,
-                                            16384,
-                                            2067594330036860870,
-                                            'FETCH 50 IN "query-cursor_1"',
-                                            6057292,
-                                            302864600,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,
-                                            0,]}}
+    assert collector.collect_query_metrics(1) == {
+        "pg_stat_statements": {
+            "columns": [
+                "userid",
+                "dbid",
+                "queryid",
+                "query",
+                "calls",
+                "rows",
+                "shared_blks_hit",
+                "shared_blks_read",
+                "shared_blks_dirtied",
+                "shared_blks_written",
+                "local_blks_hit",
+                "local_blks_read",
+                "local_blks_dirtied",
+                "temp_blks_read",
+                "temp_blks_written",
+                "blk_read_time",
+                "blk_write_time",
+            ],
+            "rows": [
+                10,
+                16384,
+                2067594330036860870,
+                'FETCH 50 IN "query-cursor_1"',
+                6057292,
+                302864600,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ],
+        }
+    }
 
 
 def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
@@ -1250,6 +1243,7 @@ def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
     # pylint: disable=protected-access
     assert collector._anonymize_query({"query": "vacuum tl1;"})["query"] == "vacuum tl1"
 
+
 def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
@@ -1260,12 +1254,20 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
     schema = collector.collect_schema()
     assert schema == {
-        "columns" : {
-            "columns" : [
-                "table_id", "name", "type", "default_val", "nullable", "collation",
-                "identity", "storage_type", "stats_target", "description",
+        "columns": {
+            "columns": [
+                "table_id",
+                "name",
+                "type",
+                "default_val",
+                "nullable",
+                "collation",
+                "identity",
+                "storage_type",
+                "stats_target",
+                "description",
             ],
-            "rows" : [
+            "rows": [
                 [
                     66764,
                     "last_value",
@@ -1278,16 +1280,27 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
                     None,
                     None,
                 ],
-            ]
-        },
-        "indexes" : {
-            "columns" : [
-                "table_id", "index_id", "index_name", "is_primary", "is_unique", "is_clustered",
-                "is_valid", "index_expression", "index_constraint", "constraint_type",
-                "constraint_deferrable", "constraint_deferred_by_default",
-                "index_replica_identity", "table_space", "index_type",
             ],
-            "rows" : [
+        },
+        "indexes": {
+            "columns": [
+                "table_id",
+                "index_id",
+                "index_name",
+                "is_primary",
+                "is_unique",
+                "is_clustered",
+                "is_valid",
+                "index_expression",
+                "index_constraint",
+                "constraint_type",
+                "constraint_deferrable",
+                "constraint_deferred_by_default",
+                "index_replica_identity",
+                "table_space",
+                "index_type",
+            ],
+            "rows": [
                 [
                     33955,
                     33967,
@@ -1305,25 +1318,33 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
                     0,
                     "btree",
                 ],
-            ]
-        },
-        "foreign_keys" : {
-            "columns" : [
-                "table_id", "constraint_name", "constraint_expression",
             ],
-            "rows" : [
+        },
+        "foreign_keys": {
+            "columns": [
+                "table_id",
+                "constraint_name",
+                "constraint_expression",
+            ],
+            "rows": [
                 [
                     33961,
                     "dogs_fk",
                     "FOREIGN KEY (owner) REFERENCES customers(uuid) ON DELETE CASCADE",
                 ],
-            ]
-        },
-        "tables" : {
-            "columns" : [
-                "schema", "table_id", "table_name", "type", "owner", "persistence", "description",
             ],
-            "rows" : [
+        },
+        "tables": {
+            "columns": [
+                "schema",
+                "table_id",
+                "table_name",
+                "type",
+                "owner",
+                "persistence",
+                "description",
+            ],
+            "rows": [
                 [
                     "public",
                     33955,
@@ -1333,22 +1354,26 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
                     "p",
                     None,
                 ],
-            ]
-        },
-        "views" : {
-            "columns" : [
-                "schemaname", "viewname", "viewowner", "definition",
             ],
-            "rows" : [
+        },
+        "views": {
+            "columns": [
+                "schemaname",
+                "viewname",
+                "viewowner",
+                "definition",
+            ],
+            "rows": [
                 [
                     "public",
                     "pg_stat_statements",
                     "rdsadmin",
                     " SELECT...",
                 ],
-            ]
-        }
+            ],
+        },
     }
+
 
 def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
@@ -1359,301 +1384,214 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
     results = {
-        'postgres': {
-            'pg_statio_user_tables_all_fields': {
-                'columns': [
-                    'relid',
-                    'schemaname',
-                    'relname',
-                    'heap_blks_read',
-                    'heap_blks_hit',
-                    'idx_blks_read',
-                    'idx_blks_hit',
-                    'toast_blks_read',
-                    'toast_blks_hit',
-                    'tidx_blks_read',
-                    'tidx_blks_hit'
+        "postgres": {
+            "pg_statio_user_tables_all_fields": {
+                "columns": [
+                    "relid",
+                    "schemaname",
+                    "relname",
+                    "heap_blks_read",
+                    "heap_blks_hit",
+                    "idx_blks_read",
+                    "idx_blks_hit",
+                    "toast_blks_read",
+                    "toast_blks_hit",
+                    "tidx_blks_read",
+                    "tidx_blks_hit",
                 ],
-                'rows': [
+                "rows": [
                     [
-                    1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
-                    32141302,
-                    152493441,
-                    10916736,
-                    171887644,
-                    None,
-                    None,
-                    None,
-                    None
+                        1544350,
+                        "public",
+                        "partitionednumericmetric_partition_145",
+                        32141302,
+                        152493441,
+                        10916736,
+                        171887644,
+                        None,
+                        None,
+                        None,
+                        None,
                     ],
                     [
-                    1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
-                    0,
-                    0,
-                    0,
-                    0,
-                    None,
-                    None,
-                    None,
-                    None
-                    ]
-                ]
-            },
-            'pg_stat_user_tables_table_sizes': {
-            'columns': [
-                'relid',
-                'indexes_size',
-                'relation_size',
-                'toast_size'
-            ],
-            'rows': [
-                [
-                1544350,
-                3761643520,
-                2487918592,
-                630784
+                        1544351,
+                        "public",
+                        "partitionednumericmetric_partition_0",
+                        0,
+                        0,
+                        0,
+                        0,
+                        None,
+                        None,
+                        None,
+                        None,
+                    ],
                 ],
-                [
-                1544351,
-                0,
-                0,
-                0
-                ]
-            ]
             },
-            'table_bloat_ratios': {
-                'columns': [
-                    'relid',
-                    'bloat_ratio'
-                ],
-                'rows': [
-                    [
-                    1234,
-                    0.09764872948837611
-                    ]
-                ]
-            }
+            "pg_stat_user_tables_table_sizes": {
+                "columns": ["relid", "indexes_size", "relation_size", "toast_size"],
+                "rows": [[1544350, 3761643520, 2487918592, 630784], [1544351, 0, 0, 0]],
+            },
+            "table_bloat_ratios": {
+                "columns": ["relid", "bloat_ratio"],
+                "rows": [[1234, 0.09764872948837611]],
+            },
         },
-        'postgres_2': {
-            'pg_statio_user_tables_all_fields': {
-                'columns': [
-                    'relid',
-                    'schemaname',
-                    'relname',
-                    'heap_blks_read',
-                    'heap_blks_hit',
-                    'idx_blks_read',
-                    'idx_blks_hit',
-                    'toast_blks_read',
-                    'toast_blks_hit',
-                    'tidx_blks_read',
-                    'tidx_blks_hit'
+        "postgres_2": {
+            "pg_statio_user_tables_all_fields": {
+                "columns": [
+                    "relid",
+                    "schemaname",
+                    "relname",
+                    "heap_blks_read",
+                    "heap_blks_hit",
+                    "idx_blks_read",
+                    "idx_blks_hit",
+                    "toast_blks_read",
+                    "toast_blks_hit",
+                    "tidx_blks_read",
+                    "tidx_blks_hit",
                 ],
-                'rows': [
+                "rows": [
                     [
-                    1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
-                    32141302,
-                    152493441,
-                    10916736,
-                    171887644,
-                    None,
-                    None,
-                    None,
-                    None
+                        1544350,
+                        "public",
+                        "partitionednumericmetric_partition_145",
+                        32141302,
+                        152493441,
+                        10916736,
+                        171887644,
+                        None,
+                        None,
+                        None,
+                        None,
                     ],
                     [
-                    1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
-                    0,
-                    0,
-                    0,
-                    0,
-                    None,
-                    None,
-                    None,
-                    None
-                    ]
-                ]
-            },
-            'pg_stat_user_tables_table_sizes': {
-            'columns': [
-                'relid',
-                'indexes_size',
-                'relation_size',
-                'toast_size'
-            ],
-            'rows': [
-                [
-                1544350,
-                3761643520,
-                2487918592,
-                630784
+                        1544351,
+                        "public",
+                        "partitionednumericmetric_partition_0",
+                        0,
+                        0,
+                        0,
+                        0,
+                        None,
+                        None,
+                        None,
+                        None,
+                    ],
                 ],
-                [
-                1544351,
-                0,
-                0,
-                0
-                ]
-            ]
             },
-            'table_bloat_ratios': {
-                'columns': [
-                    'relid',
-                    'bloat_ratio'
-                ],
-                'rows': [
-                    [
-                    1234,
-                    0.09764872948837611
-                    ]
-                ]
-            }
-        }
+            "pg_stat_user_tables_table_sizes": {
+                "columns": ["relid", "indexes_size", "relation_size", "toast_size"],
+                "rows": [[1544350, 3761643520, 2487918592, 630784], [1544351, 0, 0, 0]],
+            },
+            "table_bloat_ratios": {
+                "columns": ["relid", "bloat_ratio"],
+                "rows": [[1234, 0.09764872948837611]],
+            },
+        },
     }
     expected_modded_results = {
-        'pg_statio_user_tables_all_fields': {
-            'columns': [
-            'relid',
-            'schemaname',
-            'relname',
-            'heap_blks_read',
-            'heap_blks_hit',
-            'idx_blks_read',
-            'idx_blks_hit',
-            'toast_blks_read',
-            'toast_blks_hit',
-            'tidx_blks_read',
-            'tidx_blks_hit',
-            'logical_database_name'
+        "pg_statio_user_tables_all_fields": {
+            "columns": [
+                "relid",
+                "schemaname",
+                "relname",
+                "heap_blks_read",
+                "heap_blks_hit",
+                "idx_blks_read",
+                "idx_blks_hit",
+                "toast_blks_read",
+                "toast_blks_hit",
+                "tidx_blks_read",
+                "tidx_blks_hit",
+                "logical_database_name",
             ],
-            'rows': [
-            [
-                1544350,
-                'public',
-                'partitionednumericmetric_partition_145',
-                32141302,
-                152493441,
-                10916736,
-                171887644,
-                None,
-                None,
-                None,
-                None,
-                'postgres'
+            "rows": [
+                [
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "postgres",
+                ],
+                [
+                    1544351,
+                    "public",
+                    "partitionednumericmetric_partition_0",
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "postgres",
+                ],
+                [
+                    1544350,
+                    "public",
+                    "partitionednumericmetric_partition_145",
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "postgres_2",
+                ],
+                [
+                    1544351,
+                    "public",
+                    "partitionednumericmetric_partition_0",
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                    "postgres_2",
+                ],
             ],
-            [
-                1544351,
-                'public',
-                'partitionednumericmetric_partition_0',
-                0,
-                0,
-                0,
-                0,
-                None,
-                None,
-                None,
-                None,
-                'postgres'
-            ],
-            [
-                1544350,
-                'public',
-                'partitionednumericmetric_partition_145',
-                32141302,
-                152493441,
-                10916736,
-                171887644,
-                None,
-                None,
-                None,
-                None,
-                'postgres_2'
-            ],
-            [
-                1544351,
-                'public',
-                'partitionednumericmetric_partition_0',
-                0,
-                0,
-                0,
-                0,
-                None,
-                None,
-                None,
-                None,
-                'postgres_2'
-            ]
-            ]
         },
-        'pg_stat_user_tables_table_sizes': {
-            'columns': [
-            'relid',
-            'indexes_size',
-            'relation_size',
-            'toast_size',
-            'logical_database_name'
+        "pg_stat_user_tables_table_sizes": {
+            "columns": [
+                "relid",
+                "indexes_size",
+                "relation_size",
+                "toast_size",
+                "logical_database_name",
             ],
-            'rows': [
-            [
-                1544350,
-                3761643520,
-                2487918592,
-                630784,
-                'postgres'
+            "rows": [
+                [1544350, 3761643520, 2487918592, 630784, "postgres"],
+                [1544351, 0, 0, 0, "postgres"],
+                [1544350, 3761643520, 2487918592, 630784, "postgres_2"],
+                [1544351, 0, 0, 0, "postgres_2"],
             ],
-            [
-                1544351,
-                0,
-                0,
-                0,
-                'postgres'
-            ],
-            [
-                1544350,
-                3761643520,
-                2487918592,
-                630784,
-                'postgres_2'
-            ],
-            [
-                1544351,
-                0,
-                0,
-                0,
-                'postgres_2'
-            ]
-            ]
         },
-        'table_bloat_ratios': {
-            'columns': [
-            'relid',
-            'bloat_ratio',
-            'logical_database_name'
+        "table_bloat_ratios": {
+            "columns": ["relid", "bloat_ratio", "logical_database_name"],
+            "rows": [
+                [1234, 0.09764872948837611, "postgres"],
+                [1234, 0.09764872948837611, "postgres_2"],
             ],
-            'rows': [
-            [
-                1234,
-                0.09764872948837611,
-                'postgres'
-            ],
-            [
-                1234,
-                0.09764872948837611,
-                'postgres_2'
-            ]
-            ]
-        }
+        },
     }
     modded_results = collector._add_logical_db_columns(results, "postgres")
     assert modded_results == expected_modded_results
+
 
 def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
@@ -1662,19 +1600,16 @@ def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoRetur
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector(
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+    )
     expected_result = {
-        'postgres': {
-            'target_tables': (1234,),
-            'target_tables_str': '(1234)'
-        },
-        'postgres_2': {
-            'target_tables': (1234,),
-            'target_tables_str': '(1234)'
-        }
+        "postgres": {"target_tables": (1234,), "target_tables_str": "(1234)"},
+        "postgres_2": {"target_tables": (1234,), "target_tables_str": "(1234)"},
     }
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     assert target_table_info == expected_result
+
 
 def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
@@ -1683,40 +1618,42 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector(
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+    )
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
-        'pg_stat_user_tables_all_fields': {
-            'columns': [
-                'relid',
-                'schemaname',
-                'relname',
-                'seq_scan',
-                'seq_tup_read',
-                'idx_scan',
-                'idx_tup_fetch',
-                'n_tup_ins',
-                'n_tup_upd',
-                'n_tup_del',
-                'n_tup_hot_upd',
-                'n_live_tup',
-                'n_dead_tup',
-                'n_mod_since_analyze',
-                'last_vacuum',
-                'last_autovacuum',
-                'last_analyze',
-                'last_autoanalyze',
-                'vacuum_count',
-                'autovacuum_count',
-                'analyze_count',
-                'autoanalyze_count',
-                'logical_database_name'
+        "pg_stat_user_tables_all_fields": {
+            "columns": [
+                "relid",
+                "schemaname",
+                "relname",
+                "seq_scan",
+                "seq_tup_read",
+                "idx_scan",
+                "idx_tup_fetch",
+                "n_tup_ins",
+                "n_tup_upd",
+                "n_tup_del",
+                "n_tup_hot_upd",
+                "n_live_tup",
+                "n_dead_tup",
+                "n_mod_since_analyze",
+                "last_vacuum",
+                "last_autovacuum",
+                "last_analyze",
+                "last_autoanalyze",
+                "vacuum_count",
+                "autovacuum_count",
+                "analyze_count",
+                "autoanalyze_count",
+                "logical_database_name",
             ],
-            'rows': [
+            "rows": [
                 [
                     1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
+                    "public",
+                    "partitionednumericmetric_partition_145",
                     12,
                     156742344,
                     124901,
@@ -1730,32 +1667,18 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     1258272,
                     None,
                     None,
-                    datetime(2022,
-                    3,
-                    13,
-                    4,
-                    58,
-                    49,
-                    479706,
-                    tzinfo=timezone.utc),
-                    datetime(2022,
-                    3,
-                    28,
-                    16,
-                    35,
-                    57,
-                    602308,
-                    tzinfo=timezone.utc),
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
                     0,
                     0,
                     1,
                     9,
-                    'postgres'
+                    "postgres",
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
+                    "public",
+                    "partitionednumericmetric_partition_0",
                     0,
                     0,
                     0,
@@ -1769,32 +1692,18 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     0,
                     None,
                     None,
-                    datetime(2022,
-                    3,
-                    13,
-                    4,
-                    58,
-                    49,
-                    479706,
-                    tzinfo=timezone.utc),
-                    datetime(2022,
-                    3,
-                    28,
-                    16,
-                    35,
-                    57,
-                    602308,
-                    tzinfo=timezone.utc),
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
                     0,
                     0,
                     0,
                     0,
-                    'postgres'
+                    "postgres",
                 ],
                 [
                     1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
+                    "public",
+                    "partitionednumericmetric_partition_145",
                     12,
                     156742344,
                     124901,
@@ -1808,32 +1717,18 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     1258272,
                     None,
                     None,
-                    datetime(2022,
-                    3,
-                    13,
-                    4,
-                    58,
-                    49,
-                    479706,
-                    tzinfo=timezone.utc),
-                    datetime(2022,
-                    3,
-                    28,
-                    16,
-                    35,
-                    57,
-                    602308,
-                    tzinfo=timezone.utc),
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
                     0,
                     0,
                     1,
                     9,
-                    'postgres_2'
+                    "postgres_2",
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
+                    "public",
+                    "partitionednumericmetric_partition_0",
                     0,
                     0,
                     0,
@@ -1847,50 +1742,36 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     0,
                     None,
                     None,
-                    datetime(2022,
-                    3,
-                    13,
-                    4,
-                    58,
-                    49,
-                    479706,
-                    tzinfo=timezone.utc),
-                    datetime(2022,
-                    3,
-                    28,
-                    16,
-                    35,
-                    57,
-                    602308,
-                    tzinfo=timezone.utc),
+                    datetime(2022, 3, 13, 4, 58, 49, 479706, tzinfo=timezone.utc),
+                    datetime(2022, 3, 28, 16, 35, 57, 602308, tzinfo=timezone.utc),
                     0,
                     0,
                     0,
                     0,
-                    'postgres_2'
-                ]
-            ]
-        },
-        'pg_statio_user_tables_all_fields': {
-            'columns': [
-                'relid',
-                'schemaname',
-                'relname',
-                'heap_blks_read',
-                'heap_blks_hit',
-                'idx_blks_read',
-                'idx_blks_hit',
-                'toast_blks_read',
-                'toast_blks_hit',
-                'tidx_blks_read',
-                'tidx_blks_hit',
-                'logical_database_name'
+                    "postgres_2",
+                ],
             ],
-            'rows': [
+        },
+        "pg_statio_user_tables_all_fields": {
+            "columns": [
+                "relid",
+                "schemaname",
+                "relname",
+                "heap_blks_read",
+                "heap_blks_hit",
+                "idx_blks_read",
+                "idx_blks_hit",
+                "toast_blks_read",
+                "toast_blks_hit",
+                "tidx_blks_read",
+                "tidx_blks_hit",
+                "logical_database_name",
+            ],
+            "rows": [
                 [
                     1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
+                    "public",
+                    "partitionednumericmetric_partition_145",
                     32141302,
                     152493441,
                     10916736,
@@ -1899,12 +1780,12 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     None,
                     None,
                     None,
-                    'postgres'
+                    "postgres",
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
+                    "public",
+                    "partitionednumericmetric_partition_0",
                     0,
                     0,
                     0,
@@ -1913,12 +1794,12 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     None,
                     None,
                     None,
-                    'postgres'
+                    "postgres",
                 ],
                 [
                     1544350,
-                    'public',
-                    'partitionednumericmetric_partition_145',
+                    "public",
+                    "partitionednumericmetric_partition_145",
                     32141302,
                     152493441,
                     10916736,
@@ -1927,12 +1808,12 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     None,
                     None,
                     None,
-                    'postgres_2'
+                    "postgres_2",
                 ],
                 [
                     1544351,
-                    'public',
-                    'partitionednumericmetric_partition_0',
+                    "public",
+                    "partitionednumericmetric_partition_0",
                     0,
                     0,
                     0,
@@ -1941,71 +1822,38 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
                     None,
                     None,
                     None,
-                    'postgres_2'
-                ]
-            ]
-        },
-        'pg_stat_user_tables_table_sizes': {
-            'columns': [
-                'relid',
-                'indexes_size',
-                'relation_size',
-                'toast_size',
-                'logical_database_name'
+                    "postgres_2",
+                ],
             ],
-            'rows': [
-                [
-                    1544350,
-                    3761643520,
-                    2487918592,
-                    630784,
-                    'postgres'
-                ],
-                [
-                    1544351,
-                    0,
-                    0,
-                    0,
-                    'postgres'
-                ],
-                [
-                    1544350,
-                    3761643520,
-                    2487918592,
-                    630784,
-                    'postgres_2'
-                ],
-                [
-                    1544351,
-                    0,
-                    0,
-                    0,
-                    'postgres_2'
-                ]
-            ]
         },
-        'table_bloat_ratios': {
-            'columns': [
-                'relid',
-                'bloat_ratio',
-                'logical_database_name'
+        "pg_stat_user_tables_table_sizes": {
+            "columns": [
+                "relid",
+                "indexes_size",
+                "relation_size",
+                "toast_size",
+                "logical_database_name",
             ],
-            'rows': [
-                [
-                    1234,
-                    0.09764872948837611,
-                    'postgres'
-                ],
-                [
-                    1234,
-                    0.09764872948837611,
-                    'postgres_2'
-                ]
-            ]
-        }
+            "rows": [
+                [1544350, 3761643520, 2487918592, 630784, "postgres"],
+                [1544351, 0, 0, 0, "postgres"],
+                [1544350, 3761643520, 2487918592, 630784, "postgres_2"],
+                [1544351, 0, 0, 0, "postgres_2"],
+            ],
+        },
+        "table_bloat_ratios": {
+            "columns": ["relid", "bloat_ratio", "logical_database_name"],
+            "rows": [
+                [1234, 0.09764872948837611, "postgres"],
+                [1234, 0.09764872948837611, "postgres_2"],
+            ],
+        },
     }
-    table_level_metrics = collector.collect_table_level_metrics(target_table_info=target_table_info)
+    table_level_metrics = collector.collect_table_level_metrics(
+        target_table_info=target_table_info
+    )
     assert table_level_metrics == expected_results
+
 
 def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
@@ -2014,93 +1862,62 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
     mock_cursor.execute.side_effect = get_sql_api(data, result)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector(
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+    )
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
-        'pg_stat_user_indexes_all_fields': {
-            'columns': [
-                'relid',
-                'indexrelid',
-                'schemaname',
-                'relname',
-                'indexrelname',
-                'idx_scan',
-                'idx_tup_read',
-                'idx_tup_fetch',
-                'logical_database_name'
+        "pg_stat_user_indexes_all_fields": {
+            "columns": [
+                "relid",
+                "indexrelid",
+                "schemaname",
+                "relname",
+                "indexrelname",
+                "idx_scan",
+                "idx_tup_read",
+                "idx_tup_fetch",
+                "logical_database_name",
             ],
-            'rows': [
-                [
-                    24882,
-                    24889,
-                    'public',
-                    'test1',
-                    'test1_pkey',
-                    3,
-                    2,
-                    2,
-                    'postgres'
-                ],
-                [
-                    24882,
-                    24889,
-                    'public',
-                    'test1',
-                    'test1_pkey',
-                    3,
-                    2,
-                    2,
-                    'postgres_2'
-                ]
-            ]
-        },
-        'pg_statio_user_indexes_all_fields': {
-            'columns': [
-                'indexrelid',
-                'idx_blks_read',
-                'idx_blks_hit',
-                'logical_database_name'
+            "rows": [
+                [24882, 24889, "public", "test1", "test1_pkey", 3, 2, 2, "postgres"],
+                [24882, 24889, "public", "test1", "test1_pkey", 3, 2, 2, "postgres_2"],
             ],
-            'rows': [
-                [
-                    24889,
-                    3,
-                    7,
-                    'postgres'
-                ],
-                [
-                    24889,
-                    3,
-                    7,
-                    'postgres_2'
-                ]
-            ]
         },
-        'pg_index_all_fields': {
-            'columns': [
-                'indexrelid',
-                'indrelid',
-                'indnatts',
-                'indnkeyatts',
-                'indisunique',
-                'indisprimary',
-                'indisexclusion',
-                'indimmediate',
-                'indisclustered',
-                'indisvalid',
-                'indcheckxmin',
-                'indisready',
-                'indislive',
-                'indisreplident',
-                'indkey',
-                'indcollation',
-                'indclass',
-                'indoption',
-                'indexprs',
-                'indpred',
-                'logical_database_name'
-                ],
-                'rows': [
+        "pg_statio_user_indexes_all_fields": {
+            "columns": [
+                "indexrelid",
+                "idx_blks_read",
+                "idx_blks_hit",
+                "logical_database_name",
+            ],
+            "rows": [[24889, 3, 7, "postgres"], [24889, 3, 7, "postgres_2"]],
+        },
+        "pg_index_all_fields": {
+            "columns": [
+                "indexrelid",
+                "indrelid",
+                "indnatts",
+                "indnkeyatts",
+                "indisunique",
+                "indisprimary",
+                "indisexclusion",
+                "indimmediate",
+                "indisclustered",
+                "indisvalid",
+                "indcheckxmin",
+                "indisready",
+                "indislive",
+                "indisreplident",
+                "indkey",
+                "indcollation",
+                "indclass",
+                "indoption",
+                "indexprs",
+                "indpred",
+                "logical_database_name",
+            ],
+            "rows": [
                 [
                     24889,
                     24882,
@@ -2121,8 +1938,8 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    '{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}',
-                    'postgres'
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",
+                    "postgres",
                 ],
                 [
                     24889,
@@ -2144,30 +1961,17 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    '{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}',
-                    'postgres_2'
-                ]
-            ]
-        },
-        'indexes_size': {
-            'columns': [
-                'indexrelid',
-                'index_size',
-                'logical_database_name'
-            ],
-            'rows': [
-                [
-                    24889,
-                    16384,
-                    'postgres'
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",
+                    "postgres_2",
                 ],
-                [
-                    24889,
-                    16384,
-                    'postgres_2'
-                ]
-            ]
-        }
+            ],
+        },
+        "indexes_size": {
+            "columns": ["indexrelid", "index_size", "logical_database_name"],
+            "rows": [[24889, 16384, "postgres"], [24889, 16384, "postgres_2"]],
+        },
     }
-    index_metrics = collector.collect_index_metrics(target_table_info=target_table_info, num_index_to_collect_stats=1)
+    index_metrics = collector.collect_index_metrics(
+        target_table_info=target_table_info, num_index_to_collect_stats=1
+    )
     assert index_metrics == expected_results
