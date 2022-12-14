@@ -7,6 +7,7 @@ import os
 from mysql.connector.constants import ClientFlag  # for SSL
 import mysql.connector
 import mysql.connector.connection as mysql_conn
+import logging
 import psycopg2
 
 from driver.collector.base_collector import BaseDbCollector
@@ -272,6 +273,7 @@ def get_collector(
             pg_conf = create_db_config_postgres(driver_conf)
             conns: Dict[str, Any] = {}
 
+            logging.info("Receiving dbname: %s", pg_conf["dbname"])
             db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
             for logical_database in db_names:
                 pg_conf_logical = pg_conf.copy()
