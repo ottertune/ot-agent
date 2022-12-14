@@ -1589,7 +1589,7 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
             ],
         },
     }
-    modded_results = collector._add_logical_db_columns(results, "postgres")
+    modded_results = collector._add_logical_db_columns(results, "postgres")  # pylint: disable=protected-access
     assert modded_results == expected_modded_results
 
 
@@ -1624,31 +1624,7 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
         "pg_stat_user_tables_all_fields": {
-            "columns": [
-                "relid",
-                "schemaname",
-                "relname",
-                "seq_scan",
-                "seq_tup_read",
-                "idx_scan",
-                "idx_tup_fetch",
-                "n_tup_ins",
-                "n_tup_upd",
-                "n_tup_del",
-                "n_tup_hot_upd",
-                "n_live_tup",
-                "n_dead_tup",
-                "n_mod_since_analyze",
-                "last_vacuum",
-                "last_autovacuum",
-                "last_analyze",
-                "last_autoanalyze",
-                "vacuum_count",
-                "autovacuum_count",
-                "analyze_count",
-                "autoanalyze_count",
-                "logical_database_name",
-            ],
+            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"],
             "rows": [
                 [
                     1544350,
@@ -1938,7 +1914,7 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}", # pylint: disable=line-too-long
                     "postgres",
                 ],
                 [
@@ -1961,7 +1937,7 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}", # pylint: disable=line-too-long
                     "postgres_2",
                 ],
             ],
