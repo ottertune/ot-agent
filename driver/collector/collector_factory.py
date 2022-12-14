@@ -275,8 +275,16 @@ def get_collector(
                     pg_conf_logical = pg_conf.copy()
                     pg_conf_logical["dbname"] = logical_database
                     conns[logical_database] = connect_postgres(pg_conf_logical)
+                main_db = pg_conf["dbname"]
+            else:
+                db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
+                if len(db_names) > 2:
+                    for logical_database in db_names[1:]:
+                        pg_conf_logical = pg_conf.copy()
+                        pg_conf_logical["dbname"] = logical_database
+                        conns[logical_database] = connect_postgres(pg_conf_logical)
+                main_db = db_names[0]
 
-            main_db = pg_conf["dbname"]
             conns[main_db] = connect_postgres(pg_conf)
             version = get_postgres_version(conns[main_db])
             collector = PostgresCollector(conns, main_db, version)
