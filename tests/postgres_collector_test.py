@@ -1349,3 +1349,825 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
             ]
         }
     }
+
+def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
+    results = {
+        'postgres': {
+            'pg_statio_user_tables_all_fields': {
+                'columns': [
+                    'relid',
+                    'schemaname',
+                    'relname',
+                    'heap_blks_read',
+                    'heap_blks_hit',
+                    'idx_blks_read',
+                    'idx_blks_hit',
+                    'toast_blks_read',
+                    'toast_blks_hit',
+                    'tidx_blks_read',
+                    'tidx_blks_hit'
+                ],
+                'rows': [
+                    [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None
+                    ],
+                    [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None
+                    ]
+                ]
+            },
+            'pg_stat_user_tables_table_sizes': {
+            'columns': [
+                'relid',
+                'indexes_size',
+                'relation_size',
+                'toast_size'
+            ],
+            'rows': [
+                [
+                1544350,
+                3761643520,
+                2487918592,
+                630784
+                ],
+                [
+                1544351,
+                0,
+                0,
+                0
+                ]
+            ]
+            },
+            'table_bloat_ratios': {
+                'columns': [
+                    'relid',
+                    'bloat_ratio'
+                ],
+                'rows': [
+                    [
+                    1234,
+                    0.09764872948837611
+                    ]
+                ]
+            }
+        },
+        'postgres_2': {
+            'pg_statio_user_tables_all_fields': {
+                'columns': [
+                    'relid',
+                    'schemaname',
+                    'relname',
+                    'heap_blks_read',
+                    'heap_blks_hit',
+                    'idx_blks_read',
+                    'idx_blks_hit',
+                    'toast_blks_read',
+                    'toast_blks_hit',
+                    'tidx_blks_read',
+                    'tidx_blks_hit'
+                ],
+                'rows': [
+                    [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None
+                    ],
+                    [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None
+                    ]
+                ]
+            },
+            'pg_stat_user_tables_table_sizes': {
+            'columns': [
+                'relid',
+                'indexes_size',
+                'relation_size',
+                'toast_size'
+            ],
+            'rows': [
+                [
+                1544350,
+                3761643520,
+                2487918592,
+                630784
+                ],
+                [
+                1544351,
+                0,
+                0,
+                0
+                ]
+            ]
+            },
+            'table_bloat_ratios': {
+                'columns': [
+                    'relid',
+                    'bloat_ratio'
+                ],
+                'rows': [
+                    [
+                    1234,
+                    0.09764872948837611
+                    ]
+                ]
+            }
+        }
+    }
+    expected_modded_results = {
+        'pg_statio_user_tables_all_fields': {
+            'columns': [
+            'relid',
+            'schemaname',
+            'relname',
+            'heap_blks_read',
+            'heap_blks_hit',
+            'idx_blks_read',
+            'idx_blks_hit',
+            'toast_blks_read',
+            'toast_blks_hit',
+            'tidx_blks_read',
+            'tidx_blks_hit',
+            'logical_database_name'
+            ],
+            'rows': [
+            [
+                1544350,
+                'public',
+                'partitionednumericmetric_partition_145',
+                32141302,
+                152493441,
+                10916736,
+                171887644,
+                None,
+                None,
+                None,
+                None,
+                'postgres'
+            ],
+            [
+                1544351,
+                'public',
+                'partitionednumericmetric_partition_0',
+                0,
+                0,
+                0,
+                0,
+                None,
+                None,
+                None,
+                None,
+                'postgres'
+            ],
+            [
+                1544350,
+                'public',
+                'partitionednumericmetric_partition_145',
+                32141302,
+                152493441,
+                10916736,
+                171887644,
+                None,
+                None,
+                None,
+                None,
+                'postgres_2'
+            ],
+            [
+                1544351,
+                'public',
+                'partitionednumericmetric_partition_0',
+                0,
+                0,
+                0,
+                0,
+                None,
+                None,
+                None,
+                None,
+                'postgres_2'
+            ]
+            ]
+        },
+        'pg_stat_user_tables_table_sizes': {
+            'columns': [
+            'relid',
+            'indexes_size',
+            'relation_size',
+            'toast_size',
+            'logical_database_name'
+            ],
+            'rows': [
+            [
+                1544350,
+                3761643520,
+                2487918592,
+                630784,
+                'postgres'
+            ],
+            [
+                1544351,
+                0,
+                0,
+                0,
+                'postgres'
+            ],
+            [
+                1544350,
+                3761643520,
+                2487918592,
+                630784,
+                'postgres_2'
+            ],
+            [
+                1544351,
+                0,
+                0,
+                0,
+                'postgres_2'
+            ]
+            ]
+        },
+        'table_bloat_ratios': {
+            'columns': [
+            'relid',
+            'bloat_ratio',
+            'logical_database_name'
+            ],
+            'rows': [
+            [
+                1234,
+                0.09764872948837611,
+                'postgres'
+            ],
+            [
+                1234,
+                0.09764872948837611,
+                'postgres_2'
+            ]
+            ]
+        }
+    }
+    modded_results = collector._add_logical_db_columns(results, "postgres")
+    assert modded_results == expected_modded_results
+
+def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    expected_result = {
+        'postgres': {
+            'target_tables': (1234,),
+            'target_tables_str': '(1234)'
+        },
+        'postgres_2': {
+            'target_tables': (1234,),
+            'target_tables_str': '(1234)'
+        }
+    }
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
+    assert target_table_info == expected_result
+
+def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
+    expected_results = {
+        'pg_stat_user_tables_all_fields': {
+            'columns': [
+                'relid',
+                'schemaname',
+                'relname',
+                'seq_scan',
+                'seq_tup_read',
+                'idx_scan',
+                'idx_tup_fetch',
+                'n_tup_ins',
+                'n_tup_upd',
+                'n_tup_del',
+                'n_tup_hot_upd',
+                'n_live_tup',
+                'n_dead_tup',
+                'n_mod_since_analyze',
+                'last_vacuum',
+                'last_autovacuum',
+                'last_analyze',
+                'last_autoanalyze',
+                'vacuum_count',
+                'autovacuum_count',
+                'analyze_count',
+                'autoanalyze_count',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    12,
+                    156742344,
+                    124901,
+                    8462823118,
+                    15243454,
+                    0,
+                    0,
+                    0,
+                    41303336,
+                    0,
+                    1258272,
+                    None,
+                    None,
+                    datetime(2022,
+                    3,
+                    13,
+                    4,
+                    58,
+                    49,
+                    479706,
+                    tzinfo=timezone.utc),
+                    datetime(2022,
+                    3,
+                    28,
+                    16,
+                    35,
+                    57,
+                    602308,
+                    tzinfo=timezone.utc),
+                    0,
+                    0,
+                    1,
+                    9,
+                    'postgres'
+                ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    datetime(2022,
+                    3,
+                    13,
+                    4,
+                    58,
+                    49,
+                    479706,
+                    tzinfo=timezone.utc),
+                    datetime(2022,
+                    3,
+                    28,
+                    16,
+                    35,
+                    57,
+                    602308,
+                    tzinfo=timezone.utc),
+                    0,
+                    0,
+                    0,
+                    0,
+                    'postgres'
+                ],
+                [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    12,
+                    156742344,
+                    124901,
+                    8462823118,
+                    15243454,
+                    0,
+                    0,
+                    0,
+                    41303336,
+                    0,
+                    1258272,
+                    None,
+                    None,
+                    datetime(2022,
+                    3,
+                    13,
+                    4,
+                    58,
+                    49,
+                    479706,
+                    tzinfo=timezone.utc),
+                    datetime(2022,
+                    3,
+                    28,
+                    16,
+                    35,
+                    57,
+                    602308,
+                    tzinfo=timezone.utc),
+                    0,
+                    0,
+                    1,
+                    9,
+                    'postgres_2'
+                ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    datetime(2022,
+                    3,
+                    13,
+                    4,
+                    58,
+                    49,
+                    479706,
+                    tzinfo=timezone.utc),
+                    datetime(2022,
+                    3,
+                    28,
+                    16,
+                    35,
+                    57,
+                    602308,
+                    tzinfo=timezone.utc),
+                    0,
+                    0,
+                    0,
+                    0,
+                    'postgres_2'
+                ]
+            ]
+        },
+        'pg_statio_user_tables_all_fields': {
+            'columns': [
+                'relid',
+                'schemaname',
+                'relname',
+                'heap_blks_read',
+                'heap_blks_hit',
+                'idx_blks_read',
+                'idx_blks_hit',
+                'toast_blks_read',
+                'toast_blks_hit',
+                'tidx_blks_read',
+                'tidx_blks_hit',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                    'postgres'
+                ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                    'postgres'
+                ],
+                [
+                    1544350,
+                    'public',
+                    'partitionednumericmetric_partition_145',
+                    32141302,
+                    152493441,
+                    10916736,
+                    171887644,
+                    None,
+                    None,
+                    None,
+                    None,
+                    'postgres_2'
+                ],
+                [
+                    1544351,
+                    'public',
+                    'partitionednumericmetric_partition_0',
+                    0,
+                    0,
+                    0,
+                    0,
+                    None,
+                    None,
+                    None,
+                    None,
+                    'postgres_2'
+                ]
+            ]
+        },
+        'pg_stat_user_tables_table_sizes': {
+            'columns': [
+                'relid',
+                'indexes_size',
+                'relation_size',
+                'toast_size',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    1544350,
+                    3761643520,
+                    2487918592,
+                    630784,
+                    'postgres'
+                ],
+                [
+                    1544351,
+                    0,
+                    0,
+                    0,
+                    'postgres'
+                ],
+                [
+                    1544350,
+                    3761643520,
+                    2487918592,
+                    630784,
+                    'postgres_2'
+                ],
+                [
+                    1544351,
+                    0,
+                    0,
+                    0,
+                    'postgres_2'
+                ]
+            ]
+        },
+        'table_bloat_ratios': {
+            'columns': [
+                'relid',
+                'bloat_ratio',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    1234,
+                    0.09764872948837611,
+                    'postgres'
+                ],
+                [
+                    1234,
+                    0.09764872948837611,
+                    'postgres_2'
+                ]
+            ]
+        }
+    }
+    table_level_metrics = collector.collect_table_level_metrics(target_table_info=target_table_info)
+    assert table_level_metrics == expected_results
+
+def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3")
+    target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
+    expected_results = {
+        'pg_stat_user_indexes_all_fields': {
+            'columns': [
+                'relid',
+                'indexrelid',
+                'schemaname',
+                'relname',
+                'indexrelname',
+                'idx_scan',
+                'idx_tup_read',
+                'idx_tup_fetch',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    24882,
+                    24889,
+                    'public',
+                    'test1',
+                    'test1_pkey',
+                    3,
+                    2,
+                    2,
+                    'postgres'
+                ],
+                [
+                    24882,
+                    24889,
+                    'public',
+                    'test1',
+                    'test1_pkey',
+                    3,
+                    2,
+                    2,
+                    'postgres_2'
+                ]
+            ]
+        },
+        'pg_statio_user_indexes_all_fields': {
+            'columns': [
+                'indexrelid',
+                'idx_blks_read',
+                'idx_blks_hit',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    24889,
+                    3,
+                    7,
+                    'postgres'
+                ],
+                [
+                    24889,
+                    3,
+                    7,
+                    'postgres_2'
+                ]
+            ]
+        },
+        'pg_index_all_fields': {
+            'columns': [
+                'indexrelid',
+                'indrelid',
+                'indnatts',
+                'indnkeyatts',
+                'indisunique',
+                'indisprimary',
+                'indisexclusion',
+                'indimmediate',
+                'indisclustered',
+                'indisvalid',
+                'indcheckxmin',
+                'indisready',
+                'indislive',
+                'indisreplident',
+                'indkey',
+                'indcollation',
+                'indclass',
+                'indoption',
+                'indexprs',
+                'indpred',
+                'logical_database_name'
+                ],
+                'rows': [
+                [
+                    24889,
+                    24882,
+                    1,
+                    1,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    1,
+                    0,
+                    1978,
+                    0,
+                    None,
+                    '{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}',
+                    'postgres'
+                ],
+                [
+                    24889,
+                    24882,
+                    1,
+                    1,
+                    True,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    False,
+                    True,
+                    True,
+                    False,
+                    1,
+                    0,
+                    1978,
+                    0,
+                    None,
+                    '{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}',
+                    'postgres_2'
+                ]
+            ]
+        },
+        'indexes_size': {
+            'columns': [
+                'indexrelid',
+                'index_size',
+                'logical_database_name'
+            ],
+            'rows': [
+                [
+                    24889,
+                    16384,
+                    'postgres'
+                ],
+                [
+                    24889,
+                    16384,
+                    'postgres_2'
+                ]
+            ]
+        }
+    }
+    index_metrics = collector.collect_index_metrics(target_table_info=target_table_info, num_index_to_collect_stats=1)
+    assert index_metrics == expected_results

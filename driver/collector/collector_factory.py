@@ -270,22 +270,14 @@ def get_collector(
             collector = MysqlCollector(conn, version)
         elif driver_conf["db_type"] in ["postgres", "aurora_postgresql"]:
             pg_conf = create_db_config_postgres(driver_conf)
-            if driver_conf["postgres_db_list"] is not None:
-                for logical_database in driver_conf["postgres_db_list"]:
-                    pg_conf_logical = pg_conf.copy()
-                    pg_conf_logical["dbname"] = logical_database
-                    conns[logical_database] = connect_postgres(pg_conf_logical)
-                main_db = pg_conf["dbname"]
-            else:
-                db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
-                if len(db_names) > 2:
-                    for logical_database in db_names[1:]:
-                        pg_conf_logical = pg_conf.copy()
-                        pg_conf_logical["dbname"] = logical_database
-                        conns[logical_database] = connect_postgres(pg_conf_logical)
-                main_db = db_names[0]
+            conns: Dict[str, Any] = {}
 
-            conns[main_db] = connect_postgres(pg_conf)
+            db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
+            for logical_database in db_names:
+                pg_conf_logical = pg_conf.copy()
+                pg_conf_logical["dbname"] = logical_database
+                conns[logical_database] = connect_postgres(pg_conf_logical)
+            main_db = db_names[0]
             version = get_postgres_version(conns[main_db])
             collector = PostgresCollector(conns, main_db, version)
         else:

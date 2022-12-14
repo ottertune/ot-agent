@@ -1,5 +1,4 @@
 """Postgres database collector to get knob and metric data from the target database"""
-from locale import strcoll
 import re
 import math
 from datetime import datetime
