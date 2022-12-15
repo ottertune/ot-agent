@@ -623,7 +623,7 @@ class PostgresCollector(BaseDbCollector):
             )
             padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
             bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(
-                target_tables_str,
+                target_tables_str, logical_db
             )
             metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
                 padding_size_dict, bloat_ratio_factors_dict,
@@ -866,12 +866,13 @@ class PostgresCollector(BaseDbCollector):
     def _retrive_bloat_ratio_factors_for_tables(
         self,
         target_tables_str: str,
+        logical_db: str,
     ) -> Dict[int, Dict[str, Any]]:
         factors, columns = self._cmd(
             TABLE_BLOAT_RATIO_FACTOR_TEMPLATE.format(
                 table_list=target_tables_str,
             ),
-            self._main_logical_db
+            logical_db
         )
         return {
             factor[0]: dict(zip(columns[1:], factor[1:]))
