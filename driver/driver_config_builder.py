@@ -52,7 +52,6 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
-    postgres_db_list: Optional[List[str]]
     schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
@@ -233,7 +232,6 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_schema_monitoring: bool
     schema_monitor_interval: int
     db_non_default_parameters: List[str]
-    postgres_db_list: Optional[List[str]]
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
