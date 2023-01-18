@@ -6,9 +6,9 @@ SELECT
 FROM
   pg_stat_user_tables
 WHERE
-  n_live_tup > 0
+  n_live_tup + seq_scan + idx_scan > 0
 ORDER BY
-  n_live_tup
+  n_live_tup, seq_scan + idx_scan desc
 DESC LIMIT
   {n};
 """
