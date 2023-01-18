@@ -8,8 +8,8 @@ FROM
 WHERE
   n_live_tup + seq_scan + idx_scan > 0
 ORDER BY
-  n_live_tup, seq_scan + idx_scan desc
-DESC LIMIT
+  n_live_tup DESC, seq_scan + idx_scan DESC
+LIMIT
   {n};
 """
 
