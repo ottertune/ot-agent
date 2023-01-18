@@ -298,7 +298,7 @@ def test_collect_table_level_data_from_database(
     assert summary["observation_time"] > 0
     assert len(version_str) > 0
     # 0 as the database is empty
-    _verify_postgres_table_level_data(data, 2)
+    _verify_postgres_table_level_data(data, 3)
 
 
 def test_postgres_collect_table_level_metrics(
@@ -340,7 +340,7 @@ def test_postgres_collect_table_level_metrics(
     metrics = collector.collect_table_level_metrics(target_table_info)
     metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
 
-    _verify_postgres_table_level_data(metrics, 2)
+    _verify_postgres_table_level_data(metrics, 3)
 
 
 def test_postgres_collect_index_metrics(
