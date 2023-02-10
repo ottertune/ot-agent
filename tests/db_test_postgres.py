@@ -436,6 +436,9 @@ def test_postgres_collect_schema(
     version = get_postgres_version(conn)
     collector = PostgresCollector({pg_database: conn}, pg_database, version)
     schema = collector.collect_schema()
+    print("????????????")
+    print(schema["index_columns"])
+    print("????????????")
     assert schema["index_columns"]["rows"][0][2] == [
         "num",
     ]
