@@ -301,6 +301,26 @@ AND schemaname <> 'information_schema'
 AND schemaname !~ '^pg_toast';
 """
 
+QUERY_INDEX_SCHEMA_COLUMN_NAMES = """
+SELECT
+    i.indrelid as table_id,
+    i.indexrelid as index_id,
+    array_to_string(array_agg(pg_get_indexdef(i.indexrelid, k.i::int, false) order by k.i asc), ',') as column_names
+FROM
+    pg_index i CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY AS k(attnum, i)
+    LEFT JOIN pg_class c ON c.oid = i.indrelid
+    LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE
+    n.nspname <> 'pg_catalog'
+    AND n.nspname <> 'information_schema'
+    AND n.nspname !~ '^pg_toast'
+GROUP BY
+    i.indrelid, i.indexrelid
+ORDER BY
+    i.indrelid, i.indexrelid;
+"""
+
+
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
 
@@ -508,29 +528,36 @@ class PostgresCollector(BaseDbCollector):
         raw_stats = self._cmd(self.ROW_NUMS_SQL, self._main_logical_db)
         return {entry[0]: entry[1] for entry in zip(raw_stats[1], raw_stats[0][0])}
 
-
     def get_target_table_info(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
-        results:Dict[str, Any] = {}
+        results: Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = self._get_target_table_info_single(num_table_to_collect_stats, logical_db)
-        
+            results[logical_db] = self._get_target_table_info_single(
+                num_table_to_collect_stats, logical_db
+            )
+
         return results
-    
-    def _get_target_table_info_single(self, num_table_to_collect_stats: int, logical_db: str) -> Dict[str, Any]:
+
+    def _get_target_table_info_single(
+        self, num_table_to_collect_stats: int, logical_db: str
+    ) -> Dict[str, Any]:
         target_tables_tuple = self._cmd(
-            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats), logical_db
+            TOP_N_LARGEST_TABLES_SQL_TEMPLATE.format(n=num_table_to_collect_stats),
+            logical_db,
         )[0]
         target_tables = tuple(table[0] for table in target_tables_tuple)
-        target_tables_str = str(target_tables) if len(target_tables) > 1 else (
-            f"({target_tables[0]})" if len(target_tables) == 1 else "(0)"
+        target_tables_str = (
+            str(target_tables)
+            if len(target_tables) > 1
+            else (f"({target_tables[0]})" if len(target_tables) == 1 else "(0)")
         )
         return {
             "target_tables": target_tables,
             "target_tables_str": target_tables_str,
         }
 
-    def collect_table_level_metrics_single(self,
-                                    target_table_info: Dict[str, Any], logical_db: str) -> Dict[str, Any]:
+    def collect_table_level_metrics_single(
+        self, target_table_info: Dict[str, Any], logical_db: str
+    ) -> Dict[str, Any]:
         """Collect table level statistics
         Returns:
             {
@@ -619,30 +646,39 @@ class PostgresCollector(BaseDbCollector):
             raw_padding_info, _ = self._cmd(
                 PADDING_HELPER_TEMPLATE.format(
                     table_list=target_tables_str,
-                ), logical_db
+                ),
+                logical_db,
             )
-            padding_size_dict = self._calculate_padding_size_for_tables(raw_padding_info)
+            padding_size_dict = self._calculate_padding_size_for_tables(
+                raw_padding_info
+            )
             bloat_ratio_factors_dict = self._retrive_bloat_ratio_factors_for_tables(
                 target_tables_str, logical_db
             )
             metrics["table_bloat_ratios"]["rows"] = self._calculate_bloat_ratios(
-                padding_size_dict, bloat_ratio_factors_dict,
+                padding_size_dict,
+                bloat_ratio_factors_dict,
             )
 
         return metrics
 
-
-    def collect_table_level_metrics(self,
-                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
-        results:Dict[str, Any] = {}
+    def collect_table_level_metrics(
+        self, target_table_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        results: Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = self.collect_table_level_metrics_single(target_table_info[logical_db], logical_db)
+            results[logical_db] = self.collect_table_level_metrics_single(
+                target_table_info[logical_db], logical_db
+            )
 
         return self._add_logical_db_columns(results, self._main_logical_db)
 
-    def collect_index_metrics_single(self,
-                              target_table_info: Dict[str, Any],
-                              num_index_to_collect_stats: int, logical_db: str) -> Dict[str, Any]:
+    def collect_index_metrics_single(
+        self,
+        target_table_info: Dict[str, Any],
+        num_index_to_collect_stats: int,
+        logical_db: str,
+    ) -> Dict[str, Any]:
         """Collect index statistics
         Returns:
             {
@@ -707,18 +743,22 @@ class PostgresCollector(BaseDbCollector):
         target_tables_str = target_table_info["target_tables_str"]
 
         target_indexes_tuple: List[List[int]] = self._cmd(
-            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(table_list=target_tables_str,
-                                                      n=num_index_to_collect_stats), logical_db
+            TOP_N_LARGEST_INDEXES_SQL_TEMPLATE.format(
+                table_list=target_tables_str, n=num_index_to_collect_stats
+            ),
+            logical_db,
         )[0]
         # pyre-ignore[9]
         target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
-        target_indexes_str = str(target_indexes) if len(target_indexes) > 1 else (
-            f"({target_indexes[0]})" if len(target_indexes) == 1 else "(0)"
+        target_indexes_str = (
+            str(target_indexes)
+            if len(target_indexes) > 1
+            else (f"({target_indexes[0]})" if len(target_indexes) == 1 else "(0)")
         )
 
         for field, sql_template in self.INDEX_STATS_SQLS.items():
             rows, columns = self._cmd(
-                sql_template.format(index_list = target_indexes_str), logical_db
+                sql_template.format(index_list=target_indexes_str), logical_db
             )
             metrics[field] = {
                 "columns": columns,
@@ -732,18 +772,20 @@ class PostgresCollector(BaseDbCollector):
 
         if target_indexes:
             metrics["indexes_size"]["rows"] = [
-                [index[0], index[1]] for index in target_indexes_tuple]
+                [index[0], index[1]] for index in target_indexes_tuple
+            ]
         return metrics
 
-    def collect_index_metrics(self,
-                        target_table_info: Dict[str, Any],
-                        num_index_to_collect_stats: int) -> Dict[str, Any]:
-        results:Dict[str, Any] = {}
+    def collect_index_metrics(
+        self, target_table_info: Dict[str, Any], num_index_to_collect_stats: int
+    ) -> Dict[str, Any]:
+        results: Dict[str, Any] = {}
         for logical_db in self._conns:
-            results[logical_db] = self.collect_index_metrics_single(target_table_info[logical_db], num_index_to_collect_stats, logical_db)
+            results[logical_db] = self.collect_index_metrics_single(
+                target_table_info[logical_db], num_index_to_collect_stats, logical_db
+            )
 
         return self._add_logical_db_columns(results, self._main_logical_db)
-
 
     def collect_query_metrics(self, num_query_to_collect_stats: int):
         """Collect query statistics
@@ -763,7 +805,8 @@ class PostgresCollector(BaseDbCollector):
         rows = []
         try:
             rows, columns = self._cmd(
-                PG_QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats), self._main_logical_db
+                PG_QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats),
+                self._main_logical_db,
             )
         except PostgresCollectorException as ex:
             logging.error(
@@ -773,52 +816,68 @@ class PostgresCollector(BaseDbCollector):
             )
 
         return {
-            "pg_stat_statements": {
-                "columns": columns,
-                "rows": rows
-            },
+            "pg_stat_statements": {"columns": columns, "rows": rows},
         }
 
     def collect_schema(self) -> Dict[str, Any]:
         """Collect schema"""
         version_float = float(".".join(self._version_str.split(".")[:2]))
-        generate_query= ""
+        generate_query = ""
         conparentid_predicate = ""
         if version_float >= 13:
             generate_query = "a.attgenerated as generated,"
         if version_float >= 11:
             conparentid_predicate = "AND conparentid = 0"
 
-        column_schema_rows, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query), self._main_logical_db)
-        index_schema_rows, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE, self._main_logical_db)
-        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(conparentid_predicate=conparentid_predicate), self._main_logical_db)
-        table_schema_rows, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE, self._main_logical_db)
-        view_schema_rows, view_schema_columns = self._cmd(QUERY_VIEW_SCEHMA_SQL_TEMPLATE, self._main_logical_db)
+        column_schema_rows, column_schema_columns = self._cmd(
+            QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE.format(generate_query=generate_query),
+            self._main_logical_db,
+        )
+        index_schema_rows, index_schema_columns = self._cmd(
+            QUERY_INDEX_SCHEMA_SQL_TEMPLATE, self._main_logical_db
+        )
+        foreign_key_schema_rows, foreign_key_schema_columns = self._cmd(
+            QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE.format(
+                conparentid_predicate=conparentid_predicate
+            ),
+            self._main_logical_db,
+        )
+        table_schema_rows, table_schema_columns = self._cmd(
+            QUERY_TABLE_SCHEMA_SQL_TEMPLATE, self._main_logical_db
+        )
+        view_schema_rows, view_schema_columns = self._cmd(
+            QUERY_VIEW_SCEHMA_SQL_TEMPLATE, self._main_logical_db
+        )
+        index_column_names_rows, index_column_names_columns = self._cmd(
+            QUERY_INDEX_SCHEMA_COLUMN_NAMES, self._main_logical_db
+        )
 
         return {
-            "columns" : {
-                "columns" : column_schema_columns,
-                "rows" : column_schema_rows
+            "columns": {
+                "columns": column_schema_columns,
+                "rows": column_schema_rows,
             },
-            "indexes" : {
-                "columns" : index_schema_columns,
-                "rows" : index_schema_rows
+            "indexes": {
+                "columns": index_schema_columns,
+                "rows": index_schema_rows,
             },
-            "foreign_keys" : {
-                "columns" :  foreign_key_schema_columns,
-                "rows" : foreign_key_schema_rows
+            "foreign_keys": {
+                "columns": foreign_key_schema_columns,
+                "rows": foreign_key_schema_rows,
             },
-            "tables" : {
-                "columns" : table_schema_columns,
-                "rows" : table_schema_rows
+            "tables": {
+                "columns": table_schema_columns,
+                "rows": table_schema_rows,
             },
-            "views" : {
+            "views": {
                 "columns": view_schema_columns,
-                "rows" : view_schema_rows
-            }
+                "rows": view_schema_rows,
+            },
+            "index_columns": {
+                "columns": index_column_names_columns,
+                "rows": index_column_names_rows,
+            },
         }
-
-
 
     def _calculate_bloat_ratios(
         self,
@@ -828,8 +887,11 @@ class PostgresCollector(BaseDbCollector):
         res = []
         for relid, factors in bloat_ratio_factors_dict.items():
             bloat_ratio = self._calculate_bloat_ratio_for_table(
-                padding_size=padding_size_dict[relid] if relid in padding_size_dict else 0,
-                **factors)
+                padding_size=padding_size_dict[relid]
+                if relid in padding_size_dict
+                else 0,
+                **factors,
+            )
             res.append([relid, bloat_ratio])
         return res
 
@@ -850,18 +912,27 @@ class PostgresCollector(BaseDbCollector):
         if is_na:
             return None
         tpl_data_size = tpl_data_size + padding_size
-        tpl_size = 4 + tpl_hdr_size + tpl_data_size + 2 * ma - (
-            ma if tpl_hdr_size % ma == 0 else tpl_hdr_size % ma
-        ) - (
-            # pylint: disable=c-extension-no-member
-            ma if math.ceil(tpl_data_size) % ma == 0 else math.ceil(tpl_data_size) % ma
+        tpl_size = (
+            4
+            + tpl_hdr_size
+            + tpl_data_size
+            + 2 * ma
+            - (ma if tpl_hdr_size % ma == 0 else tpl_hdr_size % ma)
+            - (
+                # pylint: disable=c-extension-no-member
+                ma
+                if math.ceil(tpl_data_size) % ma == 0
+                else math.ceil(tpl_data_size) % ma
+            )
         )
-        est_tblpages_ff = math.ceil( # pylint: disable=c-extension-no-member
+        est_tblpages_ff = math.ceil(  # pylint: disable=c-extension-no-member
             reltuples / ((bs - page_hdr) * fillfactor / (tpl_size * 100.0))
         )
-        return 100.0 * (
-            tblpages - est_tblpages_ff
-        ) / tblpages if (tblpages - est_tblpages_ff) > 0 else 0
+        return (
+            100.0 * (tblpages - est_tblpages_ff) / tblpages
+            if (tblpages - est_tblpages_ff) > 0
+            else 0
+        )
 
     def _retrive_bloat_ratio_factors_for_tables(
         self,
@@ -872,12 +943,9 @@ class PostgresCollector(BaseDbCollector):
             TABLE_BLOAT_RATIO_FACTOR_TEMPLATE.format(
                 table_list=target_tables_str,
             ),
-            logical_db
+            logical_db,
         )
-        return {
-            factor[0]: dict(zip(columns[1:], factor[1:]))
-            for factor in factors
-        }
+        return {factor[0]: dict(zip(columns[1:], factor[1:])) for factor in factors}
 
     def _calculate_padding_size_for_tables(
         self,
@@ -886,7 +954,7 @@ class PostgresCollector(BaseDbCollector):
         # Note that groupby requires that the list is sorted by the group key
         # which is done currently by the query
         return {
-            relid : self._calculate_padding_size_for_table(list(field_info))
+            relid: self._calculate_padding_size_for_table(list(field_info))
             for relid, field_info in groupby(raw_fields_info, lambda x: x[0])
         }
 
@@ -903,12 +971,12 @@ class PostgresCollector(BaseDbCollector):
         for field in table_fields_info[1:]:
             cur_alignment = ALIGNMENT_DICT[field[2]]
             cur_alignment_ = cur_alignment - 1
-            padded_size = ((offset + cur_alignment_) & ~cur_alignment_)
+            padded_size = (offset + cur_alignment_) & ~cur_alignment_
             padding += padded_size - offset
             offset = padded_size + field[3]
 
         # Assume tuples align to 4 bytes, process the last field
-        padded_size = ((offset + 3) & ~3)
+        padded_size = (offset + 3) & ~3
         padding += padded_size - offset
         return padding
 
@@ -982,7 +1050,10 @@ class PostgresCollector(BaseDbCollector):
         """
 
         load_module_sql = "CREATE EXTENSION pg_stat_statements;"
-        module_exists = self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY, self._main_logical_db)[0][0][0] == 1
+        module_exists = (
+            self._cmd(PG_STAT_STATEMENTS_MODULE_QUERY, self._main_logical_db)[0][0][0]
+            == 1
+        )
         if not module_exists:
             try:
                 self._conns[self._main_logical_db].cursor().execute(load_module_sql)
@@ -1037,7 +1108,9 @@ class PostgresCollector(BaseDbCollector):
         return row
 
     @staticmethod
-    def _add_logical_db_columns(results: Dict[str, Any], main_logical_db) -> Dict[str, Any]:
+    def _add_logical_db_columns(
+        results: Dict[str, Any], main_logical_db
+    ) -> Dict[str, Any]:
         """
         Sample intput results:
         {
@@ -1058,7 +1131,7 @@ class PostgresCollector(BaseDbCollector):
                 ]
             }
         }
-        
+
         Sample output:
         {
             'table_bloat_ratios': {
@@ -1084,7 +1157,11 @@ class PostgresCollector(BaseDbCollector):
         """
         modded_results = {}
         for data_item in results[main_logical_db]:
-            modded_results[data_item] = {"columns": results[main_logical_db][data_item]["columns"]+["logical_database_name"], "rows": list()}
+            modded_results[data_item] = {
+                "columns": results[main_logical_db][data_item]["columns"]
+                + ["logical_database_name"],
+                "rows": list(),
+            }
         for logical_db_name in results:
             for data_item in results[logical_db_name]:
                 rows = []
