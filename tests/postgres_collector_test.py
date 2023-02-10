@@ -26,6 +26,7 @@ from driver.collector.postgres_collector import (
     QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE,
     QUERY_TABLE_SCHEMA_SQL_TEMPLATE,
     QUERY_VIEW_SCEHMA_SQL_TEMPLATE,
+    QUERY_INDEX_SCHEMA_COLUMN_NAMES,
 )
 from driver.collector.pg_table_level_stats_sqls import (
     TOP_N_LARGEST_TABLES_SQL_TEMPLATE,
@@ -282,6 +283,13 @@ class SqlData:
                 ["public", 33955, "customers", "r", "postgres", "p", None]
             ],
             "view_schema": [["public", "pg_stat_statements", "rdsadmin", " SELECT..."]],
+            "index_columns_schema": [
+                [
+                    33955,
+                    33967,
+                    "a,b,c",
+                ]
+            ],
         }
         self.aggregated_views = {
             "pg_stat_database": [[1, 1]],
@@ -490,6 +498,11 @@ class SqlData:
                 ["viewname"],
                 ["viewowner"],
                 ["definition"],
+            ],
+            "index_columns_schema": [
+                ["table_id"],
+                ["index_id"],
+                ["column_names"],
             ],
         }
         self.local_metrics = {
@@ -734,6 +747,9 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql == QUERY_VIEW_SCEHMA_SQL_TEMPLATE:
             result.value = data.views["view_schema"]
             result.meta = data.aggregated_metas["view_schema"]
+        elif sql == QUERY_INDEX_SCHEMA_COLUMN_NAMES:
+            result.value = data.views["index_columns_schema"]
+            result.meta = data.aggregated_metas["index_columns_schema"]
         else:
             raise Exception(f"Unknown sql: {sql}")
 
@@ -1372,6 +1388,20 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
                 ],
             ],
         },
+        "index_columns": {
+            "columns": [
+                "table_id",
+                "index_id",
+                "column_names",
+            ],
+            "rows": [
+                [
+                    33955,
+                    33967,
+                    "a,b,c",
+                ],
+            ]
+        }
     }
 
 
@@ -1589,7 +1619,9 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
             ],
         },
     }
-    modded_results = collector._add_logical_db_columns(results, "postgres")  # pylint: disable=protected-access
+    modded_results = collector._add_logical_db_columns( # pylint: disable=protected-access
+        results, "postgres"
+    )  # pylint: disable=protected-access
     assert modded_results == expected_modded_results
 
 
@@ -1624,7 +1656,8 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
         "pg_stat_user_tables_all_fields": {
-            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"],
+            "columns": TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS
+            + ["logical_database_name"],
             "rows": [
                 [
                     1544350,
@@ -1914,7 +1947,7 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}", # pylint: disable=line-too-long
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",  # pylint: disable=line-too-long
                     "postgres",
                 ],
                 [
@@ -1937,7 +1970,7 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
                     1978,
                     0,
                     None,
-                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}", # pylint: disable=line-too-long
+                    "{BOOLEXPR :boolop not :args ({VAR :varno 1 :varattno 4 :vartype 16 :vartypmod -1 :varcollid 0 :varlevelsup 0 :varnoold 1 :varoattno 4 :location 135}) :location 131}",  # pylint: disable=line-too-long
                     "postgres_2",
                 ],
             ],

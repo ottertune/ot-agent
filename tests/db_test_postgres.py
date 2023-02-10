@@ -3,16 +3,24 @@ import time
 from typing import Dict, Any
 import json
 
-from driver.collector.collector_factory import get_collector, get_postgres_version, connect_postgres
+from driver.collector.collector_factory import (
+    get_collector,
+    get_postgres_version,
+    connect_postgres,
+)
 from driver.database import (
     collect_db_level_data_from_database,
     collect_table_level_data_from_database,
 )
 from driver.collector.postgres_collector import PostgresCollector
-from tests.useful_literals import COLUMN_SCHEMA_POSTGRES_COLUMNS, \
-        FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS, TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS, \
-        TABLE_SCHEMA_POSTGRES_COLUMNS, VIEW_SCHEMA_POSTGRES_COLUMNS, \
-        INDEX_SCHEMA_POSTGRES_COLUMNS
+from tests.useful_literals import (
+    COLUMN_SCHEMA_POSTGRES_COLUMNS,
+    FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS,
+    TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS,
+    TABLE_SCHEMA_POSTGRES_COLUMNS,
+    VIEW_SCHEMA_POSTGRES_COLUMNS,
+    INDEX_SCHEMA_POSTGRES_COLUMNS,
+)
 
 # pylint: disable=missing-function-docstring
 
@@ -53,7 +61,7 @@ def _get_driver_conf(
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
-        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2'],
+        "db_non_default_parameters": ["test_parameter_1", "test_parameter_2"],
     }
     return conf
 
@@ -193,9 +201,9 @@ def test_postgres_collect_row_stats(
 
 def _verify_postgres_table_level_data(data: Dict[str, Any], table_nums: int) -> None:
     # pg_stat_user_tables_all_fields
-    assert data[
-        "pg_stat_user_tables_all_fields"
-    ]["columns"] == TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"]
+    assert data["pg_stat_user_tables_all_fields"][
+        "columns"
+    ] == TABLE_LEVEL_PG_STAT_USER_TABLES_COLUMNS + ["logical_database_name"]
     assert len(data["pg_stat_user_tables_all_fields"]["rows"]) == table_nums
     for row in data["pg_stat_user_tables_all_fields"]["rows"]:
         assert len(row) == 23
@@ -276,9 +284,7 @@ def test_collect_table_level_data_from_database(
     )
 
     time.sleep(1)
-    cur.execute(
-        "ANALYZE;"
-    )
+    cur.execute("ANALYZE;")
 
     driver_conf = _get_driver_conf(
         db_type,
@@ -330,15 +336,15 @@ def test_postgres_collect_table_level_metrics(
     )
 
     time.sleep(1)
-    cur.execute(
-        "ANALYZE;"
-    )
+    cur.execute("ANALYZE;")
 
     version = get_postgres_version(conn)
     collector = PostgresCollector({pg_database: conn}, pg_database, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
     metrics = collector.collect_table_level_metrics(target_table_info)
-    metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
+    metrics.update(
+        collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+    )
 
     _verify_postgres_table_level_data(metrics, 3)
 
@@ -368,18 +374,16 @@ def test_postgres_collect_index_metrics(
     cur.execute(
         "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
     )
-    cur.execute(
-        "CREATE INDEX IF NOT EXISTS idx_test1 ON test1(num);"
-    )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_test1 ON test1(num);")
 
     time.sleep(1)
-    cur.execute(
-        "ANALYZE;"
-    )
+    cur.execute("ANALYZE;")
     version = get_postgres_version(conn)
     collector = PostgresCollector({pg_database: conn}, pg_database, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
-    metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+    metrics = collector.collect_index_metrics(
+        target_table_info, num_index_to_collect_stats
+    )
 
     index_names = [row[4] for row in metrics["pg_stat_user_indexes_all_fields"]["rows"]]
     assert "idx_test1" in index_names
@@ -405,10 +409,37 @@ def test_postgres_collect_schema(
 ) -> None:
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
+
+    # create three tables
+    cur = conn.cursor()
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test1 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test2 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS test3 (id serial PRIMARY KEY, num integer, data varchar);",
+    )
+    cur.execute(
+        "INSERT INTO test1(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute(
+        "INSERT INTO test2(id, num, data) values (1, 2, 'abc') ON CONFLICT DO NOTHING;"
+    )
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_test1 ON test1(num);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_test2 ON test2(id, num);")
+
+    time.sleep(1)
+    cur.execute("ANALYZE;")
+
     version = get_postgres_version(conn)
     collector = PostgresCollector({pg_database: conn}, pg_database, version)
     schema = collector.collect_schema()
+    assert schema["index_columns"]["rows"][1][2] == "num"
+    assert schema["index_columns"]["rows"][3][2] == "id,num"
     _verify_postgres_schema(schema)
+
 
 def _verify_postgres_schema(schema: Dict[str, Any]) -> None:
     assert schema["columns"]["columns"] == COLUMN_SCHEMA_POSTGRES_COLUMNS
@@ -431,7 +462,9 @@ def _verify_postgres_schema(schema: Dict[str, Any]) -> None:
     for row in schema["indexes"]["rows"]:
         assert len(row) == len(INDEX_SCHEMA_POSTGRES_COLUMNS)
 
-def test_pg_name_list_accepted(db_type: str,
+
+def test_pg_name_list_accepted(
+    db_type: str,
     pg_user: str,
     pg_password: str,
     pg_host: str,
@@ -446,7 +479,10 @@ def test_pg_name_list_accepted(db_type: str,
     with get_collector(driver_conf) as collector:
         # pyre-ignore[16]
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
-        assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access
+        assert (
+            # pylint: disable=no-member, protected-access
+            collector._conns["postgres"] is not None
+        )  # pylint: disable=no-member, protected-access
 
     pg_database = "postgres"
     driver_conf = _get_driver_conf(
@@ -454,4 +490,6 @@ def test_pg_name_list_accepted(db_type: str,
     )
     with get_collector(driver_conf) as collector:
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
-        assert collector._conns["postgres"] is not None  # pylint: disable=no-member, protected-access
+        assert (
+            collector._conns["postgres"] is not None
+        )  # pylint: disable=no-member, protected-access
