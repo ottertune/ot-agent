@@ -71,5 +71,5 @@ tzlocal==2.1
 ujson==4.0.2
 urllib3==1.26.7
 wcwidth==0.2.5
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 xxhash==2.0.0
