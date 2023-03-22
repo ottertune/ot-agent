@@ -43,6 +43,24 @@ python3 -m driver.main --aws-region <region> --db-identifier <db-identifier-with
 
 If you are using postgres you will need to set the `POSTGRES_OTTERTUNE_DB_NAME` env variable if you are using a postgres database.
 
+### Optional arguments
+```
+--disable-index-stats: Disable index stats collection (default: False).
+--disable-query-monitoring: Disable query monitoring (default: False).
+--disable-schema-monitoring: Disable schema monitoring (default: False).
+--disable-table-level-stats: Disable collecting stats for table level analysis (default: False).
+--enable-aws-iam-auth: Use AWS IAM authentication when connecting to the RDS instance (default: False).
+--log-verbosity: Set the logging level (default: INFO).
+--override-monitor-interval: Override the frequency of collecting new data (in seconds).
+--override-num-index-to-collect-stats: Override the number of indexes to collect stats.
+--override-num-query-to-collect: Override the number of queries to collect.
+--override-num-table-to-collect-stats: Override the number of tables to collect table level stats.
+--override-query-monitor-interval: Override the frequency of collecting query data (in seconds).
+--override-schema-monitor-interval: Override the frequency of collecting schema data (in seconds).
+--override-server-url: Override the endpoint to post observation data.
+--override-table-level-monitor-interval: Override the frequency of collecting table level data (in seconds).
+```
+
 ## Permissions
 To collect metrics from the database, you need to [configure database settings](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database#configure-database-settings), and [grant permissions](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database/guarded-public-access#create-the-database-user-and-grant-permissions-1) to the database user.
 
