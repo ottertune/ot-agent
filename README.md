@@ -96,6 +96,12 @@ Once you've deployed the release, please update the fixture located in:
 service/backend/settings/fixtures/agent_release.json
 ```
 
+Also update the agent helm chart:
+
+```
+agent-helm-chart/Chart.yaml
+```
+
 ----
 
 # License
