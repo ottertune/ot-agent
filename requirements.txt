@@ -7,7 +7,7 @@ mypy_boto3_ec2==1.17.1.0
 mypy_boto3_iam==1.17.1.0
 mypy_boto3_rds==1.17.1.0
 mypy_boto3_sts==1.17.1.0
-mysql_connector_repackaged==0.3.1
+mysql-connector-python==8.0.33
 psycopg2==2.9.3
 psycopg2_binary==2.8.6
 pydantic==1.8.2
