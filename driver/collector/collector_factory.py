@@ -168,6 +168,7 @@ def connect_mysql(mysql_conf: Dict[str, Any]) -> mysql.connector.MySQLConnection
         MysqlCollectorException: unable to query DB for version
     """
     try:
+        # pyre-ignore
         return mysql.connector.connect(**mysql_conf, autocommit=True)
     except mysql.connector.Error as ex:
         raise MysqlCollectorException("Failed to connect to MySQL", ex) from ex
@@ -203,6 +204,7 @@ def get_mysql_version(conn: mysql_conn.MySQLConnection) -> str:
         cursor = conn.cursor(dictionary=False)
         cursor.execute("SELECT VERSION();")
         res = cursor.fetchall()
+        # pyre-ignore
         version = res[0][0].split("-")[0]
         return version
     except mysql.connector.Error as ex:
