@@ -215,6 +215,7 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             cursor.execute(sql)
             res = cursor.fetchall()
             columns = cursor.description
+            # pyre-ignore
             meta = [col[0] for col in columns]
             return res, meta
         except Exception as ex:  # pylint: disable=broad-except
