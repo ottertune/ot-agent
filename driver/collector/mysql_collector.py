@@ -152,6 +152,23 @@ NOT IN
 ORDER BY table_schema, table_name, view_definition;
 """
 
+LONG_RUNNING_QUERY_SQL_TEMPLATE = """
+SELECT THREAD_ID, EVENT_ID, EVENT_NAME, TIMER_START, TIMER_END, TIMER_WAIT, LOCK TIME,
+    DIGEST, DIGEST_TEXT, ROWS_AFFECTED, ROWS_SENT, ROWS_EXAMINED, CREATED_TMP_DISK_TABLES,
+    CREATED_TMP_TABLES, SELECT_FULL_JOIN, SELECT_FULL_RANGE_JOIN, SELECT_RANGE, SELECT_RANGE_CHECK,
+    SELECT_SCAN, SORT_MERGE_PASSES, SORT_RANGE, SORT_ROWS, SORT_SCAN, NO_INDEX_USED,
+    NO_GOOD_INDEX_USED
+FROM
+    performance_schema.events_statements_current
+WHERE
+    DIGEST IS NOT NULL
+AND
+    TIMER_WAIT > {timer_wait}
+LIMIT
+    {n};
+"""
+
+
 class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attributes
     """Mysql connector to collect knobs/metrics from the MySQL database"""
 
@@ -371,25 +388,27 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         """Collect statistics about the number of rows of different tables"""
         return {}
 
-    def get_target_table_info(self,
-                          num_table_to_collect_stats: int) -> Dict[str, Any]:
+    def get_target_table_info(self, num_table_to_collect_stats: int) -> Dict[str, Any]:
         """Get the information of tables to collect table and index stats"""
         table_values, table_columns = self._cmd(
-            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats))
+            TABLE_LEVEL_STATS_SQL_TEMPLATE.format(n=num_table_to_collect_stats)
+        )
         table_rows = [list(row) for row in table_values]
         schema_table_string_list = [
-            "(\"{schema}\", \"{table}\")".format(schema=item[0], table=item[1])
+            '("{schema}", "{table}")'.format(schema=item[0], table=item[1])
             for item in self._find_columns(
-                table_columns, table_rows, ["TABLE_SCHEMA", "TABLE_NAME"])
+                table_columns, table_rows, ["TABLE_SCHEMA", "TABLE_NAME"]
+            )
         ]
         return {
             "table_columns": table_columns,
             "table_rows": table_rows,
-            "schema_table_string_list": schema_table_string_list
+            "schema_table_string_list": schema_table_string_list,
         }
 
-    def collect_table_level_metrics(self,
-                                    target_table_info: Dict[str, Any]) -> Dict[str, Any]:
+    def collect_table_level_metrics(
+        self, target_table_info: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Collect table level statistics
 
         Returns:
@@ -423,9 +442,9 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             },
         }
 
-    def collect_index_metrics(self,
-                              target_table_info: Dict[str, Any],
-                              num_index_to_collect_stats: int) -> Dict[str, Any]:
+    def collect_index_metrics(
+        self, target_table_info: Dict[str, Any], num_index_to_collect_stats: int
+    ) -> Dict[str, Any]:
         """Collect index statistics
 
         Returns:
@@ -453,32 +472,43 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             schema_table_string = "(" + ",".join(schema_table_string_list) + ")"
 
         index_size_values, index_size_columns = self._cmd(
-            INDEX_SIZE_SQL_TEMPLATE.format(schema_table_list=schema_table_string,
-                                           n=num_index_to_collect_stats))
+            INDEX_SIZE_SQL_TEMPLATE.format(
+                schema_table_list=schema_table_string, n=num_index_to_collect_stats
+            )
+        )
 
         index_size_rows = [list(row) for row in index_size_values]
 
         schema_table_index_string_list = [
-            "(\"{schema}\", \"{table}\", \"{index}\")".format(
-                schema=item[0], table=item[1], index=item[2])
+            '("{schema}", "{table}", "{index}")'.format(
+                schema=item[0], table=item[1], index=item[2]
+            )
             for item in self._find_columns(
-                index_size_columns, index_size_values,
-                ["DATABASE_NAME", "TABLE_NAME", "INDEX_NAME"])
+                index_size_columns,
+                index_size_values,
+                ["DATABASE_NAME", "TABLE_NAME", "INDEX_NAME"],
+            )
         ]
 
         if not schema_table_index_string_list:
             schema_table_index_string = "((NULL,NULL,NULL))"
         else:
-            schema_table_index_string = "(" + ",".join(schema_table_index_string_list) + ")"
+            schema_table_index_string = (
+                "(" + ",".join(schema_table_index_string_list) + ")"
+            )
 
         index_stats_values, index_stats_columns = self._cmd(
             INDEX_STATS_SQL_TEMPLATE.format(
-                schema_table_index_list=schema_table_index_string))
+                schema_table_index_list=schema_table_index_string
+            )
+        )
         index_stats_rows = [list(row) for row in index_stats_values]
 
         index_usage_values, index_usage_columns = self._cmd(
             INDEX_USAGE_SQL_TEMPLATE.format(
-                schema_table_index_list=schema_table_index_string))
+                schema_table_index_list=schema_table_index_string
+            )
+        )
         index_usage_rows = [list(row) for row in index_usage_values]
 
         return {
@@ -493,13 +523,13 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             "indexes_size": {
                 "columns": index_size_columns,
                 "rows": index_size_rows,
-            }
+            },
         }
 
     @staticmethod
-    def _find_columns(columns: List[str],
-                      rows: List[List[Any]],
-                      target_columns: List[str]) -> List[List[Any]]:
+    def _find_columns(
+        columns: List[str], rows: List[List[Any]], target_columns: List[str]
+    ) -> List[List[Any]]:
         indices = [columns.index(target_col) for target_col in target_columns]
         result = []
 
@@ -549,11 +579,11 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         )
         return derived_metrics
 
-    def collect_query_metrics(self,
-                              num_query_to_collect_stats: int) -> Dict[str, Any]:
+    def collect_query_metrics(self, num_query_to_collect_stats: int) -> Dict[str, Any]:
         """Collect query statistics"""
         query_values, query_columns = self._cmd(
-            QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats))
+            QUERY_STATS_SQL_TEMPLATE.format(n=num_query_to_collect_stats)
+        )
         query_rows = [list(row) for row in query_values]
 
         return {
@@ -563,45 +593,66 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
             }
         }
 
+    def collect_long_running_query(
+        self, num_query_to_collect_stats: int, timer_wait_threshold: int = 6e13
+    ) -> Dict[str, Any]:
+        """
+        Collect long running query instances and associated metrics
+        num_query_to_collect_stats: hard limit for the number of rows collected by this method
+        timer_wait_threshold: only collect queries with timer_wait greater than this value. Set to 1 minute
+            (6e+13 picoseconds) by default.
+        """
+        lr_query_values, lr_query_columns = self._cmd(
+            LONG_RUNNING_QUERY_SQL_TEMPLATE.format(
+                timer_wait=timer_wait_threshold, n=num_query_to_collect_stats
+            )
+        )
+        lr_query_rows = [list(row) for row in lr_query_values]
+
+        return {
+            "events_statements_current": {
+                "columns": lr_query_columns,
+                "rows": lr_query_rows,
+            }
+        }
+
     def collect_schema(self) -> Dict[str, Any]:
         """Collect schema"""
 
-        column_schema_values, column_schema_columns = self._cmd(QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE)
+        column_schema_values, column_schema_columns = self._cmd(
+            QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE
+        )
         column_schema_rows = [list(row) for row in column_schema_values]
 
-        index_schema_values, index_schema_columns = self._cmd(QUERY_INDEX_SCHEMA_SQL_TEMPLATE)
+        index_schema_values, index_schema_columns = self._cmd(
+            QUERY_INDEX_SCHEMA_SQL_TEMPLATE
+        )
         index_schema_rows = [list(row) for row in index_schema_values]
 
-        foreign_key_schema_values, foreign_key_schema_columns = self._cmd(QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE)
+        foreign_key_schema_values, foreign_key_schema_columns = self._cmd(
+            QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE
+        )
         foreign_key_schema_rows = [list(row) for row in foreign_key_schema_values]
 
-        table_schema_values, table_schema_columns = self._cmd(QUERY_TABLE_SCHEMA_SQL_TEMPLATE)
+        table_schema_values, table_schema_columns = self._cmd(
+            QUERY_TABLE_SCHEMA_SQL_TEMPLATE
+        )
         table_schema_rows = [list(row) for row in table_schema_values]
 
-        view_schema_values, view_schema_columns = self._cmd(QUERY_VIEW_SCHEMA_SQL_TEMPLATE)
+        view_schema_values, view_schema_columns = self._cmd(
+            QUERY_VIEW_SCHEMA_SQL_TEMPLATE
+        )
         view_schema_rows = [list(row) for row in view_schema_values]
 
         return {
-            "columns" : {
-                "columns" : column_schema_columns,
-                "rows" : column_schema_rows
+            "columns": {"columns": column_schema_columns, "rows": column_schema_rows},
+            "indexes": {"columns": index_schema_columns, "rows": index_schema_rows},
+            "foreign_keys": {
+                "columns": foreign_key_schema_columns,
+                "rows": foreign_key_schema_rows,
             },
-            "indexes" : {
-                "columns" : index_schema_columns,
-                "rows" : index_schema_rows
-            },
-            "foreign_keys" : {
-                "columns" : foreign_key_schema_columns,
-                "rows" : foreign_key_schema_rows
-            },
-            "tables" : {
-                "columns" : table_schema_columns,
-                "rows" : table_schema_rows
-            },
-            "views" : {
-                "columns" : view_schema_columns,
-                "rows" : view_schema_rows
-            }
+            "tables": {"columns": table_schema_columns, "rows": table_schema_rows},
+            "views": {"columns": view_schema_columns, "rows": view_schema_rows},
         }
 
     @staticmethod
