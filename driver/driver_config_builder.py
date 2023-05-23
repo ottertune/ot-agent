@@ -49,6 +49,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
     num_table_to_collect_stats: StrictInt
     table_level_monitor_interval: StrictInt
     num_index_to_collect_stats: StrictInt
+    long_running_query_monitor_interval: StrictInt
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]

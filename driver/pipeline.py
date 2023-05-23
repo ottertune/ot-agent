@@ -21,6 +21,7 @@ TUNE_JOB_ID = "tune_job"
 DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
+LONG_RUNNING_QUERY_MONITOR_JOB_ID = "long_running_query_monitor_job"
 QUERY_MONITOR_JOB_ID = "query_monitor_job"
 SCHEMA_MONITOR_JOB_ID = "schema_monitor_job"
 
@@ -42,6 +43,8 @@ def driver_pipeline(
         _db_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
+        _long_running_query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == QUERY_MONITOR_JOB_ID:
         _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == SCHEMA_MONITOR_JOB_ID:
@@ -148,6 +151,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.monitor_interval)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.table_level_monitor_interval)
+    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID
+        inverval_s = int(config.long_running_query_monitor_interval)
     elif QUERY_MONITOR_JOB_ID in job_id:
         interval_s = int(config.query_monitor_interval)
     elif SCHEMA_MONITOR_JOB_ID in job_id:
@@ -167,6 +172,7 @@ def _start_job(
     if job_id in (
         DB_LEVEL_MONITOR_JOB_ID,
         TABLE_LEVEL_MONITOR_JOB_ID,
+        LONG_RUNNING_QUERY_MONITOR_JOB_ID,
         QUERY_MONITOR_JOB_ID,
         SCHEMA_MONITOR_JOB_ID,
     ):
