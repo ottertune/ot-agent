@@ -10,9 +10,10 @@ from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
 from driver.database import (
     collect_db_level_observation_for_on_prem,
+    collect_long_running_query_observation_for_on_prem,
     collect_table_level_observation_for_on_prem,
     collect_query_observation_for_on_prem,
-    collect_schema_observation_for_on_prem
+    collect_schema_observation_for_on_prem,
 )
 
 
@@ -32,7 +33,6 @@ def driver_pipeline(
     Run the core pipeline for the driver deployment
     """
     logging.info("Running driver pipeline deployment!")
-
 
     compute_server_client = ComputeServerClient(
         config.server_url, Session(), config.api_key
@@ -90,6 +90,23 @@ def _table_level_monitor_driver_pipeline_for_on_prem(
     compute_server_client.post_table_level_observation(table_level_observation)
 
 
+def _long_running_query_monitor_driver_pipeline_for_on_prem(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects long running query instances every minute
+    Args:
+        config: Driver configuration.
+        compute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    query_observation = collect_long_running_query_observation_for_on_prem(config)
+    compute_server_client.post_long_running_query_observation(query_observation)
+
+
 def _query_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
@@ -122,7 +139,6 @@ def _schema_monitor_driver_pipeline_for_on_prem(
     """
     schema_observation = collect_schema_observation_for_on_prem(config)
     compute_server_client.post_schema_observation(schema_observation)
-
 
 
 def _get_interval(config: DriverConfig, job_id: str) -> int:
