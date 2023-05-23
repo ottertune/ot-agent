@@ -320,6 +320,29 @@ ORDER BY
     i.indrelid, i.indexrelid;
 """
 
+# query digest id not included pre pg 14
+LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE = """
+SELECT
+    pid, query_start, datid, datname, usename
+FROM
+    pg_stat_activity
+WHERE
+    now() - query_start > interval '5 minutes';
+LIMIT
+    {n};
+"""
+
+LONG_RUNNING_QUERY_SQL_TEMPLATE = """
+SELECT
+    pid, query_id, query_start, datid, datname, usename
+FROM
+    pg_stat_activity
+WHERE
+    now() - query_start > interval '5 minutes';
+LIMIT
+    {n};
+"""
+
 
 class PostgresCollector(BaseDbCollector):
     """Postgres connector to collect knobs/metrics from the Postgres database"""
@@ -817,6 +840,35 @@ class PostgresCollector(BaseDbCollector):
 
         return {
             "pg_stat_statements": {"columns": columns, "rows": rows},
+        }
+
+    def collect_long_running_query(
+        self, num_query_to_collect_stats: int, latency_threshold_min: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Collect long running query instances and associated metrics
+        num_query_to_collect_stats: hard limit for the number of rows collected by this method
+        latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
+            5 minutes by default.
+        """
+        version_float = float(".".join(self._version_str.split(".")[:2]))
+        query_template = (
+            LONG_RUNNING_QUERY_SQL_TEMPLATE
+            if version_float > 13
+            else LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE
+        )
+        lr_query_values, lr_query_columns = self._cmd(
+            query_template.format(
+                timer_wait=timer_wait_threshold, n=num_query_to_collect_stats
+            )
+        )
+        lr_query_rows = [list(row) for row in lr_query_values]
+
+        return {
+            "pg_stat_activities": {
+                "columns": lr_query_columns,
+                "rows": lr_query_rows,
+            }
         }
 
     def collect_schema(self) -> Dict[str, Any]:
