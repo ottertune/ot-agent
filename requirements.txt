@@ -12,5 +12,5 @@ psycopg2==2.9.3
 psycopg2_binary==2.8.6
 pydantic==1.8.2
 PyYAML==6.0
-Requests==2.28.2
+Requests==2.31.0
 simplejson==3.19.1
