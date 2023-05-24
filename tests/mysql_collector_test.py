@@ -190,8 +190,8 @@ class SqlData:
             187298929,
             "statement/sql/select",
             4283245906676357384,
-            4283245906749246384,
-            72889000,
+            4284245906749246384,
+            100000072889000,
             0,
             "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
             "SELECT test FROM test WHERE test=?",
@@ -560,6 +560,7 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
             result.meta = data.index_size_meta
         elif "performance_schame.events_statements_current".lower() in sql.lower():
             result.value = data.long_running_query_stats
+            result.meta = data.long_running_query_stats_meta
         elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
             result.value = data.query_stats
             result.meta = data.query_stats_meta
@@ -840,8 +841,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
         collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message
 
-
-def test_collect_query_metric_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -914,6 +914,74 @@ def test_collect_query_metric_success(mock_conn: MagicMock) -> NoReturn:
                        datetime(2022, 7, 28, 19, 21, 48, 350718),
                        datetime(2022, 8, 22, 23, 58, 23, 5279),
                    ]
+               ]}
+           }
+
+def test_collect_long_running_query_success(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    res = Result()
+    mock_cursor.execute.side_effect = get_sql_api(data, res)
+    mock_cursor.fetchall.side_effect = lambda: res.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
+    collector = MysqlCollector(mock_conn, "7.9.9")
+    assert collector.collect_long_running_query(num_query_to_collect_stats=1) == \
+           {'events_statements_current': {
+               'columns': [
+                    "THREAD_ID",
+                    "EVENT_ID",
+                    "EVENT_NAME",
+                    "TIMER_START",
+                    "TIMER_END",
+                    "TIMER_WAIT",
+                    "LOCK_TIME",
+                    "DIGEST",
+                    "DIGEST_TEXT",
+                    "ROWS_AFFECTED",
+                    "ROWS_SENT",
+                    "ROWS_EXAMINED",
+                    "CREATED_TMP_DISK_TABLES",
+                    "CREATED_TMP_TABLES",
+                    "SELECT_FULL_JOIN",
+                    "SELECT_FULL_RANGE_JOIN",
+                    "SELECT_RANGE",
+                    "SELECT_RANGE_CHECK",
+                    "SELECT_SCAN",
+                    "SORT_MERGE_PASSES",
+                    "SORT_RANGE",
+                    "SORT_ROWS",
+                    "SORT_SCAN",
+                    "NO_INDEX_USED",
+                    "NO_GOOD_INDEX_USED",
+                ],
+               'rows': [
+                    [
+                        2545027,
+                        187298929,
+                        "statement/sql/select",
+                        4283245906676357384,
+                        4284245906749246384,
+                        100000072889000,
+                        0,
+                        "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
+                        "SELECT test FROM test WHERE test=?",
+                        0, # ROWS_AFFECTED
+                        1, # ROWS_SENT
+                        1, # ROWS_EXAMINED
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0, # SORT_MERGE_PASSES
+                        0,
+                        0,
+                        0,
+                        0, # NO_INDEX_USED
+                        0,
+                    ]
                ]}
            }
 
