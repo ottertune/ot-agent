@@ -151,8 +151,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.monitor_interval)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.table_level_monitor_interval)
-    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID
-        inverval_s = int(config.long_running_query_monitor_interval)
+    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
+        interval_s = int(config.long_running_query_monitor_interval)
     elif QUERY_MONITOR_JOB_ID in job_id:
         interval_s = int(config.query_monitor_interval)
     elif SCHEMA_MONITOR_JOB_ID in job_id:

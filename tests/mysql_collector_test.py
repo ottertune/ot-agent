@@ -1,4 +1,5 @@
 """Tests for interacting with Mysql database locally"""
+# pylint: disable=too-many-lines
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -471,7 +472,8 @@ class SqlData:
                                 "TIMER_WAIT": 72889000,
                                 "LOCK_TIME": 0,
                                 "SQL_TEXT": "SELECT test FROM test WHERE test=test",
-                                "DIGEST": "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
+                                "DIGEST": "9b53fec55dcd0e616a371391f1596e8\
+                                    fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
                                 "DIGEST_TEXT": "SELECT test FROM test WHERE test=?",
                                 "CURRENT_SCHEMA": "SELECT @@GLOBAL . `read_only`",
                                 "OBJECT_TYPE": None,

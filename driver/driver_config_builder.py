@@ -74,7 +74,7 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
-    
+
     @validator("long_running_query_monitor_interval")
     def check_long_running_query_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
         """Validate that long_running_query_monitor_interval is positive and at least 60 seconds."""
@@ -225,7 +225,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_key: str  # DB key handed to agent proxy to identify database
     organization_id: str  # Org id handed to agent proxy to identify database
 
-    long_running_query_monitor_interval: int # how frequently to query database for events and activities
+    # how frequently to query database for events and activities
+    long_running_query_monitor_interval: int
     monitor_interval: int  # how frequently to query database for metrics
 
     metric_source: List[

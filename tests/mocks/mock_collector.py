@@ -87,7 +87,10 @@ class MockCollector(BaseDbCollector):
                               target_table_info: Dict[str, Any],
                               num_index_to_collect_stats: int) -> Dict[str, Any]:
         return {}
-
+    
+    def collect_long_running_query(self, num_query_to_collect_stats: int) -> Dict[str, Any]:
+        return {}
+        
     def collect_query_metrics(self,
                               num_query_to_collect_stats: int) -> Dict[str, Any]:
         return {}
