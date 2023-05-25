@@ -323,7 +323,7 @@ ORDER BY
 # query digest id not included pre pg 14
 LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE = """
 SELECT
-    pid, query_start, datid, datname, usename
+    pid, query_start, datid, datname, usename, state
 FROM
     pg_stat_activity
 WHERE
@@ -334,7 +334,7 @@ LIMIT
 
 LONG_RUNNING_QUERY_SQL_TEMPLATE = """
 SELECT
-    pid, query_id, query_start, datid, datname, usename
+    pid, query_id, query_start, datid, datname, usename, state
 FROM
     pg_stat_activity
 WHERE
