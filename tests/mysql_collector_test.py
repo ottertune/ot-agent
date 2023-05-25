@@ -459,56 +459,6 @@ class SqlData:
                             }
                         ]
                     ),
-                    "events_statements_current": json.dumps(
-                        [
-                            {
-                                "THREAD_ID": 2545027,
-                                "EVENT_ID": 187298929,
-                                "END_EVENT_ID": 187298944,
-                                "EVENT_NAME": "statement/sql/select",
-                                "SOURCE": "init_net_server_extension.cc:93",
-                                "TIMER_START": 4283245906676357384,
-                                "TIMER_END": 4283245906749246384,
-                                "TIMER_WAIT": 72889000,
-                                "LOCK_TIME": 0,
-                                "SQL_TEXT": "SELECT test FROM test WHERE test=test",
-                                "DIGEST": "9b53fec55dcd0e616a371391f1596e8\
-                                    fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
-                                "DIGEST_TEXT": "SELECT test FROM test WHERE test=?",
-                                "CURRENT_SCHEMA": "SELECT @@GLOBAL . `read_only`",
-                                "OBJECT_TYPE": None,
-                                "OBJECT_SCHEMA": None,
-                                "OBJECT_NAME": None,
-                                "OBJECT_INSTANCE_BEGIN": None,
-                                "MYSQL_ERRNO": 0,
-                                "RETURNED_SQLSTATE": None,
-                                "MESSAGE_TEXT": None,
-                                "ERRORS": 0,
-                                "WARNINGS": 0,
-                                "ROWS_AFFECTED": 0,
-                                "ROWS_SENT": 1,
-                                "ROWS_EXAMINED": 1,
-                                "CREATED_TMP_DISK_TABLES": 0,
-                                "CREATED_TMP_TABLES": 0,
-                                "SELECT_FULL_JOIN": 0,
-                                "SELECT_FULL_RANGE_JOIN": 0,
-                                "SELECT_RANGE": 0,
-                                "SELECT_RANGE_CHECK": 0,
-                                "SELECT_SCAN": 0,
-                                "SORT_MERGE_PASSES": 0,
-                                "SORT_RANGE": 0,
-                                "SORT_ROWS": 0,
-                                "SORT_SCAN": 0,
-                                "NO_INDEX_USED": 0,
-                                "NO_GOOD_INDEX_USED": 0,
-                                "NESTING_EVENT_ID": None,
-                                "NESTING_EVENT_TYPE": None,
-                                "NESTING_EVENT_LEVEL": 0,
-                                "STATEMENT_ID": 166923327,
-                                "CPU_TIME": 0,
-                            }
-                        ]
-                    )
                 },
             },
             "local": None,
@@ -560,7 +510,7 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "mysql.innodb_index_stats".lower() in sql.lower():
             result.value = data.index_size
             result.meta = data.index_size_meta
-        elif "performance_schame.events_statements_current".lower() in sql.lower():
+        elif "performance_schema.events_statements_current".lower() in sql.lower():
             result.value = data.long_running_query_stats
             result.meta = data.long_running_query_stats_meta
         elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
