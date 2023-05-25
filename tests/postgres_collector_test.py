@@ -78,8 +78,14 @@ class SqlData:
                 [1, "dl1", "act1", "vacuum tl1;"],
                 [2, "dl2", "act2", "autovacuum: VACUUM ANALYZE dl2.tl2"],
             ],
-            "pg_stat_activity_pre_pg_14": [],
-            "pg_stat_activity": [],
+            "pg_stat_activity_pre_pg_14": [
+                [7123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
+                [7124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+            ],
+            "pg_stat_activity": [
+                [7123, -123456789123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
+                [7124, -123456789124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+            ],
             "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
             "row_stats": [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)],
             "top_tables": [(1234,)],
@@ -1173,6 +1179,58 @@ def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
         2234: 21,
     }
 
+def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    version = "12.4"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
+    assert collector.collect_long_running_query(1) == {
+        "pg_stat_activity": {
+            "columns": [
+                "pid",
+                "query_start",
+                "datid",
+                "datname",
+                "usename",
+                "state",
+            ],
+            "rows": [
+                [7123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
+                [7124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+            ],
+        }
+    }
+
+def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    version = "14.2"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
+    assert collector.collect_long_running_query(1) == {
+        "pg_stat_activity": {
+            "columns": [
+                "pid",
+                "query_id",
+                "query_start",
+                "datid",
+                "datname",
+                "usename",
+                "state",
+            ],
+            "rows": [
+                [7123, -123456789123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
+                [7124, -123456789124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+            ],
+        }
+    }
 
 def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
