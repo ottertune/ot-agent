@@ -327,7 +327,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '5 minutes';
+    now() - query_start > interval '{latency_threshold_min} minutes';
 LIMIT
     {n};
 """
@@ -338,7 +338,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '5 minutes';
+    now() - query_start > interval '{latency_threshold_min} minutes';
 LIMIT
     {n};
 """
@@ -854,18 +854,19 @@ class PostgresCollector(BaseDbCollector):
         version_float = float(".".join(self._version_str.split(".")[:2]))
         query_template = (
             LONG_RUNNING_QUERY_SQL_TEMPLATE
-            if version_float > 13
+            if version_float >= 14
             else LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE
         )
         lr_query_values, lr_query_columns = self._cmd(
             query_template.format(
-                timer_wait=timer_wait_threshold, n=num_query_to_collect_stats
-            )
+                latency_threshold_min=latency_threshold_min, n=num_query_to_collect_stats
+            ),
+            self._main_logical_db
         )
         lr_query_rows = [list(row) for row in lr_query_values]
 
         return {
-            "pg_stat_activities": {
+            "pg_stat_activity": {
                 "columns": lr_query_columns,
                 "rows": lr_query_rows,
             }

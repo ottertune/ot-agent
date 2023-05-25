@@ -21,8 +21,6 @@ from driver.collector.postgres_collector import (
     VACUUM_PROGRESS_STAT,
     VACUUM_ACTIVITY_STAT,
     VACUUM_USER_TABLES_STAT,
-    LONG_RUNNING_QUERY_SQL_TEMPLATE,
-    LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE,
     QUERY_COLUMNS_SCHEMA_SQL_TEMPLATE,
     QUERY_INDEX_SCHEMA_SQL_TEMPLATE,
     QUERY_FOREIGN_KEY_SCHEMA_SQL_TEMPLATE,
@@ -79,12 +77,42 @@ class SqlData:
                 [2, "dl2", "act2", "autovacuum: VACUUM ANALYZE dl2.tl2"],
             ],
             "pg_stat_activity_pre_pg_14": [
-                [7123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
-                [7124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+                [
+                    7123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
             ],
             "pg_stat_activity": [
-                [7123, -123456789123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
-                [7124, -123456789124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+                [
+                    7123,
+                    -123456789123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    -123456789124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
             ],
             "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
             "row_stats": [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)],
@@ -321,8 +349,23 @@ class SqlData:
             "pg_statio_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_stat_statements": [["queryid"], ["calls"], ["avg_time_ms"]],
             "pg_stat_activity_vacuum": [["pid"], ["datid"], ["state"], ["query"]],
-            "pg_stat_activity_pre_pg_14": [["pid"], ["query_start"], ["datid"], ["datname"], ["usename"], ["state"]],
-            "pg_stat_activity": [["pid"], ["query_id"], ["query_start"], ["datid"], ["datname"], ["usename"], ["state"]],
+            "pg_stat_activity_pre_pg_14": [
+                ["pid"],
+                ["query_start"],
+                ["datid"],
+                ["datname"],
+                ["usename"],
+                ["state"]
+            ],
+            "pg_stat_activity": [
+                ["pid"],
+                ["query_id"],
+                ["query_start"],
+                ["datid"],
+                ["datname"],
+                ["usename"],
+                ["state"]
+            ],
             "pg_stat_progress_vacuum": [["pid"], ["relid"], ["phase"]],
             "row_stats": [
                 ["num_tables"],
@@ -1199,8 +1242,22 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> N
                 "state",
             ],
             "rows": [
-                [7123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
-                [7124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+                [
+                    7123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
             ],
         }
     }
@@ -1226,8 +1283,24 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoRet
                 "state",
             ],
             "rows": [
-                [7123, -123456789123, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune", "idle"],
-                [7124, -123456789124, "2023-05-09 18:30:26.616736+00", 16401, "ottertunedb", "ottertune2", "active"],
+                [
+                    7123,
+                    -123456789123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    -123456789124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
             ],
         }
     }
