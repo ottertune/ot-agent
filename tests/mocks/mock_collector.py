@@ -88,7 +88,7 @@ class MockCollector(BaseDbCollector):
                               num_index_to_collect_stats: int) -> Dict[str, Any]:
         return {}
     
-    def collect_long_running_query(self, num_query_to_collect_stats: int) -> Dict[str, Any]:
+    def collect_long_running_query(self, num_query_to_collect_stats: int, latency_threshold_min: int) -> Dict[str, Any]:
         return {}
         
     def collect_query_metrics(self,
