@@ -45,6 +45,7 @@ def _test_config_data() -> Dict[str, Any]:
         "table_level_monitor_interval": 300,
         "num_query_to_collect": 10000,
         "long_running_query_monitor_interval": 240,
+        "latency_threshold_min": 5,
         "query_monitor_interval": 3600,
         "metric_source": [
             "cloudwatch",

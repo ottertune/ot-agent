@@ -77,7 +77,7 @@ def collect_long_running_query_observation_for_on_prem(
         MysqlCollectorException: unable to connect to MySQL database or get version.
         PostgresCollectorException: unable to connect to Postgres database or get version.
     """
-    observation = collect_query_observation_from_database(config._asdict())
+    observation = collect_long_running_query_observation_from_database(config._asdict())
     return observation
 
 

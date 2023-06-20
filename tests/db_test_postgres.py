@@ -47,6 +47,7 @@ def _get_driver_conf(
     pg_database: str,
     num_table_to_collect_stats: int,
     num_index_to_collect_stats: int,
+    latency_threshold_min: int,
 ) -> Dict[str, Any]:
     # pylint: disable=too-many-arguments
     conf = {
@@ -61,6 +62,7 @@ def _get_driver_conf(
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
+        "latency_threshold_min": latency_threshold_min,
         "db_non_default_parameters": ["test_parameter_1", "test_parameter_2"],
     }
     return conf
@@ -146,7 +148,7 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100, 5
     )
     observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
@@ -261,6 +263,7 @@ def test_collect_table_level_data_from_database(
     # pylint: disable=too-many-arguments,too-many-locals
     num_table_to_collect_stats = 10
     num_index_to_collect_stats = 10
+    latency_threshold_min = 5
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
 
@@ -295,6 +298,7 @@ def test_collect_table_level_data_from_database(
         pg_database,
         num_table_to_collect_stats,
         num_index_to_collect_stats,
+        latency_threshold_min
     )
     # pylint: disable=too-many-function-args
     observation = collect_table_level_data_from_database(driver_conf)
@@ -474,7 +478,7 @@ def test_pg_name_list_accepted(
     # pylint: disable=too-many-arguments
     pg_database = "postgres, postgres"
     driver_conf = _get_driver_conf(
-        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100, 5
     )
     with get_collector(driver_conf) as collector:
         # pyre-ignore[16]
@@ -486,7 +490,7 @@ def test_pg_name_list_accepted(
 
     pg_database = "postgres"
     driver_conf = _get_driver_conf(
-        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100
+        db_type, pg_user, pg_password, pg_host, pg_port, pg_database, 10, 100, 5
     )
     with get_collector(driver_conf) as collector:
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
