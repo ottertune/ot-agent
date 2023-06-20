@@ -151,7 +151,7 @@ class ComputeServerClient:
             msg = "Failed to post the table level observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
 
-    def post_long_runningquery_observation(
+    def post_long_running_query_observation(
         self, data: LongRunningQueryObservation
     ) -> None:
         """Post **COMPRESSED** long running query observation to the server
