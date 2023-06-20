@@ -327,7 +327,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '{latency_threshold_min} minutes';
+    now() - query_start > interval '{lr_query_latency_threshold_min} minutes';
 LIMIT
     {n};
 """
@@ -338,7 +338,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '{latency_threshold_min} minutes';
+    now() - query_start > interval '{lr_query_latency_threshold_min} minutes';
 LIMIT
     {n};
 """
@@ -843,12 +843,12 @@ class PostgresCollector(BaseDbCollector):
         }
 
     def collect_long_running_query(
-        self, num_query_to_collect_stats: int, latency_threshold_min: int = 5
+        self, num_query_to_collect_stats: int, lr_query_latency_threshold_min: int = 5
     ) -> Dict[str, Any]:
         """
         Collect long running query instances and associated metrics
         num_query_to_collect_stats: hard limit for the number of rows collected by this method
-        latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
+        lr_query_latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
             5 minutes by default.
         """
         version_float = float(".".join(self._version_str.split(".")[:2]))
@@ -859,7 +859,7 @@ class PostgresCollector(BaseDbCollector):
         )
         lr_query_values, lr_query_columns = self._cmd(
             query_template.format(
-                latency_threshold_min=latency_threshold_min, n=num_query_to_collect_stats
+                lr_query_latency_threshold_min=lr_query_latency_threshold_min, n=num_query_to_collect_stats
             ),
             self._main_logical_db
         )

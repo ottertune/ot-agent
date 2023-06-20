@@ -47,7 +47,7 @@ def _get_driver_conf(
     pg_database: str,
     num_table_to_collect_stats: int,
     num_index_to_collect_stats: int,
-    latency_threshold_min: int,
+    lr_query_latency_threshold_min: int,
 ) -> Dict[str, Any]:
     # pylint: disable=too-many-arguments
     conf = {
@@ -62,7 +62,7 @@ def _get_driver_conf(
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
-        "latency_threshold_min": latency_threshold_min,
+        "lr_query_latency_threshold_min": lr_query_latency_threshold_min,
         "db_non_default_parameters": ["test_parameter_1", "test_parameter_2"],
     }
     return conf
@@ -263,7 +263,7 @@ def test_collect_table_level_data_from_database(
     # pylint: disable=too-many-arguments,too-many-locals
     num_table_to_collect_stats = 10
     num_index_to_collect_stats = 10
-    latency_threshold_min = 5
+    lr_query_latency_threshold_min = 5
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
 
@@ -298,7 +298,7 @@ def test_collect_table_level_data_from_database(
         pg_database,
         num_table_to_collect_stats,
         num_index_to_collect_stats,
-        latency_threshold_min
+        lr_query_latency_threshold_min
     )
     # pylint: disable=too-many-function-args
     observation = collect_table_level_data_from_database(driver_conf)

@@ -594,18 +594,18 @@ class MysqlCollector(BaseDbCollector):  # pylint: disable=too-many-instance-attr
         }
 
     def collect_long_running_query(
-        self, num_query_to_collect_stats: int, latency_threshold_min: int = 5
+        self, num_query_to_collect_stats: int, lr_query_latency_threshold_min: int = 5
     ) -> Dict[str, Any]:
         """
         Collect long running query instances and associated metrics
         num_query_to_collect_stats: hard limit for the number of rows collected by this method
-        latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
+        lr_query_latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
             5 minutes by default.
         """
 
         # timer_wait_threshold: only collect queries with timer_wait greater than this value.
-        # converts latency_threshold_min to picoseconds.
-        timer_wait_threshold = latency_threshold_min * int(6e13)
+        # converts lr_query_latency_threshold_min to picoseconds.
+        timer_wait_threshold = lr_query_latency_threshold_min * int(6e13)
         lr_query_values, lr_query_columns = self._cmd(
             LONG_RUNNING_QUERY_SQL_TEMPLATE.format(
                 timer_wait=timer_wait_threshold, n=num_query_to_collect_stats

@@ -227,7 +227,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
 
     # how frequently to query database for events and activities
     long_running_query_monitor_interval: int
-    latency_threshold_min: int # latency threshold for long running queries in minutes
+    lr_query_latency_threshold_min: int # latency threshold for long running queries in minutes
     monitor_interval: int  # how frequently to query database for metrics
 
     metric_source: List[
