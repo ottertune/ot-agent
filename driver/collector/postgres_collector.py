@@ -1,12 +1,14 @@
 """Postgres database collector to get knob and metric data from the target database"""
 import re
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from itertools import groupby
 from typing import Dict, List, Any, Tuple, Optional, Union
 import logging
 import json
+
+import pytz
 
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
@@ -327,7 +329,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '{lr_query_latency_threshold_min} minutes';
+    query_start < {lr_query_start_timestamp};
 LIMIT
     {n};
 """
@@ -338,7 +340,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    now() - query_start > interval '{lr_query_latency_threshold_min} minutes';
+    query_start < {lr_query_start_timestamp};
 LIMIT
     {n};
 """
@@ -851,6 +853,8 @@ class PostgresCollector(BaseDbCollector):
         lr_query_latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
             5 minutes by default.
         """
+        time_now = datetime.now(pytz.utc)
+        start_timestamp = time_now - timedelta(minutes=lr_query_latency_threshold_min)
         version_float = float(".".join(self._version_str.split(".")[:2]))
         query_template = (
             LONG_RUNNING_QUERY_SQL_TEMPLATE
@@ -859,7 +863,7 @@ class PostgresCollector(BaseDbCollector):
         )
         lr_query_values, lr_query_columns = self._cmd(
             query_template.format(
-                lr_query_latency_threshold_min=lr_query_latency_threshold_min, n=num_query_to_collect_stats
+                lr_query_start_timestamp=start_timestamp, n=num_query_to_collect_stats
             ),
             self._main_logical_db
         )
