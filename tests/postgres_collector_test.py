@@ -773,7 +773,7 @@ def get_sql_api(data: SqlData, result: Result, version: str) -> Callable[[str], 
         ):
             result.value = data.views["pg_stat_statements_all_fields"]
             result.meta = data.metas["pg_stat_statements_all_fields"]
-        elif "now() - query_start > interval" in sql: # long running query
+        elif "query_start < " in sql: # long running query
             version_float = float(".".join(version.split(".")[:2]))
             if version_float >= 14:
                 result.value = data.views["pg_stat_activity"]
