@@ -38,9 +38,9 @@ class BaseDriverConfigBuilder(ABC):
         return {}
 
 
-class PartialConfigFromFile(
+class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+):
     """Driver options fetched from local file for on-prem deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -169,9 +169,9 @@ class Overrides(NamedTuple):
     schema_monitor_interval: int
 
 
-class PartialConfigFromEnvironment(
+class PartialConfigFromEnvironment( # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -180,9 +180,9 @@ class PartialConfigFromEnvironment(
     db_name: Optional[StrictStr]
 
 
-class PartialConfigFromCommandline(
+class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -206,9 +206,9 @@ class PartialConfigFromCommandline(
     disable_schema_monitoring: StrictBool = False
 
 
-class PartialConfigFromRDS(
+class PartialConfigFromRDS( # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
-):  # pyre-ignore[13]: pydantic uninitialized variables
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
@@ -221,9 +221,9 @@ class PartialConfigFromRDS(
     db_non_default_parameters: List[str]
 
 
-class PartialConfigFromCloudwatchMetrics(
+class PartialConfigFromCloudwatchMetrics( # pyre-ignore[13]: uninitialized variables
     BaseModel
-):  # pyre-ignore[13]: uninitialized variables
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
