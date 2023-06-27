@@ -59,9 +59,9 @@ class PartialConfigFromFile(
     schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
-    def check_table_level_monitor_interval(
+    def check_table_level_monitor_interval( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that table_level_monitor_interval is greater than 5 minutes"""
         if val < 300:
             raise ValueError(
@@ -71,9 +71,9 @@ class PartialConfigFromFile(
         return val
 
     @validator("monitor_interval")
-    def check_monitor_interval(
+    def check_monitor_interval( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that monitor_interval is positive and at least 60 seconds."""
         if val < 60:
             raise ValueError(
@@ -83,9 +83,9 @@ class PartialConfigFromFile(
         return val
 
     @validator("long_running_query_monitor_interval")
-    def check_long_running_query_monitor_interval(
+    def check_long_running_query_monitor_interval( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that long_running_query_monitor_interval is positive and at least 60 seconds."""
         if val < 60:
             raise ValueError(
@@ -95,9 +95,9 @@ class PartialConfigFromFile(
         return val
 
     @validator("num_table_to_collect_stats")
-    def check_num_table_to_collect_stats(
+    def check_num_table_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that num_table_to_collect_stats is not negative"""
         if val < 0:
             raise ValueError(
@@ -107,9 +107,9 @@ class PartialConfigFromFile(
         return val
 
     @validator("num_index_to_collect_stats")
-    def check_num_index_to_collect_stats(
+    def check_num_index_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that num_index_to_collect_stats is not negative"""
         if val < 0:
             raise ValueError(
@@ -141,9 +141,9 @@ class PartialConfigFromFile(
         return val
 
     @validator("schema_monitor_interval")
-    def check_schema_monitor_interval(
+    def check_schema_monitor_interval( # pylint: disable=no-self-argument, no-self-use
         cls, val: int
-    ) -> int:  # pylint: disable=no-self-argument, no-self-use
+    ) -> int:
         """Validate that schema_monitor_interval is greater than 5 minutes"""
         if val < 300:
             raise ValueError(
@@ -326,8 +326,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_table_level_stats=args.disable_table_level_stats.lower()
                 == "true",
                 disable_index_stats=args.disable_index_stats.lower() == "true",
-                disable_long_running_query_monitoring=args.disable_long_running_query_monitoring.lower()
-                == "true",
+                disable_long_running_query_monitoring=
+                    args.disable_long_running_query_monitoring.lower() == "true",
                 disable_query_monitoring=args.disable_query_monitoring.lower()
                 == "true",
                 disable_schema_monitoring=args.disable_schema_monitoring.lower()
@@ -365,7 +365,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 PartialConfigFromEnvironment(**config_from_env)
             )
         except ValidationError as ex:
-            msg = "Invalid driver configuration the driver option from env vars is missing or invalid"
+            msg = "Invalid driver config the driver option from env vars is missing or invalid"
             raise DriverConfigException(msg, ex) from ex
 
         self.config.update(partial_config_from_env)
