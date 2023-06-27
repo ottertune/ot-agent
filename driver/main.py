@@ -14,6 +14,7 @@ from driver.pipeline import (
     schedule_or_update_job,
     DB_LEVEL_MONITOR_JOB_ID,
     TABLE_LEVEL_MONITOR_JOB_ID,
+    LONG_RUNNING_QUERY_MONITOR_JOB_ID,
     QUERY_MONITOR_JOB_ID,
 )
 
@@ -30,29 +31,20 @@ def _get_args() -> argparse.Namespace:
         help="Logging level, DEBUG,INFO,WARNING, etc.",
     )
     parser.add_argument(
-        "--config",
-        type=str,
-        help="Path to configuration file.",
-        required=True
+        "--config", type=str, help="Path to configuration file.", required=True
     )
     parser.add_argument(
         "--aws-region",
         type=str,
         default="INFO",
         help="aws region, eg: us-east-2",
-        required=True
+        required=True,
     )
     parser.add_argument(
-        "--db-identifier",
-        type=str,
-        help="AWS rds database identifier",
-        required=True
+        "--db-identifier", type=str, help="AWS rds database identifier", required=True
     )
     parser.add_argument(
-        "--db-username",
-        type=str,
-        help="Username used for db connection",
-        required=True
+        "--db-username", type=str, help="Username used for db connection", required=True
     )
     parser.add_argument(
         "--db-password",
@@ -65,19 +57,19 @@ def _get_args() -> argparse.Namespace:
         "--api-key",
         type=str,
         help="API key used to identify OtterTune user",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--db-key",
         type=str,
         help="Key used to identify database to OtterTune",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--organization-id",
         type=str,
         help="Organization Id in Ottertune",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--disable-table-level-stats",
@@ -121,6 +113,12 @@ def _get_args() -> argparse.Namespace:
         type=str,
         default="False",
         help="Whether to disable query monitoring.",
+    )
+    parser.add_argument(
+        "--disable-long-running-query-monitoring",
+        type=str,
+        default="False",
+        help="Whether to disable long running query monitoring.",
     )
     parser.add_argument(
         "--override-query-monitor-interval",
@@ -167,18 +165,25 @@ def schedule_table_level_monitor_job(config) -> None:
     schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
 
 
+def schedule_long_running_query_monitor_job(config) -> None:
+    """
+    The polling loop for long running query monitor
+    """
+    schedule_or_update_job(scheduler, config, LONG_RUNNING_QUERY_MONITOR_JOB_ID)
+
+
 def schedule_query_monitor_job(config) -> None:
     """
     The polling loop for query monitoring
     """
     schedule_or_update_job(scheduler, config, QUERY_MONITOR_JOB_ID)
 
+
 def schedule_schema_monitor_job(config) -> None:
     """
     The polling loop for schema monitoring
     """
     schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
-
 
 
 def get_config(args):
@@ -198,13 +203,13 @@ def get_config(args):
         schema_monitor_interval=args.override_schema_monitor_interval,
     )
 
-    config_builder.from_file(args.config)\
-                  .from_overrides(overrides)\
-                  .from_rds(args.db_identifier)\
-                  .from_cloudwatch_metrics(args.db_identifier)\
-                  .from_command_line(args)\
-                  .from_env_vars()\
-                  .from_overrides(overrides)
+    config_builder.from_file(args.config).from_overrides(overrides).from_rds(
+        args.db_identifier
+    ).from_cloudwatch_metrics(args.db_identifier).from_command_line(
+        args
+    ).from_env_vars().from_overrides(
+        overrides
+    )
 
     config = config_builder.get_config()
 
@@ -229,6 +234,8 @@ def run() -> None:
     schedule_db_level_monitor_job(config)
     if not config.disable_table_level_stats or not config.disable_index_stats:
         schedule_table_level_monitor_job(config)
+    if not config.disable_long_running_query_monitoring:
+        schedule_long_running_query_monitor_job(config)
     if not config.disable_query_monitoring:
         schedule_query_monitor_job(config)
     if not config.disable_schema_monitoring:

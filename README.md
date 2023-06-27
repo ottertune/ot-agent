@@ -47,6 +47,7 @@ If you are using postgres you will need to set the `POSTGRES_OTTERTUNE_DB_NAME` 
 ```
 --disable-index-stats: Disable index stats collection (default: False).
 --disable-query-monitoring: Disable query monitoring (default: False).
+--disable-long-running-query-monitoring: Disable long running query monitoring (default: False).
 --disable-schema-monitoring: Disable schema monitoring (default: False).
 --disable-table-level-stats: Disable collecting stats for table level analysis (default: False).
 --enable-aws-iam-auth: Use AWS IAM authentication when connecting to the RDS instance (default: False).

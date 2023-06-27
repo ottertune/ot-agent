@@ -44,7 +44,9 @@ def driver_pipeline(
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
-        _long_running_query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+        _long_running_query_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client
+        )
     elif job_id == QUERY_MONITOR_JOB_ID:
         _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == SCHEMA_MONITOR_JOB_ID:
