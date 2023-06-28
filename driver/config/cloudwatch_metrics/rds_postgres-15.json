@@ -1,0 +1,102 @@
+[
+    {
+        "name": "BurstBalance",
+        "description": "The percent of General Purpose SSD (gp2) burst-bucket I/O credits available."
+    },
+    {
+        "name": "CPUUtilization",
+        "description": "The percentage of CPU utilization."
+    },
+    {
+        "name": "CPUCreditUsage",
+        "description": "(T2 instances) The number of CPU credits spent by the instance for CPU utilization. One CPU credit equals one vCPU running at 100 percent utilization for one minute or an equivalent combination of vCPUs, utilization, and time. "
+    },
+    {
+        "name": "CPUCreditBalance",
+        "description": "(T2 instances) The number of earned CPU credits that an instance has accrued since it was launched or started. For T2 Standard, the CPUCreditBalance also includes the number of launch credits that have been accrued. Credits are accrued in the credit balance after they are earned, and removed from the credit balance when they are spent. The credit balance has a maximum limit, determined by the instance size. After the limit is reached, any new credits that are earned are discarded. For T2 Standard, launch credits don't count towards the limit."
+    },
+    {
+        "name": "CPUSurplusCreditBalance",
+        "description": "The number of surplus credits that have been spent by an unlimited instance when its CPUCreditBalance value is zero."
+    },
+    {
+        "name": "CPUSurplusCreditsCharged",
+        "description": "The number of spent surplus credits that are not paid down by earned CPU credits, and which thus incur an additional charge."
+    },
+    {
+        "name": "DatabaseConnections",
+        "description": "The number of database connections in use. The metric value might not include broken database connections that haven't been cleaned up by your database yet. So, the number of database connections recorded by your database might be higher than the metric value."
+    },
+    {
+        "name": "DiskQueueDepth",
+        "description": "The number of outstanding I/Os (read/write requests) waiting to access the disk."
+    },
+    {
+        "name": "FreeableMemory",
+        "description": "The amount of available random access memory."
+    },
+    {
+        "name": "FreeStorageSpace",
+        "description": "The amount of available storage space."
+    },
+    {
+        "name": "MaximumUsedTransactionIDs",
+        "description": "The maximum transaction IDs that have been used. Applies to PostgreSQL."
+    },
+    {
+        "name": "NetworkReceiveThroughput",
+        "description": "The incoming (receive) network traffic on the DB instance, including both customer database traffic and Amazon RDS traffic used for monitoring and replication."
+    },
+    {
+        "name": "NetworkTransmitThroughput",
+        "description": "The outgoing (transmit) network traffic on the DB instance, including both customer database traffic and Amazon RDS traffic used for monitoring and replication."
+    },
+    {
+        "name": "OldestReplicationSlotLag",
+        "description": "The lagging size of the replica lagging the most in terms of write-ahead log (WAL) data received. Applies to PostgreSQL."
+    },
+    {
+        "name": "ReadIOPS",
+        "description": "The average number of disk read I/O operations per second."
+    },
+    {
+        "name": "ReadLatency",
+        "description": "The average amount of time taken per disk I/O operation."
+    },
+    {
+        "name": "ReadThroughput",
+        "description": "The average number of bytes read from disk per second."
+    },
+    {
+        "name": "ReplicaLag",
+        "description": "The amount of time a read replica DB instance lags behind the source DB instance. Applies to MySQL, MariaDB, Oracle, PostgreSQL, and SQL Server read replicas."
+    },
+    {
+        "name": "ReplicationSlotDiskUsage",
+        "description": "The disk space used by replication slot files. Applies to PostgreSQL."
+    },
+    {
+        "name": "SwapUsage",
+        "description": "The amount of swap space used on the DB instance. This metric is not available for SQL Server."
+    },
+    {
+        "name": "TransactionLogsDiskUsage",
+        "description": "The disk space used by transaction logs. Applies to PostgreSQL."
+    },
+    {
+        "name": "TransactionLogsGeneration",
+        "description": "The size of transaction logs generated per second. Applies to PostgreSQL."
+    },
+    {
+        "name": "WriteIOPS",
+        "description": "The average number of disk write I/O operations per second."
+    },
+    {
+        "name": "WriteLatency",
+        "description": "The average amount of time taken per disk I/O operation."
+    },
+    {
+        "name": "WriteThroughput",
+        "description": "The average number of bytes written to disk per second."
+    }
+]
