@@ -67,6 +67,7 @@ def _get_driver_conf(
     mysql_database: str,
     num_table_to_collect_stats: int,
     num_index_to_collect_stats: int,
+    lr_query_latency_threshold_min: int,
 ) -> Dict[str, Union[int, str, List[str]]]:
     # pylint: disable=too-many-arguments
     conf = {
@@ -81,6 +82,7 @@ def _get_driver_conf(
         "organization_id": "test_organization",
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
+        "lr_query_latency_threshold_min": lr_query_latency_threshold_min,
         "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2']
     }
     return conf
@@ -215,7 +217,7 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10, 100
+        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10, 100, 5
     )
     observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
@@ -262,9 +264,10 @@ def test_collect_table_level_data_from_database(
     mysql_port: str,
     mysql_database: str,
 ) -> None:
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-locals
     num_table_to_collect_stats = 10
     num_index_to_collect_stats = 10
+    lr_query_latency_threshold_min = 5
 
     conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
     conn = connect_mysql(conf)
@@ -278,7 +281,8 @@ def test_collect_table_level_data_from_database(
         mysql_port,
         mysql_database,
         num_table_to_collect_stats,
-        num_index_to_collect_stats
+        num_index_to_collect_stats,
+        lr_query_latency_threshold_min
     )
     observation = collect_table_level_data_from_database(driver_conf)
     data = observation["data"]

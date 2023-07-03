@@ -38,24 +38,30 @@ class BaseDriverConfigBuilder(ABC):
         return {}
 
 
-class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
+    BaseModel
+):
     """Driver options fetched from local file for on-prem deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
     It validates that options do not have missing values, wrong types or invalid values.
     """
+
     server_url: StrictStr
     monitor_interval: StrictInt
     num_table_to_collect_stats: StrictInt
     table_level_monitor_interval: StrictInt
     num_index_to_collect_stats: StrictInt
+    long_running_query_monitor_interval: StrictInt
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
     schema_monitor_interval: StrictInt
 
     @validator("table_level_monitor_interval")
-    def check_table_level_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+    def check_table_level_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
         """Validate that table_level_monitor_interval is greater than 5 minutes"""
         if val < 300:
             raise ValueError(
@@ -65,7 +71,9 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
         return val
 
     @validator("monitor_interval")
-    def check_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+    def check_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
         """Validate that monitor_interval is positive and at least 60 seconds."""
         if val < 60:
             raise ValueError(
@@ -74,8 +82,22 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
             )
         return val
 
+    @validator("long_running_query_monitor_interval")
+    def check_long_running_query_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
+        """Validate that long_running_query_monitor_interval is positive and at least 60 seconds."""
+        if val < 60:
+            raise ValueError(
+                "Invalid driver option long_running_query_monitor_interval, positive value >= 60"
+                f" is expected, but {val} is found"
+            )
+        return val
+
     @validator("num_table_to_collect_stats")
-    def check_num_table_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+    def check_num_table_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
         """Validate that num_table_to_collect_stats is not negative"""
         if val < 0:
             raise ValueError(
@@ -85,7 +107,9 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
         return val
 
     @validator("num_index_to_collect_stats")
-    def check_num_index_to_collect_stats(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+    def check_num_index_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
         """Validate that num_index_to_collect_stats is not negative"""
         if val < 0:
             raise ValueError(
@@ -115,8 +139,11 @@ class PartialConfigFromFile(BaseModel):  # pyre-ignore[13]: pydantic uninitializ
                 f" is expected, but {val} is found"
             )
         return val
+
     @validator("schema_monitor_interval")
-    def check_schema_monitor_interval(cls, val: int) -> int:  # pylint: disable=no-self-argument, no-self-use
+    def check_schema_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
         """Validate that schema_monitor_interval is greater than 5 minutes"""
         if val < 300:
             raise ValueError(
@@ -130,30 +157,37 @@ class Overrides(NamedTuple):
     """
     Runtime overrides for configurations in files, useful for when running in container
     """
+
     monitor_interval: int
     server_url: str
     num_table_to_collect_stats: int
     table_level_monitor_interval: int
     num_index_to_collect_stats: int
+    long_running_query_monitor_interval: int
     query_monitor_interval: int
     num_query_to_collect: int
     schema_monitor_interval: int
 
 
-
-class PartialConfigFromEnvironment(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromEnvironment( # pyre-ignore[13]: pydantic uninitialized variables
+    BaseModel
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
     """
+
     db_name: Optional[StrictStr]
 
 
-class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized variables
+    BaseModel
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
     """
+
     api_key: StrictStr
     db_key: StrictStr
     organization_id: StrictStr
@@ -167,16 +201,19 @@ class PartialConfigFromCommandline(BaseModel):  # pyre-ignore[13]: pydantic unin
     enable_aws_iam_auth: StrictBool = False
     disable_table_level_stats: StrictBool = False
     disable_index_stats: StrictBool = False
+    disable_long_running_query_monitoring: StrictBool = False
     disable_query_monitoring: StrictBool = False
-    disable_schema_monitoring:StrictBool = False
+    disable_schema_monitoring: StrictBool = False
 
 
-
-class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromRDS( # pyre-ignore[13]: pydantic uninitialized variables
+    BaseModel
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
     """
+
     db_host: StrictStr
     db_port: StrictInt
     db_version: StrictStr
@@ -184,16 +221,20 @@ class PartialConfigFromRDS(BaseModel):  # pyre-ignore[13]: pydantic uninitialize
     db_non_default_parameters: List[str]
 
 
-class PartialConfigFromCloudwatchMetrics(BaseModel):  # pyre-ignore[13]: uninitialized variables
+class PartialConfigFromCloudwatchMetrics( # pyre-ignore[13]: uninitialized variables
+    BaseModel
+):
     """Driver options fetched from RDS for agent deployment.
 
     Such options are part of the complete driver options (defined in DriverConfig).
     """
+
     metrics_to_retrieve_from_source: Dict[StrictStr, List[StrictStr]]
 
 
 class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     """Driver Config for on-prem deployment."""
+
     server_url: str  # OtterTune server url, required
 
     db_identifier: str  # AWS RDS Database identifier, required
@@ -213,6 +254,9 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_key: str  # DB key handed to agent proxy to identify database
     organization_id: str  # Org id handed to agent proxy to identify database
 
+    # how frequently to query database for events and activities
+    long_running_query_monitor_interval: int
+    lr_query_latency_threshold_min: int  # latency threshold for long running queries in minutes
     monitor_interval: int  # how frequently to query database for metrics
 
     metric_source: List[
@@ -226,6 +270,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     table_level_monitor_interval: int
     disable_index_stats: bool
     num_index_to_collect_stats: int
+    disable_long_running_query_monitoring: bool
     disable_query_monitoring: bool
     query_monitor_interval: int
     num_query_to_collect: int
@@ -250,8 +295,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 raise ValueError("Invalid data in the driver configuration YAML file")
 
             try:
-                partial_config_from_file: PartialConfigFromFile = (
-                    PartialConfigFromFile(**data)
+                partial_config_from_file: PartialConfigFromFile = PartialConfigFromFile(
+                    **data
                 )
             except ValidationError as ex:
                 msg = (
@@ -278,10 +323,15 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 api_key=args.api_key,
                 db_key=args.db_key,
                 organization_id=args.organization_id,
-                disable_table_level_stats=args.disable_table_level_stats.lower() == "true",
-                disable_index_stats = args.disable_index_stats.lower() == "true",
-                disable_query_monitoring = args.disable_query_monitoring.lower() == "true",
-                disable_schema_monitoring = args.disable_schema_monitoring.lower() == "true",
+                disable_table_level_stats=args.disable_table_level_stats.lower()
+                == "true",
+                disable_index_stats=args.disable_index_stats.lower() == "true",
+                disable_long_running_query_monitoring=
+                    args.disable_long_running_query_monitoring.lower() == "true",
+                disable_query_monitoring=args.disable_query_monitoring.lower()
+                == "true",
+                disable_schema_monitoring=args.disable_schema_monitoring.lower()
+                == "true",
                 enable_aws_iam_auth=enable_aws_iam_auth,
             )
         except ValidationError as ex:
@@ -308,18 +358,14 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 logging.warning(msg)
                 db_name = None
 
-        config_from_env = {
-            "db_name": db_name
-        }
+        config_from_env = {"db_name": db_name}
 
         try:
             partial_config_from_env: PartialConfigFromEnvironment = (
                 PartialConfigFromEnvironment(**config_from_env)
             )
         except ValidationError as ex:
-            msg = (
-                "Invalid driver configuration the driver option from env vars is missing or invalid"
-            )
+            msg = "Invalid driver config the driver option from env vars is missing or invalid"
             raise DriverConfigException(msg, ex) from ex
 
         self.config.update(partial_config_from_env)
@@ -334,12 +380,12 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             "db_type": get_db_type(db_instance_identifier, self.rds_client),
             "db_non_default_parameters": get_db_non_default_parameters(
                 db_instance_identifier, self.rds_client
-            )
+            ),
         }
 
         try:
-            partial_config_from_rds: PartialConfigFromRDS = (
-                PartialConfigFromRDS(**config_from_rds)
+            partial_config_from_rds: PartialConfigFromRDS = PartialConfigFromRDS(
+                **config_from_rds
             )
         except ValidationError as ex:
             msg = (
@@ -354,15 +400,15 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
 
     def _get_cloudwatch_metrics_file(self, db_instance_identifier):
         """
-         For aurora mysql 5.6:
-           db_version = 5_6_mysql_aurora_1_22_2
-           db_type = aurora_mysql
-         For aurora mysql 5.7:
-           db_version = 5_7_mysql_aurora_2_10_1
-           db_type = aurora_mysql
-         For aurora postgres
-           db_version = 10_x / 11_x / 12_x
-           db_type = aurora_postgresql
+        For aurora mysql 5.6:
+          db_version = 5_6_mysql_aurora_1_22_2
+          db_type = aurora_mysql
+        For aurora mysql 5.7:
+          db_version = 5_7_mysql_aurora_2_10_1
+          db_type = aurora_mysql
+        For aurora postgres
+          db_version = 10_x / 11_x / 12_x
+          db_type = aurora_postgresql
         """
         db_version = get_db_version(db_instance_identifier, self.rds_client)
         db_type = get_db_type(db_instance_identifier, self.rds_client)
@@ -392,7 +438,9 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         folder_path = "./driver/config/cloudwatch_metrics"
         return f"{folder_path}/rds_{db_type}-{db_version}.json"
 
-    def from_cloudwatch_metrics(self, db_instance_identifier) -> BaseDriverConfigBuilder:
+    def from_cloudwatch_metrics(
+        self, db_instance_identifier
+    ) -> BaseDriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""
         metric_names = []
         file_path = self._get_cloudwatch_metrics_file(db_instance_identifier)

@@ -1,12 +1,14 @@
 """Postgres database collector to get knob and metric data from the target database"""
 import re
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from itertools import groupby
 from typing import Dict, List, Any, Tuple, Optional, Union
 import logging
 import json
+
+import pytz
 
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
@@ -318,6 +320,29 @@ GROUP BY
     i.indrelid, i.indexrelid
 ORDER BY
     i.indrelid, i.indexrelid;
+"""
+
+# query digest id not included pre pg 14
+LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE = """
+SELECT
+    pid, backend_start, query_start, datid, datname, state, state_change, wait_event, wait_event_type, backend_type, xact_start
+FROM
+    pg_stat_activity
+WHERE
+    query_start < {lr_query_start_timestamp};
+LIMIT
+    {n};
+"""
+
+LONG_RUNNING_QUERY_SQL_TEMPLATE = """
+SELECT
+    pid, query_id, backend_start, query_start, datid, datname, state, state_change, wait_event, wait_event_type, backend_type, xact_start
+FROM
+    pg_stat_activity
+WHERE
+    query_start < {lr_query_start_timestamp};
+LIMIT
+    {n};
 """
 
 
@@ -817,6 +842,38 @@ class PostgresCollector(BaseDbCollector):
 
         return {
             "pg_stat_statements": {"columns": columns, "rows": rows},
+        }
+
+    def collect_long_running_query(
+        self, num_query_to_collect_stats: int, lr_query_latency_threshold_min: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Collect long running query instances and associated metrics
+        num_query_to_collect_stats: hard limit for the number of rows collected by this method
+        lr_query_latency_threshold_min: only collect queries with time elapsed greater than this many minutes. Set to
+            5 minutes by default.
+        """
+        time_now = datetime.now(pytz.utc)
+        start_timestamp = time_now - timedelta(minutes=lr_query_latency_threshold_min)
+        version_float = float(".".join(self._version_str.split(".")[:2]))
+        query_template = (
+            LONG_RUNNING_QUERY_SQL_TEMPLATE
+            if version_float >= 14
+            else LONG_RUNNING_QUERY_NO_ID_SQL_TEMPLATE
+        )
+        lr_query_values, lr_query_columns = self._cmd(
+            query_template.format(
+                lr_query_start_timestamp=start_timestamp, n=num_query_to_collect_stats
+            ),
+            self._main_logical_db
+        )
+        lr_query_rows = [list(row) for row in lr_query_values]
+
+        return {
+            "pg_stat_activity": {
+                "columns": lr_query_columns,
+                "rows": lr_query_rows,
+            }
         }
 
     def collect_schema(self) -> Dict[str, Any]:

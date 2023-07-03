@@ -37,6 +37,17 @@ class DBLevelObservation(TypedDict):
     non_default_knobs: List[str]
 
 
+class LongRunningQueryObservation(TypedDict):
+    """Observation of long running query instances"""
+
+    data: Dict[str, Any]
+    summary: Dict[
+        str, Any
+    ]  # summary information like observation time, database version, etc
+    db_key: str
+    organization_id: str
+
+
 class TableLevelObservation(TypedDict):
     """Table level observation data collected from the target database."""
 
@@ -140,6 +151,36 @@ class ComputeServerClient:
             msg = "Failed to post the table level observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
 
+    def post_long_running_query_observation(
+        self, data: LongRunningQueryObservation
+    ) -> None:
+        """Post **COMPRESSED** long running query observation to the server
+        Args:
+            session_id: Session that the data is uploaded to.
+            data: Collected data from the target database.
+        Raises:
+            ComputeServerClientException: Failed to post the observation.
+        """
+        url = f"{self._server_url}/long_running_query_observation/"
+        headers = self._generate_headers(data["organization_id"])
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        headers["Content-Encoding"] = "gzip"
+        # pylint: disable=c-extension-no-member
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode("utf-8"))
+        # long running query observation use its own timeout settings
+        query_observation_timeout = 60
+        try:
+            response = self._req_session.post(
+                url,
+                data=compressed_data,
+                timeout=query_observation_timeout,
+                headers=headers,
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the long running query observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+
     def post_query_observation(self, data: QueryObservation) -> None:
         """Post **COMPRESSED** query observation to the server
         Args:
@@ -153,19 +194,20 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode("utf-8"))
         # query observation use its own timeout settings due to the potential large data volume
         query_observation_timeout = 90
         try:
             response = self._req_session.post(
-                url, data=compressed_data, timeout=query_observation_timeout,
+                url,
+                data=compressed_data,
+                timeout=query_observation_timeout,
                 headers=headers,
             )
             response.raise_for_status()
         except Exception as ex:
             msg = "Failed to post the query observation to the server"
             raise ComputeServerClientException(msg, ex) from ex
-
 
     def post_schema_observation(self, data: SchemaObservation) -> None:
         """Post **COMPRESSED** schema observation to the server
@@ -180,12 +222,14 @@ class ComputeServerClient:
         headers["Content-Type"] = "application/json; charset=utf-8"
         headers["Content-Encoding"] = "gzip"
         # pylint: disable=c-extension-no-member
-        compressed_data = zlib.compress(json.dumps(data, default=str).encode('utf-8'))
+        compressed_data = zlib.compress(json.dumps(data, default=str).encode("utf-8"))
         # schema observation use its own timeout settings due to the potential large data volume
         schema_observation_timeout = 90
         try:
             response = self._req_session.post(
-                url, data=compressed_data, timeout=schema_observation_timeout,
+                url,
+                data=compressed_data,
+                timeout=schema_observation_timeout,
                 headers=headers,
             )
             response.raise_for_status()

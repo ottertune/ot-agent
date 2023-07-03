@@ -10,9 +10,10 @@ from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
 from driver.database import (
     collect_db_level_observation_for_on_prem,
+    collect_long_running_query_observation_for_on_prem,
     collect_table_level_observation_for_on_prem,
     collect_query_observation_for_on_prem,
-    collect_schema_observation_for_on_prem
+    collect_schema_observation_for_on_prem,
 )
 
 
@@ -20,6 +21,7 @@ TUNE_JOB_ID = "tune_job"
 DB_LEVEL_MONITOR_JOB_ID = "db_level_monitor_job"
 APPLY_EVENT_JOB_ID = "apply_event_job"
 TABLE_LEVEL_MONITOR_JOB_ID = "table_level_monitor_job"
+LONG_RUNNING_QUERY_MONITOR_JOB_ID = "long_running_query_monitor_job"
 QUERY_MONITOR_JOB_ID = "query_monitor_job"
 SCHEMA_MONITOR_JOB_ID = "schema_monitor_job"
 
@@ -33,7 +35,6 @@ def driver_pipeline(
     """
     logging.info("Running driver pipeline deployment!")
 
-
     compute_server_client = ComputeServerClient(
         config.server_url, Session(), config.api_key
     )
@@ -42,6 +43,10 @@ def driver_pipeline(
         _db_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
+        _long_running_query_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client
+        )
     elif job_id == QUERY_MONITOR_JOB_ID:
         _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
     elif job_id == SCHEMA_MONITOR_JOB_ID:
@@ -90,6 +95,23 @@ def _table_level_monitor_driver_pipeline_for_on_prem(
     compute_server_client.post_table_level_observation(table_level_observation)
 
 
+def _long_running_query_monitor_driver_pipeline_for_on_prem(
+    config: DriverConfig,
+    compute_server_client: ComputeServerClient,
+) -> None:
+    """
+    Regular monitoring pipeline that collects long running query instances every minute
+    Args:
+        config: Driver configuration.
+        compute_server_client: Client interacting with server in Ottertune.
+    Raises:
+        DriverException: Driver error.
+        Exception: Other unknown exceptions that are not caught as DriverException.
+    """
+    query_observation = collect_long_running_query_observation_for_on_prem(config)
+    compute_server_client.post_long_running_query_observation(query_observation)
+
+
 def _query_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
@@ -124,7 +146,6 @@ def _schema_monitor_driver_pipeline_for_on_prem(
     compute_server_client.post_schema_observation(schema_observation)
 
 
-
 def _get_interval(config: DriverConfig, job_id: str) -> int:
     """Get the scheduled time interval (sec) based on job id."""
 
@@ -132,6 +153,8 @@ def _get_interval(config: DriverConfig, job_id: str) -> int:
         interval_s = int(config.monitor_interval)
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
         interval_s = int(config.table_level_monitor_interval)
+    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
+        interval_s = int(config.long_running_query_monitor_interval)
     elif QUERY_MONITOR_JOB_ID in job_id:
         interval_s = int(config.query_monitor_interval)
     elif SCHEMA_MONITOR_JOB_ID in job_id:
@@ -151,6 +174,7 @@ def _start_job(
     if job_id in (
         DB_LEVEL_MONITOR_JOB_ID,
         TABLE_LEVEL_MONITOR_JOB_ID,
+        LONG_RUNNING_QUERY_MONITOR_JOB_ID,
         QUERY_MONITOR_JOB_ID,
         SCHEMA_MONITOR_JOB_ID,
     ):

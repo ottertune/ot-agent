@@ -72,9 +72,47 @@ class SqlData:
             "pg_stat_user_indexes": [["il1", 1, 1]],
             "pg_statio_user_indexes": [["il2", 2, 2]],
             "pg_stat_statements": [[123, 2, 1.5]],
-            "pg_stat_activity": [
+            "pg_stat_activity_vacuum": [
                 [1, "dl1", "act1", "vacuum tl1;"],
                 [2, "dl2", "act2", "autovacuum: VACUUM ANALYZE dl2.tl2"],
+            ],
+            "pg_stat_activity_pre_pg_14": [
+                [
+                    7123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
+            ],
+            "pg_stat_activity": [
+                [
+                    7123,
+                    -123456789123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    -123456789124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
             ],
             "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
             "row_stats": [(2111, 1925, 72, 13, 30, 41, 30, 0, 42817478, 0)],
@@ -310,7 +348,24 @@ class SqlData:
             "pg_stat_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_statio_user_indexes": [["relname"], ["local_count"], ["indexrelid"]],
             "pg_stat_statements": [["queryid"], ["calls"], ["avg_time_ms"]],
-            "pg_stat_activity": [["pid"], ["datid"], ["state"], ["query"]],
+            "pg_stat_activity_vacuum": [["pid"], ["datid"], ["state"], ["query"]],
+            "pg_stat_activity_pre_pg_14": [
+                ["pid"],
+                ["query_start"],
+                ["datid"],
+                ["datname"],
+                ["usename"],
+                ["state"]
+            ],
+            "pg_stat_activity": [
+                ["pid"],
+                ["query_id"],
+                ["query_start"],
+                ["datid"],
+                ["datname"],
+                ["usename"],
+                ["state"]
+            ],
             "pg_stat_progress_vacuum": [["pid"], ["relid"], ["phase"]],
             "row_stats": [
                 ["num_tables"],
@@ -591,7 +646,7 @@ class Result:
         self.meta: List[List[str]] = []
 
 
-def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
+def get_sql_api(data: SqlData, result: Result, version: str) -> Callable[[str], NoReturn]:
     """
     Used for providing a fake sql endpoint so we can return test data
     """
@@ -718,12 +773,20 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         ):
             result.value = data.views["pg_stat_statements_all_fields"]
             result.meta = data.metas["pg_stat_statements_all_fields"]
+        elif "query_start < " in sql: # long running query
+            version_float = float(".".join(version.split(".")[:2]))
+            if version_float >= 14:
+                result.value = data.views["pg_stat_activity"]
+                result.meta = data.metas["pg_stat_activity"]
+            else:
+                result.value = data.views["pg_stat_activity_pre_pg_14"]
+                result.meta = data.metas["pg_stat_activity_pre_pg_14"]
         elif sql == "CREATE EXTENSION pg_stat_statements;":
             result.value = []
             result.meta = []
         elif sql == VACUUM_ACTIVITY_STAT:
-            result.value = data.views["pg_stat_activity"]
-            result.meta = data.metas["pg_stat_activity"]
+            result.value = data.views["pg_stat_activity_vacuum"]
+            result.meta = data.metas["pg_stat_activity_vacuum"]
         elif sql == VACUUM_PROGRESS_STAT:
             result.value = data.views["pg_stat_progress_vacuum"]
             result.meta = data.metas["pg_stat_progress_vacuum"]
@@ -806,10 +869,11 @@ def test_collect_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     assert collector.collect_metrics() == data.expected_default_result()
 
 
@@ -826,10 +890,11 @@ def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     assert collector.collect_table_row_number_stats() == {
         "num_tables": 2111,
         "num_empty_tables": 1925,
@@ -857,10 +922,11 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     assert collector.collect_table_level_metrics(
         target_table_info=target_table_info
@@ -1156,15 +1222,98 @@ def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
         2234: 21,
     }
 
+def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    version = "12.4"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
+    assert collector.collect_long_running_query(1) == {
+        "pg_stat_activity": {
+            "columns": [
+                "pid",
+                "query_start",
+                "datid",
+                "datname",
+                "usename",
+                "state",
+            ],
+            "rows": [
+                [
+                    7123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
+            ],
+        }
+    }
+
+def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoReturn:
+    mock_cursor = mock_conn.cursor.return_value
+    data = SqlData()
+    result = Result()
+    version = "14.2"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
+    mock_cursor.fetchall.side_effect = lambda: result.value
+    type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
+    assert collector.collect_long_running_query(1) == {
+        "pg_stat_activity": {
+            "columns": [
+                "pid",
+                "query_id",
+                "query_start",
+                "datid",
+                "datname",
+                "usename",
+                "state",
+            ],
+            "rows": [
+                [
+                    7123,
+                    -123456789123,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune",
+                    "idle"
+                ],
+                [
+                    7124,
+                    -123456789124,
+                    "2023-05-09 18:30:26.616736+00",
+                    16401,
+                    "ottertunedb",
+                    "ottertune2",
+                    "active"
+                ],
+            ],
+        }
+    }
 
 def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     assert collector.collect_query_metrics(1) == {
         "pg_stat_statements": {
             "columns": [
@@ -1264,10 +1413,11 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "11"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     schema = collector.collect_schema()
     assert schema == {
         "columns": {
@@ -1409,10 +1559,11 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "11"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
-    collector = PostgresCollector({"postgres": mock_conn}, "postgres", "11")
+    collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
     results = {
         "postgres": {
             "pg_statio_user_tables_all_fields": {
@@ -1629,11 +1780,12 @@ def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoRetur
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(
-        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", version
     )
     expected_result = {
         "postgres": {"target_tables": (1234,), "target_tables_str": "(1234)"},
@@ -1647,11 +1799,12 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(
-        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", version
     )
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
@@ -1868,11 +2021,12 @@ def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoRetur
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
-    mock_cursor.execute.side_effect = get_sql_api(data, result)
+    version = "9.6.3"
+    mock_cursor.execute.side_effect = get_sql_api(data, result, version)
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector(
-        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", "9.6.3"
+        {"postgres": mock_conn, "postgres_2": mock_conn}, "postgres", version
     )
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     expected_results = {
