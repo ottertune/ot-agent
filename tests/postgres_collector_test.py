@@ -80,18 +80,28 @@ class SqlData:
                 [
                     7123,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune",
-                    "idle"
+                    "idle",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
                 [
                     7124,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune2",
-                    "active"
+                    "active",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
             ],
             "pg_stat_activity": [
@@ -99,19 +109,29 @@ class SqlData:
                     7123,
                     -123456789123,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune",
-                    "idle"
+                    "idle",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
                 [
                     7124,
                     -123456789124,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune2",
-                    "active"
+                    "active",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
             ],
             "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
@@ -351,20 +371,30 @@ class SqlData:
             "pg_stat_activity_vacuum": [["pid"], ["datid"], ["state"], ["query"]],
             "pg_stat_activity_pre_pg_14": [
                 ["pid"],
+                ["backend_start"],
                 ["query_start"],
                 ["datid"],
                 ["datname"],
-                ["usename"],
-                ["state"]
+                ["state"],
+                ["state_change"],
+                ["wait_event"],
+                ["wait_event_type"],
+                ["backend_type"],
+                ["xact_start"],
             ],
             "pg_stat_activity": [
                 ["pid"],
                 ["query_id"],
+                ["backend_start"],
                 ["query_start"],
                 ["datid"],
                 ["datname"],
-                ["usename"],
-                ["state"]
+                ["state"],
+                ["state_change"],
+                ["wait_event"],
+                ["wait_event_type"],
+                ["backend_type"],
+                ["xact_start"],
             ],
             "pg_stat_progress_vacuum": [["pid"], ["relid"], ["phase"]],
             "row_stats": [
@@ -1235,28 +1265,43 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> N
         "pg_stat_activity": {
             "columns": [
                 "pid",
+                "backend_start",
                 "query_start",
                 "datid",
                 "datname",
-                "usename",
                 "state",
+                "state_change",
+                "wait_event",
+                "wait_event_type",
+                "backend_type",
+                "xact_start"
             ],
             "rows": [
                 [
                     7123,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune",
-                    "idle"
+                    "idle",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
                 [
                     7124,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune2",
-                    "active"
+                    "active",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00"
                 ],
             ],
         }
@@ -1276,30 +1321,45 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoRet
             "columns": [
                 "pid",
                 "query_id",
+                "backend_start",
                 "query_start",
                 "datid",
                 "datname",
-                "usename",
                 "state",
+                "state_change",
+                "wait_event",
+                "wait_event_type",
+                "backend_type",
+                "xact_start"
             ],
             "rows": [
                 [
                     7123,
                     -123456789123,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune",
-                    "idle"
+                    "idle",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00",
                 ],
                 [
                     7124,
                     -123456789124,
                     "2023-05-09 18:30:26.616736+00",
+                    "2023-05-09 18:30:26.616736+00",
                     16401,
                     "ottertunedb",
-                    "ottertune2",
-                    "active"
+                    "active",
+                    "test_state_change",
+                    "test_wait_event",
+                    "test_wait_event_type",
+                    "test_backend_type",
+                    "2023-05-09 18:30:26.616736+00",
                 ],
             ],
         }
