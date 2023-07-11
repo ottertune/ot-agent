@@ -16,7 +16,7 @@ pylint==2.11.1
 pyparsing==2.4.7
 pyre-check==0.0.59
 pyre-extensions==0.0.20
-pytest==6.2.2
+pytest==7.2.0
 responses==0.12
 toml==0.10.2
 wrapt==1.12.1

@@ -9,7 +9,7 @@ mypy_boto3_rds==1.17.1.0
 mypy_boto3_sts==1.17.1.0
 mysql-connector-python==8.0.33
 psycopg2==2.9.3
-psycopg2_binary==2.8.6
+psycopg2_binary==2.9.5
 pydantic==1.8.2
 PyYAML==6.0
 Requests==2.28.2
