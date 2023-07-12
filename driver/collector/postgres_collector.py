@@ -748,7 +748,6 @@ class PostgresCollector(BaseDbCollector):
             ),
             logical_db,
         )[0]
-        # pyre-ignore[9]
         target_indexes: Tuple[int] = tuple(index[0] for index in target_indexes_tuple)
         target_indexes_str = (
             str(target_indexes)

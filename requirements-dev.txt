@@ -18,5 +18,5 @@ pytest==6.2.2
 responses==0.12
 toml==0.10.2
 wrapt==1.12.1
-pyre-check==0.0.59
-pyre-extensions==0.0.20
+pyre-check==0.9.18
+pyre-extensions==0.0.29

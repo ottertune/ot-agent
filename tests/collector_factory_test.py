@@ -1,7 +1,7 @@
 """
 Tests for the collector factory
 """
-from typing import Dict, Any, NoReturn
+from typing import Dict, Any, NoReturn, Optional
 from unittest.mock import (MagicMock, patch)
 import mock
 import pytest
@@ -192,19 +192,19 @@ def test_db_config_postgres_invalid() -> None:
     )
 
 
-def test_get_postgres_version_success(mock_pg_conn: MagicMock) -> NoReturn:
+def test_get_postgres_version_success(mock_pg_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_pg_conn.cursor.return_value
     mock_cursor.fetchall.return_value = [["9.3.10"]]
     assert get_postgres_version(mock_pg_conn) == "9.3.10"
 
 
-def test_get_postgres_version_success2(mock_pg_conn: MagicMock) -> NoReturn:
+def test_get_postgres_version_success2(mock_pg_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_pg_conn.cursor.return_value
     mock_cursor.fetchall.return_value = [["12 (Ubuntu 12.6-0ubuntu0.20.04.1)"]]
     assert get_postgres_version(mock_pg_conn) == "12"
 
 
-def test_get_postgres_version_sql_failure(mock_pg_conn: MagicMock) -> NoReturn:
+def test_get_postgres_version_sql_failure(mock_pg_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_pg_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     with pytest.raises(PostgresCollectorException) as ex:
@@ -212,19 +212,19 @@ def test_get_postgres_version_sql_failure(mock_pg_conn: MagicMock) -> NoReturn:
     assert "Failed to get Postgres version" in str(ex.value)
 
 
-def test_get_mysql_version_success(mock_mysql_conn: MagicMock) -> NoReturn:
+def test_get_mysql_version_success(mock_mysql_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_mysql_conn.cursor.return_value
     mock_cursor.fetchall.return_value = [["8.0.22"]]
     assert get_mysql_version(mock_mysql_conn) == "8.0.22"
 
 
-def test_get_mysql_version_success2(mock_mysql_conn: MagicMock) -> NoReturn:
+def test_get_mysql_version_success2(mock_mysql_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_mysql_conn.cursor.return_value
     mock_cursor.fetchall.return_value = [["8.0.23-0ubuntu0.20.04.1"]]
     assert get_mysql_version(mock_mysql_conn) == "8.0.23"
 
 
-def test_get_mysql_version_sql_failure(mock_mysql_conn: MagicMock) -> NoReturn:
+def test_get_mysql_version_sql_failure(mock_mysql_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_mysql_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     with pytest.raises(MysqlCollectorException) as ex:
