@@ -530,12 +530,13 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
             result.meta = data.view_schema_meta
         elif "information_schema.statistics" in sql.lower() and "packed" in sql.lower():
             result.value = data.index_schema
+            # pyre-fixme[7]
             result.meta = data.index_schema_meta
 
     return sql_fn
 
 
-def test_collect_knobs_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_knobs_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = MysqlCollector(mock_conn, "5.7.3")
     mock_cursor = mock_conn.cursor.return_value
     expected = [["bulk_insert_buffer_size", 5000], ["tmpdir", "/tmp"]]
@@ -547,13 +548,13 @@ def test_collect_knobs_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_get_version(mock_conn: MagicMock) -> NoReturn:
+def test_get_version(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = MysqlCollector(mock_conn, "5.7.3")
     version = collector.get_version()
     assert version == "5.7.3"
 
 
-def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     collector = MysqlCollector(mock_conn, "5.7.3")
@@ -562,7 +563,7 @@ def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_collect_metrics_success_with_latency_hist(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_success_with_latency_hist(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -574,7 +575,7 @@ def test_collect_metrics_success_with_latency_hist(mock_conn: MagicMock) -> NoRe
     assert metrics == data.expected_default_result()
 
 
-def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -588,7 +589,7 @@ def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> NoRetu
     assert metrics == result
 
 
-def test_collect_metrics_success_no_master_status(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_success_no_master_status(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     data.master_status = []
@@ -603,7 +604,7 @@ def test_collect_metrics_success_no_master_status(mock_conn: MagicMock) -> NoRet
     assert metrics == result
 
 
-def test_collect_metrics_success_no_replica_status(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_success_no_replica_status(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     data.replica_status = []
@@ -618,7 +619,7 @@ def test_collect_metrics_success_no_replica_status(mock_conn: MagicMock) -> NoRe
     assert metrics == result
 
 
-def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     collector = MysqlCollector(mock_conn, "5.7.3")
@@ -627,12 +628,11 @@ def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_check_permissions_success(mock_conn: MagicMock) -> NoReturn:
+def test_check_permissions_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = MysqlCollector(mock_conn, "8.0.0")
     assert collector.check_permission() == (True, [], "")
 
 
-# pyre-ignore[56]
 @pytest.mark.parametrize(
     "code",
     [
@@ -644,7 +644,7 @@ def test_check_permissions_success(mock_conn: MagicMock) -> NoReturn:
 )
 def test_check_permissions_specific_access_denied(
     mock_conn: MagicMock, code: int
-) -> NoReturn:
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.Error(errno=code)
     collector = MysqlCollector(mock_conn, "8.0.0")
@@ -662,7 +662,7 @@ def test_check_permissions_specific_access_denied(
             assert "unknown" in info["example"]
 
 
-def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -784,7 +784,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     collector = MysqlCollector(mock_conn, "5.7.3")
@@ -793,7 +793,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
         collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message
 
-def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_query_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -869,7 +869,7 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
                ]}
            }
 
-def test_collect_long_running_query_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_long_running_query_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -938,7 +938,7 @@ def test_collect_long_running_query_success(mock_conn: MagicMock) -> NoReturn:
            }
 
 
-def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
