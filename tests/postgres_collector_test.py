@@ -844,6 +844,7 @@ def get_sql_api(data: SqlData, result: Result, version: str) -> Callable[[str], 
             result.value = data.views["index_columns_schema"]
             result.meta = data.aggregated_metas["index_columns_schema"]
         else:
+            # pyre-fixme[7]
             raise Exception(f"Unknown sql: {sql}")
 
     return sql_fn
@@ -855,13 +856,13 @@ def _mock_conn(mock_connect: MagicMock) -> MagicMock:
     return mock_connect.return_value
 
 
-def test_get_version(mock_conn: MagicMock) -> NoReturn:
+def test_get_version(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
     version = collector.get_version()
     assert version == "9.6.3"
 
 
-def test_collect_knobs_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_knobs_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.return_value = [
         ["autovacuum_max_workers", 7],
@@ -877,7 +878,7 @@ def test_collect_knobs_success(mock_conn: MagicMock) -> NoReturn:
     assert collector.collect_knobs() == expected
 
 
-def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
@@ -886,7 +887,7 @@ def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_check_permission_success(mock_conn: MagicMock) -> NoReturn:
+def test_check_permission_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     # Even with sql failure, we should still return true as we don't do anything
     # in check_permission for now
     mock_cursor = mock_conn.cursor.return_value
@@ -895,7 +896,7 @@ def test_check_permission_success(mock_conn: MagicMock) -> NoReturn:
     assert collector.check_permission() == (True, [], "")
 
 
-def test_collect_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -907,7 +908,7 @@ def test_collect_metrics_success(mock_conn: MagicMock) -> NoReturn:
     assert collector.collect_metrics() == data.expected_default_result()
 
 
-def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
@@ -916,7 +917,7 @@ def test_collect_metrics_sql_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_row_stats_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -939,7 +940,7 @@ def test_collect_row_stats_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_row_stats_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
@@ -948,7 +949,7 @@ def test_collect_row_stats_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1176,7 +1177,7 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
+def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
@@ -1186,7 +1187,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> NoReturn:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
+def test_postgres_padding_calculator(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
     # pylint: disable=protected-access
     assert (
@@ -1252,7 +1253,7 @@ def test_postgres_padding_calculator(mock_conn: MagicMock) -> NoReturn:
         2234: 21,
     }
 
-def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> NoReturn:
+def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1307,7 +1308,7 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> N
         }
     }
 
-def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoReturn:
+def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1365,7 +1366,7 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> NoRet
         }
     }
 
-def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_query_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1418,7 +1419,7 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
+def test_anonymize_query(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
     # pylint: disable=protected-access
     assert (
@@ -1469,7 +1470,7 @@ def test_anonymize_query(mock_conn: MagicMock) -> NoReturn:
     assert collector._anonymize_query({"query": "vacuum tl1;"})["query"] == "vacuum tl1"
 
 
-def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
+def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1615,7 +1616,7 @@ def test_collect_schema_success(mock_conn: MagicMock) -> NoReturn:
     }
 
 
-def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
+def test_add_logical_db_columns(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1836,7 +1837,7 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> NoReturn:
     assert modded_results == expected_modded_results
 
 
-def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1855,7 +1856,7 @@ def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> NoRetur
     assert target_table_info == expected_result
 
 
-def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -2077,7 +2078,7 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> N
     assert table_level_metrics == expected_results
 
 
-def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> NoReturn:
+def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
