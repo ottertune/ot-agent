@@ -26,6 +26,8 @@ ENV OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT="10000"
 ENV OTTERTUNE_DISABLE_SCHEMA_MONITORING="False"
 ENV OTTERTUNE_OVERRIDE_SCHEMA_MONITOR_INTERVAL="3600"
 ENV OTTERTUNE_ENABLE_AWS_IAM_AUTH="False"
+ENV OTTERTUNE_OVERRIDE_LONG_RUNNING_QUERY_MONITOR_INTERVAL="240"
+
 
 RUN   apt-get clean \
    && apt-get update \
@@ -57,4 +59,5 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --override-num-query-to-collect $OTTERTUNE_OVERRIDE_NUM_QUERY_TO_COLLECT \
   --disable-schema-monitoring $OTTERTUNE_DISABLE_SCHEMA_MONITORING \
   --override-schema-monitor-interval $OTTERTUNE_OVERRIDE_SCHEMA_MONITOR_INTERVAL \
-  --enable-aws-iam-auth $OTTERTUNE_ENABLE_AWS_IAM_AUTH
+  --enable-aws-iam-auth $OTTERTUNE_ENABLE_AWS_IAM_AUTH \
+  --override-long-running-query-monitor-interval $OTTERTUNE_OVERRIDE_LONG_RUNNING_QUERY_MONITOR_INTERVAL

@@ -147,6 +147,11 @@ def _get_args() -> argparse.Namespace:
         default="False",
         help="Use AWS IAM auth when connecting to DB",
     )
+    parser.add_argument(
+        "--override-long-running-query-monitor-interval",
+        type=int,
+        help="Override file setting for how often to collect long running query data (in seconds)",
+    )
 
     return parser.parse_args()
 
@@ -197,7 +202,7 @@ def get_config(args):
         num_table_to_collect_stats=args.override_num_table_to_collect_stats,
         table_level_monitor_interval=args.override_table_level_monitor_interval,
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
-        long_running_query_monitor_interval=args.long_running_query_monitor_interval,
+        long_running_query_monitor_interval=args.override_long_running_query_monitor_interval,
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
         schema_monitor_interval=args.override_schema_monitor_interval,
