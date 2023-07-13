@@ -16,7 +16,7 @@ import driver.pipeline as module_under_test
 # pylint: disable=protected-access
 
 
-class MockConfig:
+class MockConfig: # pylint: disable=too-many-instance-attributes
     """Quick mock for testing pipeline code"""
 
     def __init__(self) -> None:
@@ -29,6 +29,7 @@ class MockConfig:
         self.db_provider = "amazon"
         self.enable_tuning = True
         self.table_level_monitor_interval = 3600
+        self.long_running_query_monitor_interval = 240
         self.schema_monitor_interval = 3600
 
 
