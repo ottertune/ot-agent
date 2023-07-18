@@ -60,6 +60,7 @@ If you are using postgres you will need to set the `POSTGRES_OTTERTUNE_DB_NAME` 
 --override-schema-monitor-interval: Override the frequency of collecting schema data (in seconds).
 --override-server-url: Override the endpoint to post observation data.
 --override-table-level-monitor-interval: Override the frequency of collecting table level data (in seconds).
+--override-long-running-query-monitor-interval: Override the frequency of collecting long running query data (in seconds).
 ```
 
 ## Permissions
