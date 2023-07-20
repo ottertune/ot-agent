@@ -30,6 +30,7 @@ class MockConfig: # pylint: disable=too-many-instance-attributes
         self.enable_tuning = True
         self.table_level_monitor_interval = 3600
         self.long_running_query_monitor_interval = 240
+        self.lr_query_latency_threshold_min = 1
         self.schema_monitor_interval = 3600
 
 

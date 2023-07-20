@@ -203,6 +203,7 @@ def get_config(args):
         table_level_monitor_interval=args.override_table_level_monitor_interval,
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
         long_running_query_monitor_interval=args.override_long_running_query_monitor_interval,
+        lr_query_latency_threshold_min=args.override_lr_query_latency_threshold_min,
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
         schema_monitor_interval=args.override_schema_monitor_interval,

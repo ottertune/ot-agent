@@ -45,7 +45,7 @@ def _test_config_data() -> Dict[str, Any]:
         "table_level_monitor_interval": 300,
         "num_query_to_collect": 10000,
         "long_running_query_monitor_interval": 240,
-        "lr_query_latency_threshold_min": 5,
+        "lr_query_latency_threshold_min": 1,
         "query_monitor_interval": 3600,
         "metric_source": [
             "cloudwatch",
@@ -97,6 +97,7 @@ def test_partial_config_from_file_success(
     assert partial_config.num_query_to_collect == 10000
     assert partial_config.query_monitor_interval == 3600
     assert partial_config.long_running_query_monitor_interval == 240
+    assert partial_config.lr_query_latency_threshold_min == 1
 
 
 def test_partial_config_from_file_invalid_table_level_monitor_interval(

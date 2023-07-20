@@ -239,7 +239,7 @@ def collect_long_running_query_observation_from_database(
         # TODO: Do we need to set a variable for the threshold?
         query_metrics = collector.collect_long_running_query(
             int(config["num_query_to_collect"]),
-            int(config.get("lr_query_latency_threshold_min", 5))
+            int(config["lr_query_latency_threshold_min"])
         )
         version = collector.get_version()
         summary: Dict[str, Any] = {
