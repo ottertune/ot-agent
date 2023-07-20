@@ -877,7 +877,7 @@ def test_collect_long_running_query_success(mock_conn: MagicMock) -> Optional[No
     mock_cursor.fetchall.side_effect = lambda: res.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
-    assert collector.collect_long_running_query(num_query_to_collect_stats=1, lr_query_latency_threshold_min=1) == \
+    assert collector.collect_long_running_query(1, 1) == \
            {'events_statements_current': {
                'columns': [
                     "THREAD_ID",
