@@ -155,7 +155,7 @@ def _get_args() -> argparse.Namespace:
     parser.add_argument(
         "--override-lr-query-latency-threshold-min",
         type=int,
-        help="Override file setting for the threshold of latency (minutes) of long running queries.",
+        help="Override file setting for the latency threshold (minutes) of long running queries.",
     )
 
     return parser.parse_args()
