@@ -329,7 +329,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    query_start < {lr_query_start_timestamp};
+    query_start < '{lr_query_start_timestamp}'::timestamptz;
 LIMIT
     {n};
 """
@@ -340,7 +340,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    query_start < {lr_query_start_timestamp};
+    query_start < '{lr_query_start_timestamp}'::timestamptz;
 LIMIT
     {n};
 """
