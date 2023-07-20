@@ -94,7 +94,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
                 f" is expected, but {val} is found"
             )
         return val
-    
+
     @validator("lr_query_latency_threshold_min")
     def check_lr_query_latency_threshold_min( # pylint: disable=no-self-argument, no-self-use
         cls, val: int

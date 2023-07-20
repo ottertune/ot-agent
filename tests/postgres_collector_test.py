@@ -1262,7 +1262,7 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> O
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
-    assert collector.collect_long_running_query(1) == {
+    assert collector.collect_long_running_query(1, 1) == {
         "pg_stat_activity": {
             "columns": [
                 "pid",
@@ -1317,7 +1317,7 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> Optio
     mock_cursor.fetchall.side_effect = lambda: result.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: result.meta)
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", version)
-    assert collector.collect_long_running_query(1) == {
+    assert collector.collect_long_running_query(1, 1) == {
         "pg_stat_activity": {
             "columns": [
                 "pid",
