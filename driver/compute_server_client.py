@@ -1,7 +1,6 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
 import zlib
-import logging
 from typing import List, Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
