@@ -1,6 +1,7 @@
 """Defines the compute server client that interacts with the server with http requests"""
 
 import zlib
+import logging
 from typing import List, Dict, Any, TypedDict, Set
 from http import HTTPStatus
 from requests import Session
@@ -169,6 +170,9 @@ class ComputeServerClient:
         compressed_data = zlib.compress(json.dumps(data, default=str).encode("utf-8"))
         # long running query observation use its own timeout settings
         query_observation_timeout = 60
+        logging.info(url)
+        logging.info(headers)
+        logging.info(compressed_data)
         try:
             response = self._req_session.post(
                 url,
@@ -197,6 +201,9 @@ class ComputeServerClient:
         compressed_data = zlib.compress(json.dumps(data, default=str).encode("utf-8"))
         # query observation use its own timeout settings due to the potential large data volume
         query_observation_timeout = 90
+        logging.info(url)
+        logging.info(headers)
+        logging.info(compressed_data)
         try:
             response = self._req_session.post(
                 url,
