@@ -53,6 +53,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
     table_level_monitor_interval: StrictInt
     num_index_to_collect_stats: StrictInt
     long_running_query_monitor_interval: StrictInt
+    lr_query_latency_threshold_min: StrictInt
     query_monitor_interval: StrictInt
     num_query_to_collect: StrictInt
     metric_source: List[str]
@@ -90,6 +91,18 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         if val < 60:
             raise ValueError(
                 "Invalid driver option long_running_query_monitor_interval, positive value >= 60"
+                f" is expected, but {val} is found"
+            )
+        return val
+
+    @validator("lr_query_latency_threshold_min")
+    def check_lr_query_latency_threshold_min( # pylint: disable=no-self-argument, no-self-use
+        cls, val: int
+    ) -> int:
+        """Validate that lr_query_latency_threshold_min is positive and at least 60 seconds."""
+        if val < 1:
+            raise ValueError(
+                "Invalid driver option lr_query_latency_threshold_min, positive value >= 1"
                 f" is expected, but {val} is found"
             )
         return val
@@ -164,6 +177,7 @@ class Overrides(NamedTuple):
     table_level_monitor_interval: int
     num_index_to_collect_stats: int
     long_running_query_monitor_interval: int
+    lr_query_latency_threshold_min: int
     query_monitor_interval: int
     num_query_to_collect: int
     schema_monitor_interval: int

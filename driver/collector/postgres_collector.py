@@ -329,7 +329,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    query_start < {lr_query_start_timestamp};
+    query_start < '{lr_query_start_timestamp}'::timestamptz
 LIMIT
     {n};
 """
@@ -340,7 +340,7 @@ SELECT
 FROM
     pg_stat_activity
 WHERE
-    query_start < {lr_query_start_timestamp};
+    query_start < '{lr_query_start_timestamp}'::timestamptz
 LIMIT
     {n};
 """
@@ -844,7 +844,7 @@ class PostgresCollector(BaseDbCollector):
         }
 
     def collect_long_running_query(
-        self, num_query_to_collect_stats: int, lr_query_latency_threshold_min: int = 5
+        self, num_query_to_collect_stats: int, lr_query_latency_threshold_min: int
     ) -> Dict[str, Any]:
         """
         Collect long running query instances and associated metrics

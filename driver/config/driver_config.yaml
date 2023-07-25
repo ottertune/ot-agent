@@ -24,7 +24,8 @@ monitor_interval: 60
 table_level_monitor_interval: 3600
 num_table_to_collect_stats: 1000
 num_index_to_collect_stats: 10000
-long_running_query_monitor_interval: 240
+long_running_query_monitor_interval: 120
+lr_query_latency_threshold_min: 2
 query_monitor_interval: 3600
 num_query_to_collect: 10000
 schema_monitor_interval: 3600

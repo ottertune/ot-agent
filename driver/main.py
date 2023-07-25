@@ -152,6 +152,11 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for how often to collect long running query data (in seconds)",
     )
+    parser.add_argument(
+        "--override-lr-query-latency-threshold-min",
+        type=int,
+        help="Override file setting for the latency threshold (minutes) of long running queries.",
+    )
 
     return parser.parse_args()
 
@@ -203,6 +208,7 @@ def get_config(args):
         table_level_monitor_interval=args.override_table_level_monitor_interval,
         num_index_to_collect_stats=args.override_num_index_to_collect_stats,
         long_running_query_monitor_interval=args.override_long_running_query_monitor_interval,
+        lr_query_latency_threshold_min=args.override_lr_query_latency_threshold_min,
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
         schema_monitor_interval=args.override_schema_monitor_interval,

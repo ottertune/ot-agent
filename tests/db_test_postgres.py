@@ -263,7 +263,7 @@ def test_collect_table_level_data_from_database(
     # pylint: disable=too-many-arguments,too-many-locals
     num_table_to_collect_stats = 10
     num_index_to_collect_stats = 10
-    lr_query_latency_threshold_min = 5
+    lr_query_latency_threshold_min = 2
     conf = _get_conf(pg_user, pg_password, pg_host, pg_port, pg_database)
     conn = connect_postgres(conf)
 
