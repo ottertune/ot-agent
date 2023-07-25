@@ -267,7 +267,7 @@ def test_collect_table_level_data_from_database(
     # pylint: disable=too-many-arguments, too-many-locals
     num_table_to_collect_stats = 10
     num_index_to_collect_stats = 10
-    lr_query_latency_threshold_min = 1
+    lr_query_latency_threshold_min = 2
 
     conf = _get_conf(mysql_user, mysql_password, mysql_host, mysql_port, mysql_database)
     conn = connect_mysql(conf)
