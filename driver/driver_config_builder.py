@@ -207,6 +207,7 @@ class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized va
     organization_id: StrictStr
 
     aws_region: StrictStr
+    enable_s3: StrictBool = False
     db_identifier: StrictStr
 
     db_user: StrictStr
@@ -291,6 +292,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     disable_schema_monitoring: bool
     schema_monitor_interval: int
     db_non_default_parameters: List[str]
+    enable_s3: bool
 
 
 class DriverConfigBuilder(BaseDriverConfigBuilder):
@@ -331,6 +333,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
 
             from_cli = PartialConfigFromCommandline(
                 aws_region=args.aws_region,
+                enable_s3=args.enable_s3.lower() == "true",
                 db_identifier=args.db_identifier,
                 db_user=args.db_username,
                 db_password=db_password,

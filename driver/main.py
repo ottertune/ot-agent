@@ -157,6 +157,11 @@ def _get_args() -> argparse.Namespace:
         type=int,
         help="Override file setting for the latency threshold (minutes) of long running queries.",
     )
+    parser.add_argument(
+        "--enable-s3",
+        type=str,
+        help="Whether to send observation data to S3.",
+    )
 
     return parser.parse_args()
 

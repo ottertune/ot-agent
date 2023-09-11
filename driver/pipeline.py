@@ -8,6 +8,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
+from driver.s3_client import S3Client, ObservationType
 from driver.database import (
     collect_db_level_observation_for_on_prem,
     collect_long_running_query_observation_for_on_prem,
@@ -38,24 +39,34 @@ def driver_pipeline(
     compute_server_client = ComputeServerClient(
         config.server_url, Session(), config.api_key
     )
+    s3_client = S3Client(config.enable_s3, config.organization_id)
 
     if job_id == DB_LEVEL_MONITOR_JOB_ID:
-        _db_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+        _db_level_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client, s3_client
+        )
     elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
-        _table_level_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+        _table_level_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client, s3_client
+        )
     elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
         _long_running_query_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client
+            config, compute_server_client, s3_client
         )
     elif job_id == QUERY_MONITOR_JOB_ID:
-        _query_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+        _query_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client, s3_client
+        )
     elif job_id == SCHEMA_MONITOR_JOB_ID:
-        _schema_monitor_driver_pipeline_for_on_prem(config, compute_server_client)
+        _schema_monitor_driver_pipeline_for_on_prem(
+            config, compute_server_client, s3_client
+        )
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
+    s3_client: S3Client,
 ) -> None:
     """
     Regular monitoring pipeline that collects database level metrics and configs every minute
@@ -71,12 +82,17 @@ def _db_level_monitor_driver_pipeline_for_on_prem(
     db_level_observation = collect_db_level_observation_for_on_prem(config)
 
     logging.debug("Posting db level observation data to the server.")
-    compute_server_client.post_db_level_observation(db_level_observation)
+    if config.enable_s3:
+        s3_client.post_observation(db_level_observation, ObservationType.DB)
+        logging.info("Posted db level observation data to S3.")
+    else:
+        compute_server_client.post_db_level_observation(db_level_observation)
 
 
 def _table_level_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
+    s3_client: S3Client,
 ) -> None:
     """
     Regular monitoring pipeline that collects table level metrics every hour
@@ -92,12 +108,18 @@ def _table_level_monitor_driver_pipeline_for_on_prem(
     table_level_observation = collect_table_level_observation_for_on_prem(config)
 
     logging.debug("Posting table level observation data to the server.")
-    compute_server_client.post_table_level_observation(table_level_observation)
+
+    if config.enable_s3:
+        s3_client.post_observation(table_level_observation, ObservationType.TABLE)
+        logging.info("Posted table level observation data to S3.")
+    else:
+        compute_server_client.post_table_level_observation(table_level_observation)
 
 
 def _long_running_query_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
+    s3_client: S3Client,
 ) -> None:
     """
     Regular monitoring pipeline that collects long running query instances every minute
@@ -109,12 +131,19 @@ def _long_running_query_monitor_driver_pipeline_for_on_prem(
         Exception: Other unknown exceptions that are not caught as DriverException.
     """
     query_observation = collect_long_running_query_observation_for_on_prem(config)
-    compute_server_client.post_long_running_query_observation(query_observation)
+    if config.enable_s3:
+        s3_client.post_observation(
+            query_observation, ObservationType.LONG_RUNNING_QUERY
+        )
+        logging.info("Posted long running query observation data to S3.")
+    else:
+        compute_server_client.post_long_running_query_observation(query_observation)
 
 
 def _query_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
+    s3_client: S3Client,
 ) -> None:
     """
     Regular monitoring pipeline that collects queries every day
@@ -126,12 +155,17 @@ def _query_monitor_driver_pipeline_for_on_prem(
         Exception: Other unknown exceptions that are not caught as DriverException.
     """
     query_observation = collect_query_observation_for_on_prem(config)
-    compute_server_client.post_query_observation(query_observation)
+    if config.enable_s3:
+        s3_client.post_observation(query_observation, ObservationType.QUERY)
+        logging.info("Posted query observation data to S3.")
+    else:
+        compute_server_client.post_query_observation(query_observation)
 
 
 def _schema_monitor_driver_pipeline_for_on_prem(
     config: DriverConfig,
     compute_server_client: ComputeServerClient,
+    s3_client: S3Client,
 ) -> None:
     """
     Regular monitoring pipeline that collects schemas every day
@@ -143,7 +177,11 @@ def _schema_monitor_driver_pipeline_for_on_prem(
         Exception: Other unknown exceptions that are not caught as DriverException.
     """
     schema_observation = collect_schema_observation_for_on_prem(config)
-    compute_server_client.post_schema_observation(schema_observation)
+    if config.enable_s3:
+        s3_client.post_observation(schema_observation, ObservationType.SCHEMA)
+        logging.info("Posted schema observation data to S3.")
+    else:
+        compute_server_client.post_schema_observation(schema_observation)
 
 
 def _get_interval(config: DriverConfig, job_id: str) -> int:
