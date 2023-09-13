@@ -69,10 +69,7 @@ def test_generate_headers() -> None:
         organization_id="81072a87-ef79-4a24-86be-84b2efd84688",
         api_key="test_api_key",
     )
-    observation_data = {
-        "key1": "value1",
-    }
-    observation_data["headers"] = client.generate_headers()
+    observation_data = {"key1": "value1", "headers": client.generate_headers()}
     assert (
         observation_data["headers"]["organization_id"]
         == "81072a87-ef79-4a24-86be-84b2efd84688"
