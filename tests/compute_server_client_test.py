@@ -165,3 +165,19 @@ def test_post_schema_observation_connection_error(test_data: Dict[str, Any]) -> 
     with pytest.raises(ComputeServerClientException) as ex:
         client.post_schema_observation(test_data["schema"])
     assert "Connection Error" in str(ex.value)
+
+
+@responses.activate
+def test_post_agent_health_heartbeat(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/agent_health/",
+        status=200,
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    client.post_agent_health_heartbeat(test_data["agent_health"])

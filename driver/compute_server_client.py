@@ -81,6 +81,17 @@ class SchemaObservation(TypedDict):
     organization_id: str
 
 
+class AgentHealthData(TypedDict):
+    organization_id: str
+    db_key: str
+    agent_status: str
+    agent_starttime: str
+    heartbeat_time: str
+    agent_version: str
+    agent_hostname: str
+    errors: List[Dict[str, Any]]
+
+
 class DriverStatus(TypedDict):
     """Driver status information."""
 
@@ -235,4 +246,17 @@ class ComputeServerClient:
             response.raise_for_status()
         except Exception as ex:
             msg = "Failed to post the schema observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+
+    def post_agent_health_heartbeat(self, data: AgentHealthData):
+        url = f"{self._server_url}/agent_health/"
+        headers = self._generate_headers(data["organization_id"])
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        try:
+            response = self._req_session.post(
+                url, data=json.dumps(data, default=str), headers=headers
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the agent health heartbeat to the server"
             raise ComputeServerClientException(msg, ex) from ex

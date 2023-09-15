@@ -9,6 +9,7 @@ import logging
 from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
+from driver.error_reporter import add_error_to_global
 from driver.pipeline import (
     SCHEMA_MONITOR_JOB_ID,
     schedule_or_update_job,
@@ -246,17 +247,24 @@ def run() -> None:
     logging.basicConfig(level=numeric_level)
 
     config = get_config(args)
+    # TODO Schedule agent health reporting job
 
-    schedule_db_level_monitor_job(config)
-    if not config.disable_table_level_stats or not config.disable_index_stats:
-        schedule_table_level_monitor_job(config)
-    if not config.disable_long_running_query_monitoring:
-        schedule_long_running_query_monitor_job(config)
-    if not config.disable_query_monitoring:
-        schedule_query_monitor_job(config)
-    if not config.disable_schema_monitoring:
-        schedule_schema_monitor_job(config)
-    scheduler.start()
+
+    try:
+        schedule_db_level_monitor_job(config)
+        if not config.disable_table_level_stats or not config.disable_index_stats:
+            schedule_table_level_monitor_job(config)
+        if not config.disable_long_running_query_monitoring:
+            schedule_long_running_query_monitor_job(config)
+        if not config.disable_query_monitoring:
+            schedule_query_monitor_job(config)
+        if not config.disable_schema_monitoring:
+            schedule_schema_monitor_job(config)
+        scheduler.start()
+    except Exception as e:
+        logging.error(f"Initialization error: {e}")
+        add_error_to_global(e)
+        raise e
 
 
 if __name__ == "__main__":
