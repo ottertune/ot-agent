@@ -5,8 +5,10 @@ from enum import Enum
 import datetime
 import zlib
 import boto3
+from .compute_server_client import AGENT_VERSION
 
 # pylint: disable=attribute-defined-outside-init
+
 
 class ObservationType(Enum):
     """Possible observation types."""
@@ -27,9 +29,10 @@ BUCKET_NAME = "customer-database-observations"
 class S3Client:
     """S3 client that interacts with the OtterTune S3 bucket."""
 
-    def __init__(self, enable_s3, organization_id) -> None:
+    def __init__(self, enable_s3, organization_id, api_key) -> None:
         self._enable_s3 = enable_s3
         self._organization_id = organization_id
+        self._api_key = api_key
 
     @staticmethod
     def get_s3_session():
@@ -87,6 +90,14 @@ class S3Client:
 
         return self._organization_id + "/" + object_key
 
+    def generate_headers(self):
+        """Generate the headers for the S3 request."""
+
+        headers = {}
+        headers["ApiKey"] = self._api_key
+        headers["organization_id"] = self._organization_id
+        headers["AgentVersion"] = AGENT_VERSION
+        return headers
 
     def post_observation(self, data, obs_type: ObservationType) -> None:
         """Post the observation to S3."""
@@ -94,10 +105,9 @@ class S3Client:
         if not self._enable_s3:
             return
 
+        data["headers"] = self.generate_headers()
         object_key = self.get_s3_bucket_object_key(obs_type)
         s3_session = self.get_s3_session()
         s3_client = s3_session.client("s3")
         processed_data = self.process_observation_data(data, obs_type)
-        s3_client.put_object(
-            Bucket=BUCKET_NAME, Key=object_key, Body=processed_data
-        )
+        s3_client.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=processed_data)

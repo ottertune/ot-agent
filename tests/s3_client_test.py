@@ -13,6 +13,7 @@ def test_get_s3_bucket_object_key() -> None:
     client = S3Client(
         enable_s3=True,
         organization_id="81072a87-ef79-4a24-86be-84b2efd84688",
+        api_key="test_api_key",
     )
     object_key = client.get_s3_bucket_object_key(ObservationType.DB)
     assert "81072a87-ef79-4a24-86be-84b2efd84688/DB/" in object_key
@@ -23,6 +24,7 @@ def test_process_observation_data() -> None:
     client = S3Client(
         enable_s3=True,
         organization_id="81072a87-ef79-4a24-86be-84b2efd84688",
+        api_key="test_api_key",
     )
     observation_data = {
         "key1": "value1",
@@ -59,3 +61,18 @@ def test_process_observation_data() -> None:
     )
     assert isinstance(processed_observation_data, bytes), True
     assert processed_observation_data, json.dumps(observation_data)
+
+
+def test_generate_headers() -> None:
+    client = S3Client(
+        enable_s3=True,
+        organization_id="81072a87-ef79-4a24-86be-84b2efd84688",
+        api_key="test_api_key",
+    )
+    observation_data = {"key1": "value1", "headers": client.generate_headers()}
+    assert (
+        observation_data["headers"]["organization_id"]
+        == "81072a87-ef79-4a24-86be-84b2efd84688"
+    )
+    assert observation_data["headers"]["AgentVersion"] == "0.4.9"
+    assert observation_data["headers"]["ApiKey"] == "test_api_key"

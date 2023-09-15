@@ -40,10 +40,11 @@ def driver_pipeline(
     """
     try:
         logging.info("Running driver pipeline deployment!")
+
         compute_server_client = ComputeServerClient(
             config.server_url, Session(), config.api_key
         )
-        s3_client = S3Client(config.enable_s3, config.organization_id)
+        s3_client = S3Client(config.enable_s3, config.organization_id, config.api_key)
 
         if job_id == DB_LEVEL_MONITOR_JOB_ID:
             _db_level_monitor_driver_pipeline_for_on_prem(
