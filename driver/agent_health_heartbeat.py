@@ -15,36 +15,48 @@ error_queue_global = queue.Queue()  # thread safe queue
 SERVER_ENDPOINT = 'https://api.ottertune.com/agent_health'
 
 
-def schedule_agent_health_job():
+def add_error_to_global(error):
+    """
+    Add error to the global error queue.
+    """
+    error_queue_global.put((error, datetime.datetime.now()))
+
+
+def schedule_agent_health_job(config: DriverConfig,
+                              agent_starttime: datetime.datetime,
+                              agent_version: str):
     """
     Run the heartbeat sender.
     """
     scheduler = BackgroundScheduler()
     HEARTBEAT_INTERVAL_MINUTES = 1
-    scheduler.add_job(send_heartbeat, 'interval', minutes=HEARTBEAT_INTERVAL_MINUTES)
+    kwargs = {
+        "next_run_time": datetime.datetime.now() + datetime.timedelta(minutes=HEARTBEAT_INTERVAL_MINUTES),
+    }
+    scheduler.add_job(send_heartbeat,
+                      'interval',
+                      minutes=HEARTBEAT_INTERVAL_MINUTES,
+                      args=[config, agent_starttime, agent_version],
+                      kwargs=kwargs)
     scheduler.start()
 
 
-def send_heartbeat(config: DriverConfig):
+def send_heartbeat(config: DriverConfig,
+                   agent_starttime: datetime.datetime,
+                   agent_version: str):
     """
     Send heartbeat to the compute-service.
     """
-
     data: AgentHealthData = {
         "organization_id": config.organization_id,
         "db_key": config.db_key,
         "agent_status": "Error" if error_queue_global else "OK",
-        "agent_starttime": config.agent_starttime,
+        "agent_starttime": agent_starttime,
         "heartbeat_time": datetime.datetime.now().isoformat(),
-        "agent_version": config.agent_version,
-        "agent_hostname": config.agent_hostname,
+        "agent_version": agent_version,
         "errors": construct_error_list_and_clear(error_queue_global),
     }
     ComputeServerClient.send_heartbeat(data)
-
-
-def add_error_to_global(error):
-    error_queue_global.put((error, datetime.datetime.now()))
 
 
 def construct_error_list_and_clear(error_queue):

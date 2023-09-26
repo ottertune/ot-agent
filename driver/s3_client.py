@@ -5,7 +5,8 @@ from enum import Enum
 import datetime
 import zlib
 import boto3
-from .compute_server_client import AGENT_VERSION
+from agent_version import AGENT_VERSION
+
 
 # pylint: disable=attribute-defined-outside-init
 

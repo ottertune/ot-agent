@@ -10,7 +10,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 
 from driver.driver_config_builder import DriverConfig
 from driver.compute_server_client import ComputeServerClient
-from driver.error_reporter import add_error_to_global
+from driver.agent_health_heartbeat import add_error_to_global
 from driver.exceptions import DriverException
 from driver.s3_client import S3Client, ObservationType
 from driver.database import (

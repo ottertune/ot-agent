@@ -7,7 +7,7 @@ from requests import Session
 import simplejson as json
 
 from driver.exceptions import ComputeServerClientException
-
+from agent_version import AGENT_VERSION
 
 TIMEOUT_SEC = 30
 SECONDS_TO_MS = 1000
@@ -18,9 +18,6 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.SERVICE_UNAVAILABLE,
     HTTPStatus.GATEWAY_TIMEOUT,
 }
-
-# TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.4.9"
 
 
 class DBLevelObservation(TypedDict):
@@ -88,7 +85,6 @@ class AgentHealthData(TypedDict):
     agent_starttime: str
     heartbeat_time: str
     agent_version: str
-    agent_hostname: str
     errors: List[Dict[str, Any]]
 
 

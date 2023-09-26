@@ -4,12 +4,14 @@ executions of monitoring and tuning pipeline.
 """
 
 import argparse
+import datetime
 import logging
 
 from apscheduler.schedulers.background import BlockingScheduler
 
+from driver.agent_health_heartbeat import schedule_agent_health_job, add_error_to_global
+from agent_version import AGENT_VERSION
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
-from driver.error_reporter import add_error_to_global
 from driver.pipeline import (
     SCHEMA_MONITOR_JOB_ID,
     schedule_or_update_job,
@@ -18,6 +20,7 @@ from driver.pipeline import (
     LONG_RUNNING_QUERY_MONITOR_JOB_ID,
     QUERY_MONITOR_JOB_ID,
 )
+
 
 # Setup the scheduler that will poll for new configs and run the core pipeline
 scheduler = BlockingScheduler()
@@ -247,8 +250,12 @@ def run() -> None:
     logging.basicConfig(level=numeric_level)
 
     config = get_config(args)
-    # TODO Schedule agent health reporting job
 
+    schedule_agent_health_job(
+        config=config,
+        agent_starttime=datetime.datetime.now(),
+        agent_version=AGENT_VERSION,
+    )
 
     try:
         schedule_db_level_monitor_job(config)
