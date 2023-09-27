@@ -2,6 +2,7 @@ APScheduler==3.7.0
 aws_psycopg2==1.2.1
 boto3==1.24.56
 botocore==1.27.96
+factory_boy==3.1.0
 mypy_boto3_cloudwatch==1.17.1.0
 mypy_boto3_ec2==1.17.1.0
 mypy_boto3_iam==1.17.1.0

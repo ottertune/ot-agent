@@ -13,7 +13,7 @@ from driver.compute_server_client import (
     QueryObservation,
 )
 from driver.collector.collector_factory import get_collector
-from driver.driver_config_builder import DriverConfig
+from driver.driver_config import DriverConfig
 from driver.exceptions import DbCollectorException
 from driver.metric_source_utils import METRIC_SOURCE_COLLECTOR
 

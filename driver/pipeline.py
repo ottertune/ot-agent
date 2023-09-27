@@ -1,5 +1,5 @@
 """ Module containing pipelines (reoccuring function calls) for use with apscheduler. """
-
+import traceback
 from datetime import datetime
 import logging
 
@@ -8,7 +8,7 @@ from requests import Session
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.driver_config_builder import DriverConfig
+from driver.driver_config import DriverConfig
 from driver.compute_server_client import ComputeServerClient
 from driver.agent_health_heartbeat import add_error_to_global
 from driver.exceptions import DriverException
@@ -70,10 +70,12 @@ def driver_pipeline(
             raise DriverException(f"Unknown job id {job_id}")
     except requests.RequestException as e:
         logging.error(f"Network error during driver pipeline for job_id {job_id}: {str(e)}")
-        add_error_to_global(e)
+        stacktrace = traceback.format_exc()
+        add_error_to_global(e, stacktrace)
     except Exception as e:
         logging.error(f"Unexpected error during driver pipeline for job_id {job_id}: {str(e)}")
-        add_error_to_global(e)
+        stacktrace = traceback.format_exc()
+        add_error_to_global(e, stacktrace)
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(

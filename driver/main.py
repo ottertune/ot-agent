@@ -6,6 +6,7 @@ executions of monitoring and tuning pipeline.
 import argparse
 import datetime
 import logging
+import traceback
 
 from apscheduler.schedulers.background import BlockingScheduler
 
@@ -253,7 +254,7 @@ def run() -> None:
 
     schedule_agent_health_job(
         config=config,
-        agent_starttime=datetime.datetime.now(),
+        agent_starttime=datetime.datetime.utcnow(),
         agent_version=AGENT_VERSION,
     )
 
@@ -270,7 +271,8 @@ def run() -> None:
         scheduler.start()
     except Exception as e:
         logging.error(f"Initialization error: {e}")
-        add_error_to_global(e)
+        stacktrace = traceback.format_exc()
+        add_error_to_global(e, stacktrace)
         raise e
 
 
