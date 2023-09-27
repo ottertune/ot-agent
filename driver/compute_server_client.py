@@ -79,6 +79,8 @@ class SchemaObservation(TypedDict):
 
 
 class AgentHealthData(TypedDict):
+    """Agent health data."""
+
     organization_id: str
     db_key: str
     agent_status: str
@@ -245,6 +247,12 @@ class ComputeServerClient:
             raise ComputeServerClientException(msg, ex) from ex
 
     def post_agent_health_heartbeat(self, data: AgentHealthData):
+        """Post the agent health heartbeat to the server.
+        Args:
+            data: Agent health data.
+        Raises:
+            ComputeServerClientException: Failed to post the agent health heartbeat.
+        """
         url = f"{self._server_url}/agent_health/"
         headers = self._generate_headers(data["organization_id"])
         headers["Content-Type"] = "application/json; charset=utf-8"

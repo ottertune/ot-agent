@@ -68,14 +68,14 @@ def driver_pipeline(
             )
         else:
             raise DriverException(f"Unknown job id {job_id}")
-    except requests.RequestException as e:
-        logging.error(f"Network error during driver pipeline for job_id {job_id}: {str(e)}")
+    except requests.RequestException as exc:
+        logging.error("Network error during driver pipeline for job_id %s: %s", job_id, str(exc))
         stacktrace = traceback.format_exc()
-        add_error_to_global(e, stacktrace)
-    except Exception as e:
-        logging.error(f"Unexpected error during driver pipeline for job_id {job_id}: {str(e)}")
+        add_error_to_global(exc, stacktrace)
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.error("Unexpected error during driver pipeline for job_id %s: %s", job_id, str(exc))
         stacktrace = traceback.format_exc()
-        add_error_to_global(e, stacktrace)
+        add_error_to_global(exc, stacktrace)
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(

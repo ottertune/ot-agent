@@ -10,8 +10,8 @@ import traceback
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.agent_health_heartbeat import schedule_agent_health_job, add_error_to_global
 from agent_version import AGENT_VERSION
+from driver.agent_health_heartbeat import schedule_agent_health_job, add_error_to_global
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import (
     SCHEMA_MONITOR_JOB_ID,
@@ -269,11 +269,11 @@ def run() -> None:
         if not config.disable_schema_monitoring:
             schedule_schema_monitor_job(config)
         scheduler.start()
-    except Exception as e:
-        logging.error(f"Initialization error: {e}")
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.error("Initialization error: %s", exc)
         stacktrace = traceback.format_exc()
-        add_error_to_global(e, stacktrace)
-        raise e
+        add_error_to_global(exc, stacktrace)
+        raise exc
 
 
 if __name__ == "__main__":

@@ -79,7 +79,8 @@ class DriverConfigFactory(factory.Factory):
     lr_query_latency_threshold_min = factory.Faker('pyint')
     monitor_interval = factory.Faker('pyint')
     metric_source = factory.Faker('pylist', nb_elements=5, variable_nb_elements=True)
-    metrics_to_retrieve_from_source = factory.Faker('pydict', nb_elements=5, variable_nb_elements=True)
+    metrics_to_retrieve_from_source = factory.Faker(
+        'pydict', nb_elements=5, variable_nb_elements=True)
     disable_table_level_stats = factory.Faker('pybool')
     num_table_to_collect_stats = factory.Faker('pyint')
     table_level_monitor_interval = factory.Faker('pyint')

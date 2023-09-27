@@ -29,14 +29,15 @@ def schedule_agent_health_job(config: DriverConfig,
     Run the heartbeat sender.
     """
     scheduler = BackgroundScheduler()
-    HEARTBEAT_INTERVAL_MINUTES = 1
+    heartbeat_interval_minutes = 1
     kwargs = {
-        "next_run_time": datetime.datetime.now() + datetime.timedelta(minutes=HEARTBEAT_INTERVAL_MINUTES),
+        "next_run_time":
+            datetime.datetime.now() + datetime.timedelta(minutes=heartbeat_interval_minutes),
     }
 
     scheduler.add_job(send_heartbeat,
                       'interval',
-                      minutes=HEARTBEAT_INTERVAL_MINUTES,
+                      minutes=heartbeat_interval_minutes,
                       args=[config, agent_starttime, agent_version],
                       kwargs=kwargs)
     scheduler.start()
@@ -70,14 +71,14 @@ def construct_error_list_and_clear(error_queue=error_queue_global):
     """
     errors = []
     while not error_queue.empty():
-          error, timestamp, stacktrace = error_queue.get()
-          errors.append({
-                "data": {
-                    "name": error.__class__.__name__,
-                    "message": str(error),
-                    "stacktrace": stacktrace
-                },
-                "timestamp": timestamp,
-            })
+        error, timestamp, stacktrace = error_queue.get()
+        errors.append({
+            "data": {
+                "name": error.__class__.__name__,
+                "message": str(error),
+                "stacktrace": stacktrace
+            },
+            "timestamp": timestamp,
+        })
     error_queue.queue.clear()
     return errors

@@ -6,7 +6,11 @@ import json
 import traceback
 import responses
 
-from driver.agent_health_heartbeat import add_error_to_global, construct_error_list_and_clear, send_heartbeat
+from driver.agent_health_heartbeat import (
+    add_error_to_global,
+    construct_error_list_and_clear,
+    send_heartbeat
+)
 from driver.driver_config import DriverConfigFactory
 
 
@@ -16,14 +20,14 @@ def test_add_error():
     """
     try:
         raise Exception("Test error")
-    except Exception as e:
+    except Exception as exc:  # pylint: disable=broad-except
         stacktrace = traceback.format_exc()
-        add_error_to_global(e, stacktrace)
+        add_error_to_global(exc, stacktrace)
 
     error_list = construct_error_list_and_clear()
     assert len(error_list) == 1
     assert "Traceback (most recent call last):" in error_list[0]["data"]["stacktrace"]
-    assert type(error_list[0]["timestamp"]) == datetime.datetime
+    assert isinstance(error_list[0]["timestamp"], datetime.datetime)
     assert error_list == [
         {
             "data": {
@@ -72,9 +76,9 @@ def test_heartbeat_with_errors():
     agent_version = "1.0.0"
     try:
         raise Exception("Test error")
-    except Exception as e:
+    except Exception as exc:  # pylint: disable=broad-except
         stacktrace = traceback.format_exc()
-        add_error_to_global(e, stacktrace)
+        add_error_to_global(exc, stacktrace)
 
     url = f"{config.server_url}/agent_health/"
     responses.add(
