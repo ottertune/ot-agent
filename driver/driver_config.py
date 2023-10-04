@@ -53,6 +53,8 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     db_non_default_parameters: List[str]
     enable_s3: bool
 
+    agent_health_report_interval: int
+
 
 class DriverConfigFactory(factory.Factory):
     """
@@ -94,3 +96,4 @@ class DriverConfigFactory(factory.Factory):
     schema_monitor_interval = factory.Faker('pyint')
     db_non_default_parameters = factory.Faker('pylist', nb_elements=5, variable_nb_elements=True)
     enable_s3 = factory.Faker('pybool')
+    agent_health_report_interval = factory.Faker('pyint')

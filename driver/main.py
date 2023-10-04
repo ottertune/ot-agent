@@ -167,6 +167,12 @@ def _get_args() -> argparse.Namespace:
         type=str,
         help="Whether to send observation data to S3.",
     )
+    parser.add_argument(
+        "--agent-health-report-interval",
+        type=int,
+        help="Interval (in seconds) to send agent health information to OtterTune.",
+        default=60,
+    )
 
     return parser.parse_args()
 
@@ -206,6 +212,38 @@ def schedule_schema_monitor_job(config) -> None:
     schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
 
 
+def get_essential_config(args):
+    """
+    Get the essential config for error reporting
+    """
+    config_builder = DriverConfigBuilder(args.aws_region)
+    overrides = Overrides(
+        monitor_interval=args.override_monitor_interval,
+        server_url=args.override_server_url,
+        num_table_to_collect_stats=args.override_num_table_to_collect_stats,
+        table_level_monitor_interval=args.override_table_level_monitor_interval,
+        num_index_to_collect_stats=args.override_num_index_to_collect_stats,
+        long_running_query_monitor_interval=args.override_long_running_query_monitor_interval,
+        lr_query_latency_threshold_min=args.override_lr_query_latency_threshold_min,
+        query_monitor_interval=args.override_query_monitor_interval,
+        num_query_to_collect=args.override_num_query_to_collect,
+        schema_monitor_interval=args.override_schema_monitor_interval,
+        agent_health_report_interval=args.agent_health_report_interval,
+    )
+
+    config_builder\
+        .from_placeholder_data()\
+        .from_file(args.config)\
+        .from_command_line(args)\
+        .from_overrides(overrides)
+
+    config = config_builder.get_config()
+
+
+
+    return config
+
+
 def get_config(args):
     """
     Build configuration from file, command line overrides, rds info,
@@ -222,6 +260,7 @@ def get_config(args):
         query_monitor_interval=args.override_query_monitor_interval,
         num_query_to_collect=args.override_num_query_to_collect,
         schema_monitor_interval=args.override_schema_monitor_interval,
+        agent_health_report_interval=args.agent_health_report_interval,
     )
 
     config_builder.from_file(args.config).from_overrides(overrides).from_rds(
@@ -250,15 +289,15 @@ def run() -> None:
         raise ValueError(f"Invalid log level: {loglevel}")
     logging.basicConfig(level=numeric_level)
 
-    config = get_config(args)
-
     schedule_agent_health_job(
-        config=config,
+        config=get_essential_config(args),
         agent_starttime=datetime.datetime.utcnow(),
         agent_version=AGENT_VERSION,
     )
 
     try:
+        config = get_config(args)
+
         schedule_db_level_monitor_job(config)
         if not config.disable_table_level_stats or not config.disable_index_stats:
             schedule_table_level_monitor_job(config)

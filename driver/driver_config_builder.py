@@ -59,6 +59,8 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
     num_query_to_collect: StrictInt
     metric_source: List[str]
     schema_monitor_interval: StrictInt
+    agent_health_report_interval: StrictInt
+
 
     @validator("table_level_monitor_interval")
     def check_table_level_monitor_interval( # pylint: disable=no-self-argument, no-self-use
@@ -182,6 +184,7 @@ class Overrides(NamedTuple):
     query_monitor_interval: int
     num_query_to_collect: int
     schema_monitor_interval: int
+    agent_health_report_interval: int
 
 
 class PartialConfigFromEnvironment( # pyre-ignore[13]: pydantic uninitialized variables
@@ -430,6 +433,21 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             k: v for k, v in overrides._asdict().items() if v is not None
         }
         self.config.update(supplied_overrides)
+        return self
+
+    def from_placeholder_data(self):
+        """Build config options from placeholder data"""
+        self.config.update(
+            {
+                "db_type": "placeholder_db_type",
+                "db_host": "placeholder_db_host",
+                "db_port": 0,
+                "db_version": "placeholder_db_version",
+                "db_name": "placeholder_db_name",
+                "metrics_to_retrieve_from_source": [],
+                "db_non_default_parameters": []
+            }
+        )
         return self
 
     def get_config(self) -> DriverConfig:

@@ -2,6 +2,7 @@
 Agent Health reporting
 """
 import datetime
+import logging
 import queue
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -29,18 +30,19 @@ def schedule_agent_health_job(config: DriverConfig,
     Run the heartbeat sender.
     """
     scheduler = BackgroundScheduler()
-    heartbeat_interval_minutes = 1
+    interval_seconds = config.agent_health_report_interval
     kwargs = {
         "next_run_time":
-            datetime.datetime.now() + datetime.timedelta(minutes=heartbeat_interval_minutes),
+            datetime.datetime.now() + datetime.timedelta(seconds=interval_seconds),
     }
 
     scheduler.add_job(send_heartbeat,
                       'interval',
-                      minutes=heartbeat_interval_minutes,
+                      seconds=interval_seconds,
                       args=[config, agent_starttime, agent_version],
-                      kwargs=kwargs)
+                      **kwargs)
     scheduler.start()
+    logging.info("Agent health job scheduled")
 
 
 def send_heartbeat(config: DriverConfig,

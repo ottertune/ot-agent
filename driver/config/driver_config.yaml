@@ -29,3 +29,4 @@ lr_query_latency_threshold_min: 2
 query_monitor_interval: 3600
 num_query_to_collect: 10000
 schema_monitor_interval: 3600
+agent_health_report_interval: 60
