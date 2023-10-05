@@ -11,7 +11,11 @@ import traceback
 from apscheduler.schedulers.background import BlockingScheduler
 
 from agent_version import AGENT_VERSION
-from driver.agent_health_heartbeat import schedule_agent_health_job, add_error_to_global
+from driver.agent_health_heartbeat import (
+    schedule_agent_health_job,
+    add_error_to_global,
+    send_heartbeat
+)
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import (
     SCHEMA_MONITOR_JOB_ID,
@@ -289,9 +293,11 @@ def run() -> None:
         raise ValueError(f"Invalid log level: {loglevel}")
     logging.basicConfig(level=numeric_level)
 
+    essential_config = get_essential_config(args)
+    agent_starttime = datetime.datetime.utcnow()
     schedule_agent_health_job(
-        config=get_essential_config(args),
-        agent_starttime=datetime.datetime.utcnow(),
+        config=essential_config,
+        agent_starttime=agent_starttime,
         agent_version=AGENT_VERSION,
     )
 
@@ -312,7 +318,12 @@ def run() -> None:
         logging.error("Initialization error: %s", exc)
         stacktrace = traceback.format_exc()
         add_error_to_global(exc, stacktrace)
-        raise exc
+    send_heartbeat(
+        config=essential_config,
+        agent_starttime=agent_starttime,
+        agent_version=AGENT_VERSION,
+        terminating=True,
+    )
 
 
 if __name__ == "__main__":

@@ -47,14 +47,25 @@ def schedule_agent_health_job(config: DriverConfig,
 
 def send_heartbeat(config: DriverConfig,
                    agent_starttime: datetime.datetime,
-                   agent_version: str):
+                   agent_version: str,
+                   terminating: bool = False):
     """
     Send heartbeat to the compute-service.
     """
+    if terminating:
+        if error_queue_global:
+            status = "terminating_error"
+        else:
+            status = "terminating_ok"
+    elif error_queue_global:
+        status = "error"
+    else:
+        status = "ok"
+
     data: AgentHealthData = {
         "organization_id": config.organization_id,
         "db_key": config.db_key,
-        "agent_status": "Error" if error_queue_global else "OK",
+        "agent_status": status,
         "agent_starttime": agent_starttime.isoformat(),
         "heartbeat_time": datetime.datetime.utcnow().isoformat(),
         "agent_version": agent_version,
