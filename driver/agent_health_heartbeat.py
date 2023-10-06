@@ -53,11 +53,11 @@ def send_heartbeat(config: DriverConfig,
     Send heartbeat to the compute-service.
     """
     if terminating:
-        if error_queue_global:
+        if not error_queue_global.empty():
             status = "terminating_error"
         else:
             status = "terminating_ok"
-    elif error_queue_global:
+    elif not error_queue_global.empty():
         status = "error"
     else:
         status = "ok"

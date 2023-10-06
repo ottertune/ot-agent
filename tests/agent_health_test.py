@@ -61,7 +61,7 @@ def test_heartbeat_without_errors():
     assert body == {
         "organization_id": config.organization_id,
         "db_key": config.db_key,
-        "agent_status": "Error",
+        "agent_status": "ok",
         "agent_starttime": body["agent_starttime"],
         "heartbeat_time": body["heartbeat_time"],
         "agent_version": agent_version, "errors": []}
@@ -93,7 +93,7 @@ def test_heartbeat_with_errors():
     assert body == {
         "organization_id": config.organization_id,
         "db_key": config.db_key,
-        "agent_status": "Error",
+        "agent_status": "error",
         "agent_starttime": body["agent_starttime"],
         "heartbeat_time": body["heartbeat_time"],
         "agent_version": agent_version,
