@@ -7,7 +7,7 @@ from requests import Session
 import simplejson as json
 
 from driver.exceptions import ComputeServerClientException
-
+from agent_version import AGENT_VERSION
 
 TIMEOUT_SEC = 30
 SECONDS_TO_MS = 1000
@@ -18,9 +18,6 @@ RETRYABLE_HTTP_STATUS: Set[int] = {
     HTTPStatus.SERVICE_UNAVAILABLE,
     HTTPStatus.GATEWAY_TIMEOUT,
 }
-
-# TODO: move this elsewhere and have it pull from git tags as source of truth
-AGENT_VERSION = "0.4.9"
 
 
 class DBLevelObservation(TypedDict):
@@ -79,6 +76,18 @@ class SchemaObservation(TypedDict):
     ]  # summary information like observation time, database version, etc
     db_key: str
     organization_id: str
+
+
+class AgentHealthData(TypedDict):
+    """Agent health data."""
+
+    organization_id: str
+    db_key: str
+    agent_status: str
+    agent_starttime: str
+    heartbeat_time: str
+    agent_version: str
+    errors: List[Dict[str, Any]]
 
 
 class DriverStatus(TypedDict):
@@ -235,4 +244,23 @@ class ComputeServerClient:
             response.raise_for_status()
         except Exception as ex:
             msg = "Failed to post the schema observation to the server"
+            raise ComputeServerClientException(msg, ex) from ex
+
+    def post_agent_health_heartbeat(self, data: AgentHealthData):
+        """Post the agent health heartbeat to the server.
+        Args:
+            data: Agent health data.
+        Raises:
+            ComputeServerClientException: Failed to post the agent health heartbeat.
+        """
+        url = f"{self._server_url}/agent_health/"
+        headers = self._generate_headers(data["organization_id"])
+        headers["Content-Type"] = "application/json; charset=utf-8"
+        try:
+            response = self._req_session.post(
+                url, data=json.dumps(data, default=str), headers=headers
+            )
+            response.raise_for_status()
+        except Exception as ex:
+            msg = "Failed to post the agent health heartbeat to the server"
             raise ComputeServerClientException(msg, ex) from ex

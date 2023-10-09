@@ -1,13 +1,17 @@
 """ Module containing pipelines (reoccuring function calls) for use with apscheduler. """
-
+import traceback
 from datetime import datetime
 import logging
+
+import requests
 from requests import Session
 
 from apscheduler.schedulers.background import BlockingScheduler
 
-from driver.driver_config_builder import DriverConfig
+from driver.driver_config import DriverConfig
 from driver.compute_server_client import ComputeServerClient
+from driver.agent_health_heartbeat import add_error_to_global
+from driver.exceptions import DriverException
 from driver.s3_client import S3Client, ObservationType
 from driver.database import (
     collect_db_level_observation_for_on_prem,
@@ -34,33 +38,44 @@ def driver_pipeline(
     """
     Run the core pipeline for the driver deployment
     """
-    logging.info("Running driver pipeline deployment!")
+    try:
+        logging.info("Running driver pipeline deployment!")
 
-    compute_server_client = ComputeServerClient(
-        config.server_url, Session(), config.api_key
-    )
-    s3_client = S3Client(config.enable_s3, config.organization_id, config.api_key)
+        compute_server_client = ComputeServerClient(
+            config.server_url, Session(), config.api_key
+        )
+        s3_client = S3Client(config.enable_s3, config.organization_id, config.api_key)
 
-    if job_id == DB_LEVEL_MONITOR_JOB_ID:
-        _db_level_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client, s3_client
-        )
-    elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
-        _table_level_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client, s3_client
-        )
-    elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
-        _long_running_query_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client, s3_client
-        )
-    elif job_id == QUERY_MONITOR_JOB_ID:
-        _query_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client, s3_client
-        )
-    elif job_id == SCHEMA_MONITOR_JOB_ID:
-        _schema_monitor_driver_pipeline_for_on_prem(
-            config, compute_server_client, s3_client
-        )
+        if job_id == DB_LEVEL_MONITOR_JOB_ID:
+            _db_level_monitor_driver_pipeline_for_on_prem(
+                config, compute_server_client, s3_client
+            )
+        elif job_id == TABLE_LEVEL_MONITOR_JOB_ID:
+            _table_level_monitor_driver_pipeline_for_on_prem(
+                config, compute_server_client, s3_client
+            )
+        elif job_id == LONG_RUNNING_QUERY_MONITOR_JOB_ID:
+            _long_running_query_monitor_driver_pipeline_for_on_prem(
+                config, compute_server_client, s3_client
+            )
+        elif job_id == QUERY_MONITOR_JOB_ID:
+            _query_monitor_driver_pipeline_for_on_prem(
+                config, compute_server_client, s3_client
+            )
+        elif job_id == SCHEMA_MONITOR_JOB_ID:
+            _schema_monitor_driver_pipeline_for_on_prem(
+                config, compute_server_client, s3_client
+            )
+        else:
+            raise DriverException(f"Unknown job id {job_id}")
+    except requests.RequestException as exc:
+        logging.error("Network error during driver pipeline for job_id %s: %s", job_id, str(exc))
+        stacktrace = traceback.format_exc()
+        add_error_to_global(exc, stacktrace)
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.error("Unexpected error during driver pipeline for job_id %s: %s", job_id, str(exc))
+        stacktrace = traceback.format_exc()
+        add_error_to_global(exc, stacktrace)
 
 
 def _db_level_monitor_driver_pipeline_for_on_prem(

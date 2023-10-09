@@ -54,11 +54,30 @@ def _test_response_data() -> Dict[str, Any]:
         summary=observation_summary,
         organization_id="test_org"
     )
+    agent_health: Dict[str, Any] = {
+        "organization_id": "test_org",
+        "db_key": "test_db_key",
+        "agent_status": "OK",
+        "agent_starttime": "2020-01-01 00:00:00+00:00",
+        "heartbeat_time": "2020-01-02 00:00:00+00:00",
+        "agent_version": "1.0.0",
+        "errors": [
+            {
+                "data": {
+                    "name": "error_name",
+                    "test_field": "error_message",
+                },
+                "timestamp": "2020-01-01 00:00:00+00:00",
+            }
+        ],
+    }
+
     return dict(
         server_url=server_url,
         api_key=api_key,
         observation=observation,
-        schema=schema
+        schema=schema,
+        agent_health=agent_health,
     )
 
 
@@ -165,3 +184,37 @@ def test_post_schema_observation_connection_error(test_data: Dict[str, Any]) -> 
     with pytest.raises(ComputeServerClientException) as ex:
         client.post_schema_observation(test_data["schema"])
     assert "Connection Error" in str(ex.value)
+
+
+@responses.activate
+def test_post_agent_health_heartbeat(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/agent_health/",
+        status=200,
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    client.post_agent_health_heartbeat(test_data["agent_health"])
+
+
+@responses.activate
+def test_post_agent_health_heartbeat_session_not_found(test_data: Dict[str, Any]) -> None:
+    responses.add(
+        responses.POST,
+        f"{test_data['server_url']}/agent_health/",
+        status=404,
+    )
+    session = requests.Session()
+    client = ComputeServerClient(
+        server_url=test_data["server_url"],
+        req_session=session,
+        api_key=test_data["api_key"],
+    )
+    with pytest.raises(ComputeServerClientException) as ex:
+        client.post_agent_health_heartbeat(test_data["agent_health"])
+    assert "404" in str(ex.value)

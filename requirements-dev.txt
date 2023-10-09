@@ -2,7 +2,7 @@
 astroid==2.8.0
 attrs==20.3.0
 autopep8==1.5.4
-black==21.7b0
+black==22.3.0
 iniconfig==1.1.1
 ipdb==0.13.9
 isort==5.7.0
@@ -14,7 +14,7 @@ pluggy==0.13.1
 py==1.10.0
 pylint==2.11.1
 pyparsing==2.4.7
-pytest==6.2.2
+pytest==7.4.2
 responses==0.12
 toml==0.10.2
 wrapt==1.12.1

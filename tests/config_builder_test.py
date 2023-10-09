@@ -51,7 +51,7 @@ def _test_config_data() -> Dict[str, Any]:
             "cloudwatch",
         ],
         "schema_monitor_interval": 300,
-
+        "agent_health_report_interval": 60
     }
 
     partial_config_from_server: Dict[str, Any] = {

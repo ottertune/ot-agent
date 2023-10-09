@@ -3,6 +3,8 @@ Tests for the S3 client
 """
 import zlib
 import json
+
+from agent_version import AGENT_VERSION
 from driver.s3_client import S3Client, ObservationType
 
 # pylint: disable=missing-class-docstring
@@ -74,5 +76,5 @@ def test_generate_headers() -> None:
         observation_data["headers"]["organization_id"]
         == "81072a87-ef79-4a24-86be-84b2efd84688"
     )
-    assert observation_data["headers"]["AgentVersion"] == "0.4.9"
+    assert observation_data["headers"]["AgentVersion"] == AGENT_VERSION
     assert observation_data["headers"]["ApiKey"] == "test_api_key"
