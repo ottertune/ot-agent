@@ -7,9 +7,11 @@ from itertools import groupby
 from typing import Dict, List, Any, Tuple, Optional, Union
 import logging
 import json
+import traceback
 
 import pytz
 
+from driver.agent_health_heartbeat import add_error_to_global
 from driver.exceptions import PostgresCollectorException
 from driver.collector.base_collector import BaseDbCollector, PermissionInfo
 from driver.collector.pg_table_level_stats_sqls import (
@@ -838,6 +840,8 @@ class PostgresCollector(BaseDbCollector):
                 "pg_stat_statements in parameter shared_preload_libraries: %s",
                 ex,
             )
+            stacktrace = traceback.format_exc()
+            add_error_to_global(ex, stacktrace)
 
         return {
             "pg_stat_statements": {"columns": columns, "rows": rows},
@@ -1136,6 +1140,8 @@ class PostgresCollector(BaseDbCollector):
                     "pg_stat_statements in parameter shared_preload_libraries: %s",
                     ex,
                 )
+                stacktrace = traceback.format_exc()
+                add_error_to_global(ex, stacktrace)
         return res
 
     @staticmethod
