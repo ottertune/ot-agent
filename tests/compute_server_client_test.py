@@ -17,7 +17,6 @@ from driver.compute_server_client import ComputeServerClient
 
 @pytest.fixture(name="test_data")
 def _test_response_data() -> Dict[str, Any]:
-
     server_url = "https://server_url:8000"
     api_key = "test_api_key"
 
@@ -48,11 +47,10 @@ def _test_response_data() -> Dict[str, Any]:
         knobs_data=observation_knobs_data,
         metrics_data=observation_metrics_data,
         summary=observation_summary,
-        organization_id="test_org"
+        organization_id="test_org",
     )
-    schema: Dict[str,Any] = dict(
-        summary=observation_summary,
-        organization_id="test_org"
+    schema: Dict[str, Any] = dict(
+        summary=observation_summary, organization_id="test_org"
     )
     agent_health: Dict[str, Any] = {
         "organization_id": "test_org",
@@ -149,7 +147,6 @@ def test_post_schema_observation_success(test_data: Dict[str, Any]) -> None:
     client.post_schema_observation(test_data["schema"])
 
 
-
 @responses.activate
 def test_post_schema_observation_session_not_found(test_data: Dict[str, Any]) -> None:
     responses.add(
@@ -203,7 +200,9 @@ def test_post_agent_health_heartbeat(test_data: Dict[str, Any]) -> None:
 
 
 @responses.activate
-def test_post_agent_health_heartbeat_session_not_found(test_data: Dict[str, Any]) -> None:
+def test_post_agent_health_heartbeat_session_not_found(
+    test_data: Dict[str, Any]
+) -> None:
     responses.add(
         responses.POST,
         f"{test_data['server_url']}/agent_health/",

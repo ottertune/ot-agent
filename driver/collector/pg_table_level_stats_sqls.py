@@ -50,10 +50,10 @@ IN
 """
 
 ALIGNMENT_DICT = {
-  "c": 1,
-  "s": 2,
-  "i": 4,
-  "d": 8,
+    "c": 1,
+    "s": 2,
+    "i": 4,
+    "d": 8,
 }
 
 PADDING_HELPER_TEMPLATE = """
@@ -73,7 +73,7 @@ ORDER BY
   tbl.oid, att.attnum
 ASC;
 """
-  
+
 TABLE_BLOAT_RATIO_FACTOR_TEMPLATE = """
 SELECT
   relid, heappages AS tblpages,

@@ -83,7 +83,7 @@ def _get_driver_conf(
         "num_table_to_collect_stats": num_table_to_collect_stats,
         "num_index_to_collect_stats": num_index_to_collect_stats,
         "lr_query_latency_threshold_min": lr_query_latency_threshold_min,
-        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2']
+        "db_non_default_parameters": ["test_parameter_1", "test_parameter_2"],
     }
     return conf
 
@@ -217,7 +217,15 @@ def test_collect_data_from_database(
 ) -> None:
     # pylint: disable=too-many-arguments
     driver_conf = _get_driver_conf(
-        db_type, mysql_user, mysql_password, mysql_host, mysql_port, mysql_database, 10, 100, 5
+        db_type,
+        mysql_user,
+        mysql_password,
+        mysql_host,
+        mysql_port,
+        mysql_database,
+        10,
+        100,
+        5,
     )
     observation = collect_db_level_data_from_database(driver_conf)
     knobs = observation["knobs_data"]
@@ -282,7 +290,7 @@ def test_collect_table_level_data_from_database(
         mysql_database,
         num_table_to_collect_stats,
         num_index_to_collect_stats,
-        lr_query_latency_threshold_min
+        lr_query_latency_threshold_min,
     )
     observation = collect_table_level_data_from_database(driver_conf)
     data = observation["data"]
@@ -311,7 +319,9 @@ def test_mysql_collect_table_level_metrics(
     collector = MysqlCollector(conn, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
     metrics = collector.collect_table_level_metrics(target_table_info)
-    metrics.update(collector.collect_index_metrics(target_table_info, num_index_to_collect_stats))
+    metrics.update(
+        collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+    )
 
     # the metric json should not contain any field that cannot be converted to a string,
     # like decimal type and datetime type
@@ -335,9 +345,12 @@ def test_mysql_collect_index_metrics(
     _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
     _db_query(conn, "CREATE DATABASE testdb;")
     _db_query(conn, "USE testdb;")
-    _db_query(conn, "CREATE TABLE IF NOT EXISTS test1 "
-                    "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
-                    "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));")
+    _db_query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS test1 "
+        "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
+        "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));",
+    )
     _db_query(conn, "INSERT IGNORE INTO test1(id, num, data) values (1, 2, 'abc');")
     _db_query(conn, "ALTER TABLE test1 ADD INDEX idx_test1(num);")
 
@@ -345,7 +358,9 @@ def test_mysql_collect_index_metrics(
     version = get_mysql_version(conn)
     collector = MysqlCollector(conn, version)
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats)
-    metrics = collector.collect_index_metrics(target_table_info, num_index_to_collect_stats)
+    metrics = collector.collect_index_metrics(
+        target_table_info, num_index_to_collect_stats
+    )
 
     assert metrics["indexes_size"]["rows"][1][2] == "idx_test1"
 
@@ -364,9 +379,12 @@ def test_mysql_collect_query_metrics(
     _db_query(conn, "DROP DATABASE IF EXISTS testdb;")
     _db_query(conn, "CREATE DATABASE testdb;")
     _db_query(conn, "USE testdb;")
-    _db_query(conn, "CREATE TABLE IF NOT EXISTS test1 "
-                    "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
-                    "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));")
+    _db_query(
+        conn,
+        "CREATE TABLE IF NOT EXISTS test1 "
+        "(id MEDIUMINT NOT NULL AUTO_INCREMENT, "
+        "num INTEGER, data VARCHAR(30), PRIMARY KEY(id));",
+    )
     _db_query(conn, "INSERT IGNORE INTO test1(id, num, data) values (1, 2, 'abc');")
     _db_query(conn, "ALTER TABLE test1 ADD INDEX idx_test1(num);")
 
@@ -376,6 +394,7 @@ def test_mysql_collect_query_metrics(
     metrics = collector.collect_query_metrics(num_query_to_collect_stats)
 
     assert metrics["events_statements_summary_by_digest"]["rows"]
+
 
 def test_mysql_collect_schema(
     mysql_user: str,
@@ -393,6 +412,7 @@ def test_mysql_collect_schema(
     schema = collector.collect_schema()
 
     _verify_mysql_schema(schema)
+
 
 def _verify_mysql_schema(schema: Dict[str, Any]) -> None:
     assert schema["columns"]["columns"] == COLUMN_SCHEMA_MYSQL_COLUMNS

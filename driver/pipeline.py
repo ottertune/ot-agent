@@ -44,7 +44,14 @@ def driver_pipeline(
         compute_server_client = ComputeServerClient(
             config.server_url, Session(), config.api_key
         )
-        s3_client = S3Client(config.enable_s3, config.organization_id, config.api_key)
+        s3_client = S3Client(
+            config.enable_s3,
+            config.aws_region,
+            config.organization_id,
+            config.db_key,
+            config.api_key,
+            config.s3_bucket_name,
+        )
 
         if job_id == DB_LEVEL_MONITOR_JOB_ID:
             _db_level_monitor_driver_pipeline_for_on_prem(
@@ -69,11 +76,17 @@ def driver_pipeline(
         else:
             raise DriverException(f"Unknown job id {job_id}")
     except requests.RequestException as exc:
-        logging.error("Network error during driver pipeline for job_id %s: %s", job_id, str(exc))
+        logging.error(
+            "Network error during driver pipeline for job_id %s: %s", job_id, str(exc)
+        )
         stacktrace = traceback.format_exc()
         add_error_to_global(exc, stacktrace)
     except Exception as exc:  # pylint: disable=broad-except
-        logging.error("Unexpected error during driver pipeline for job_id %s: %s", job_id, str(exc))
+        logging.error(
+            "Unexpected error during driver pipeline for job_id %s: %s",
+            job_id,
+            str(exc),
+        )
         stacktrace = traceback.format_exc()
         add_error_to_global(exc, stacktrace)
 

@@ -66,4 +66,5 @@ CMD python3 -m driver.main --config ./driver/config/driver_config.yaml --aws-reg
   --override-long-running-query-monitor-interval $OTTERTUNE_OVERRIDE_LONG_RUNNING_QUERY_MONITOR_INTERVAL \
   --override-lr-query-latency-threshold-min $OTTERTUNE_OVERRIDE_LR_QUERY_LATENCY_THRESHOLD_MIN \
   --enable-s3 $OTTERTUNE_ENABLE_S3 \
+  --s3-bucket-name $OTTERTUNE_S3_BUCKET_NAME \
   --agent-health-report-interval $OTTERTUNE_AGENT_HEALTH_REPORT_INTERVAL

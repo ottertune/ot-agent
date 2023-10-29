@@ -864,7 +864,7 @@ class PostgresCollector(BaseDbCollector):
             query_template.format(
                 lr_query_start_timestamp=start_timestamp, n=num_query_to_collect_stats
             ),
-            self._main_logical_db
+            self._main_logical_db,
         )
         lr_query_rows = [list(row) for row in lr_query_values]
 
