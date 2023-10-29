@@ -52,6 +52,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     schema_monitor_interval: int
     db_non_default_parameters: List[str]
     enable_s3: bool
+    s3_bucket_name: str
 
     agent_health_report_interval: int
 
@@ -60,40 +61,45 @@ class DriverConfigFactory(factory.Factory):
     """
     Factory for DriverConfig
     """
+
     class Meta:
         model = DriverConfig
 
-    server_url = factory.Faker('url')
-    db_identifier = factory.Faker('pystr')
-    aws_region = factory.Faker('pystr')
-    db_type = factory.Faker('pystr')
-    db_host = factory.Faker('pystr')
-    db_port = factory.Faker('pyint')
-    db_version = factory.Faker('pystr')
-    db_user = factory.Faker('pystr')
-    db_password = factory.Faker('pystr')
-    enable_aws_iam_auth = factory.Faker('pybool')
-    db_name = factory.Faker('pystr')
-    api_key = factory.Faker('pystr')
-    db_key = factory.Faker('pystr')
-    organization_id = factory.Faker('pystr')
-    long_running_query_monitor_interval = factory.Faker('pyint')
-    lr_query_latency_threshold_min = factory.Faker('pyint')
-    monitor_interval = factory.Faker('pyint')
-    metric_source = factory.Faker('pylist', nb_elements=5, variable_nb_elements=True)
+    server_url = factory.Faker("url")
+    db_identifier = factory.Faker("pystr")
+    aws_region = factory.Faker("pystr")
+    db_type = factory.Faker("pystr")
+    db_host = factory.Faker("pystr")
+    db_port = factory.Faker("pyint")
+    db_version = factory.Faker("pystr")
+    db_user = factory.Faker("pystr")
+    db_password = factory.Faker("pystr")
+    enable_aws_iam_auth = factory.Faker("pybool")
+    db_name = factory.Faker("pystr")
+    api_key = factory.Faker("pystr")
+    db_key = factory.Faker("pystr")
+    organization_id = factory.Faker("pystr")
+    long_running_query_monitor_interval = factory.Faker("pyint")
+    lr_query_latency_threshold_min = factory.Faker("pyint")
+    monitor_interval = factory.Faker("pyint")
+    metric_source = factory.Faker("pylist", nb_elements=5, variable_nb_elements=True)
     metrics_to_retrieve_from_source = factory.Faker(
-        'pydict', nb_elements=5, variable_nb_elements=True)
-    disable_table_level_stats = factory.Faker('pybool')
-    num_table_to_collect_stats = factory.Faker('pyint')
-    table_level_monitor_interval = factory.Faker('pyint')
-    disable_index_stats = factory.Faker('pybool')
-    num_index_to_collect_stats = factory.Faker('pyint')
-    disable_long_running_query_monitoring = factory.Faker('pybool')
-    disable_query_monitoring = factory.Faker('pybool')
-    query_monitor_interval = factory.Faker('pyint')
-    num_query_to_collect = factory.Faker('pyint')
-    disable_schema_monitoring = factory.Faker('pybool')
-    schema_monitor_interval = factory.Faker('pyint')
-    db_non_default_parameters = factory.Faker('pylist', nb_elements=5, variable_nb_elements=True)
-    enable_s3 = factory.Faker('pybool')
-    agent_health_report_interval = factory.Faker('pyint')
+        "pydict", nb_elements=5, variable_nb_elements=True
+    )
+    disable_table_level_stats = factory.Faker("pybool")
+    num_table_to_collect_stats = factory.Faker("pyint")
+    table_level_monitor_interval = factory.Faker("pyint")
+    disable_index_stats = factory.Faker("pybool")
+    num_index_to_collect_stats = factory.Faker("pyint")
+    disable_long_running_query_monitoring = factory.Faker("pybool")
+    disable_query_monitoring = factory.Faker("pybool")
+    query_monitor_interval = factory.Faker("pyint")
+    num_query_to_collect = factory.Faker("pyint")
+    disable_schema_monitoring = factory.Faker("pybool")
+    schema_monitor_interval = factory.Faker("pyint")
+    db_non_default_parameters = factory.Faker(
+        "pylist", nb_elements=5, variable_nb_elements=True
+    )
+    enable_s3 = factory.Faker("pybool")
+    s3_bucket_name = factory.Faker("pystr")
+    agent_health_report_interval = factory.Faker("pyint")

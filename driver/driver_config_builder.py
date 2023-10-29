@@ -39,7 +39,7 @@ class BaseDriverConfigBuilder(ABC):
         return {}
 
 
-class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromFile(  # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
 ):
     """Driver options fetched from local file for on-prem deployment.
@@ -61,9 +61,8 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
     schema_monitor_interval: StrictInt
     agent_health_report_interval: StrictInt
 
-
     @validator("table_level_monitor_interval")
-    def check_table_level_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+    def check_table_level_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that table_level_monitor_interval is greater than 5 minutes"""
@@ -75,7 +74,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("monitor_interval")
-    def check_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+    def check_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that monitor_interval is positive and at least 60 seconds."""
@@ -87,7 +86,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("long_running_query_monitor_interval")
-    def check_long_running_query_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+    def check_long_running_query_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that long_running_query_monitor_interval is positive and at least 60 seconds."""
@@ -99,7 +98,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("lr_query_latency_threshold_min")
-    def check_lr_query_latency_threshold_min( # pylint: disable=no-self-argument, no-self-use
+    def check_lr_query_latency_threshold_min(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that lr_query_latency_threshold_min is positive and at least 60 seconds."""
@@ -111,7 +110,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("num_table_to_collect_stats")
-    def check_num_table_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
+    def check_num_table_to_collect_stats(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that num_table_to_collect_stats is not negative"""
@@ -123,7 +122,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("num_index_to_collect_stats")
-    def check_num_index_to_collect_stats( # pylint: disable=no-self-argument, no-self-use
+    def check_num_index_to_collect_stats(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that num_index_to_collect_stats is not negative"""
@@ -157,7 +156,7 @@ class PartialConfigFromFile( # pyre-ignore[13]: pydantic uninitialized variables
         return val
 
     @validator("schema_monitor_interval")
-    def check_schema_monitor_interval( # pylint: disable=no-self-argument, no-self-use
+    def check_schema_monitor_interval(  # pylint: disable=no-self-argument, no-self-use
         cls, val: int
     ) -> int:
         """Validate that schema_monitor_interval is greater than 5 minutes"""
@@ -187,7 +186,7 @@ class Overrides(NamedTuple):
     agent_health_report_interval: int
 
 
-class PartialConfigFromEnvironment( # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromEnvironment(  # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
 ):
     """Driver options fetched from RDS for agent deployment.
@@ -198,7 +197,7 @@ class PartialConfigFromEnvironment( # pyre-ignore[13]: pydantic uninitialized va
     db_name: Optional[StrictStr]
 
 
-class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromCommandline(  # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
 ):
     """Driver options fetched from RDS for agent deployment.
@@ -212,6 +211,7 @@ class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized va
 
     aws_region: StrictStr
     enable_s3: StrictBool = False
+    s3_bucket_name: StrictStr
     db_identifier: StrictStr
 
     db_user: StrictStr
@@ -225,7 +225,7 @@ class PartialConfigFromCommandline( # pyre-ignore[13]: pydantic uninitialized va
     disable_schema_monitoring: StrictBool = False
 
 
-class PartialConfigFromRDS( # pyre-ignore[13]: pydantic uninitialized variables
+class PartialConfigFromRDS(  # pyre-ignore[13]: pydantic uninitialized variables
     BaseModel
 ):
     """Driver options fetched from RDS for agent deployment.
@@ -240,7 +240,7 @@ class PartialConfigFromRDS( # pyre-ignore[13]: pydantic uninitialized variables
     db_non_default_parameters: List[str]
 
 
-class PartialConfigFromCloudwatchMetrics( # pyre-ignore[13]: uninitialized variables
+class PartialConfigFromCloudwatchMetrics(  # pyre-ignore[13]: uninitialized variables
     BaseModel
 ):
     """Driver options fetched from RDS for agent deployment.
@@ -290,6 +290,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             from_cli = PartialConfigFromCommandline(
                 aws_region=args.aws_region,
                 enable_s3=args.enable_s3.lower() == "true",
+                s3_bucket_name=args.s3_bucket_name,
                 db_identifier=args.db_identifier,
                 db_user=args.db_username,
                 db_password=db_password,
@@ -445,7 +446,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 "db_version": "placeholder_db_version",
                 "db_name": "placeholder_db_name",
                 "metrics_to_retrieve_from_source": [],
-                "db_non_default_parameters": []
+                "db_non_default_parameters": [],
             }
         )
         return self

@@ -144,8 +144,7 @@ def get_db_non_default_parameters(
         db_non_default_parameters = [
             parameter.get("ParameterName")
             for parameter in db_parameters
-            if parameter.get("Source") == "user"
-            and "ParameterName" in parameter
+            if parameter.get("Source") == "user" and "ParameterName" in parameter
         ]
     else:
         logging.warning(

@@ -231,7 +231,9 @@ def get_postgres_version(conn) -> str:
 @contextmanager
 def get_collector(
     driver_conf: Dict[str, Any],
-) -> Union[Generator[BaseDbCollector, None, None], Generator[PostgresCollector, None, None]]:
+) -> Union[
+    Generator[BaseDbCollector, None, None], Generator[PostgresCollector, None, None]
+]:
     """Get the database collector according to database type
 
     Callers should use in a "with" block to ensure connection object is closed.
@@ -276,7 +278,7 @@ def get_collector(
             conns: Dict[str, Any] = {}
 
             logging.info("Receiving dbname: %s", pg_conf["dbname"])
-            db_names = [x.strip() for x in pg_conf["dbname"].split(',')]
+            db_names = [x.strip() for x in pg_conf["dbname"].split(",")]
             for logical_database in db_names:
                 pg_conf_logical = pg_conf.copy()
                 pg_conf_logical["dbname"] = logical_database

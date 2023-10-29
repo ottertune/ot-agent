@@ -88,7 +88,7 @@ class SqlData:
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
                 [
                     7124,
@@ -101,7 +101,7 @@ class SqlData:
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
             ],
             "pg_stat_activity": [
@@ -117,7 +117,7 @@ class SqlData:
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
                 [
                     7124,
@@ -131,7 +131,7 @@ class SqlData:
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
             ],
             "pg_stat_progress_vacuum": [[1, "tl1", "phase1"], [2, "tl2", "phase2"]],
@@ -676,7 +676,9 @@ class Result:
         self.meta: List[List[str]] = []
 
 
-def get_sql_api(data: SqlData, result: Result, version: str) -> Callable[[str], NoReturn]:
+def get_sql_api(
+    data: SqlData, result: Result, version: str
+) -> Callable[[str], NoReturn]:
     """
     Used for providing a fake sql endpoint so we can return test data
     """
@@ -803,7 +805,7 @@ def get_sql_api(data: SqlData, result: Result, version: str) -> Callable[[str], 
         ):
             result.value = data.views["pg_stat_statements_all_fields"]
             result.meta = data.metas["pg_stat_statements_all_fields"]
-        elif "query_start < " in sql: # long running query
+        elif "query_start < " in sql:  # long running query
             version_float = float(".".join(version.split(".")[:2]))
             if version_float >= 14:
                 result.value = data.views["pg_stat_activity"]
@@ -949,7 +951,9 @@ def test_collect_row_stats_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_table_level_metrics_success(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1177,7 +1181,9 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[N
     }
 
 
-def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_table_level_metrics_failure(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = psycopg2.ProgrammingError("bad query")
     collector = PostgresCollector({"postgres": mock_conn}, "postgres", "9.6.3")
@@ -1253,7 +1259,10 @@ def test_postgres_padding_calculator(mock_conn: MagicMock) -> Optional[NoReturn]
         2234: 21,
     }
 
-def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> Optional[NoReturn]:
+
+def test_collect_long_running_query_success_pre_pg_14(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1275,7 +1284,7 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> O
                 "wait_event",
                 "wait_event_type",
                 "backend_type",
-                "xact_start"
+                "xact_start",
             ],
             "rows": [
                 [
@@ -1289,7 +1298,7 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> O
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
                 [
                     7124,
@@ -1302,13 +1311,16 @@ def test_collect_long_running_query_success_pre_pg_14(mock_conn: MagicMock) -> O
                     "test_wait_event",
                     "test_wait_event_type",
                     "test_backend_type",
-                    "2023-05-09 18:30:26.616736+00"
+                    "2023-05-09 18:30:26.616736+00",
                 ],
             ],
         }
     }
 
-def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> Optional[NoReturn]:
+
+def test_collect_long_running_query_success_pg_14(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1331,7 +1343,7 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> Optio
                 "wait_event",
                 "wait_event_type",
                 "backend_type",
-                "xact_start"
+                "xact_start",
             ],
             "rows": [
                 [
@@ -1365,6 +1377,7 @@ def test_collect_long_running_query_success_pg_14(mock_conn: MagicMock) -> Optio
             ],
         }
     }
+
 
 def test_collect_query_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
@@ -1611,8 +1624,8 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     33967,
                     "a,b,c",
                 ],
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -1831,13 +1844,17 @@ def test_add_logical_db_columns(mock_conn: MagicMock) -> Optional[NoReturn]:
             ],
         },
     }
-    modded_results = collector._add_logical_db_columns( # pylint: disable=protected-access
-        results, "postgres"
+    modded_results = (
+        collector._add_logical_db_columns(  # pylint: disable=protected-access
+            results, "postgres"
+        )
     )  # pylint: disable=protected-access
     assert modded_results == expected_modded_results
 
 
-def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_get_target_table_info_success_multi_db(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -1856,7 +1873,9 @@ def test_get_target_table_info_success_multi_db(mock_conn: MagicMock) -> Optiona
     assert target_table_info == expected_result
 
 
-def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_table_level_metrics_success_multi_db(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()
@@ -2078,7 +2097,9 @@ def test_collect_table_level_metrics_success_multi_db(mock_conn: MagicMock) -> O
     assert table_level_metrics == expected_results
 
 
-def test_collect_index_metrics_success_multi_db(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_index_metrics_success_multi_db(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     result = Result()

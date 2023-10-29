@@ -11,6 +11,7 @@ from mysql.connector import errorcode
 from driver.collector.mysql_collector import MysqlCollector
 from driver.exceptions import MysqlCollectorException
 from tests.useful_literals import TABLE_LEVEL_MYSQL_COLUMNS
+
 # pylint: disable=missing-function-docstring,too-many-instance-attributes
 
 
@@ -40,7 +41,6 @@ class SqlData:
     view_schema: List[List[Union[int, str]]]
     view_schema_meta: List[List[str]]
 
-
     def __init__(self) -> None:
         self.global_status = [
             ["Innodb_buffer_pool_reads", 25],
@@ -54,27 +54,34 @@ class SqlData:
         self.innodb_metrics = [["trx_rw_commits", 0]]
         self.innodb_status = [["ndbcluster", "connection", "cluster_node_id=7"]]
         self.latency_hist = [[2, 1, 5, 3, 1, 0.0588]]
-        self.latency_hist_meta = [["bucket_number"], ["bucket_timer_low"],
-                                  ["bucket_timer_high"], ["count_bucket"],
-                                  ["count_bucket_and_lower"], ["bucket_quantile"]]
+        self.latency_hist_meta = [
+            ["bucket_number"],
+            ["bucket_timer_low"],
+            ["bucket_timer_high"],
+            ["count_bucket"],
+            ["count_bucket_and_lower"],
+            ["bucket_quantile"],
+        ]
         self.digest_time = [["abc", 10, 1.5]]
         self.digest_time_meta = [["queryid"], ["calls"], ["avg_time_ms"]]
         self.master_status = [[1307, "test"]]
         self.master_status_meta = [["Position"], ["Binlog_Do_DB"]]
         self.replica_status = [["localhost", 60]]
         self.replica_status_meta = [["Source_Host"], ["Connect_Retry"]]
-        self.table_level_stats = [[
-            "mysql",
-            "time_zone_transition",
-            "BASE TABLE",
-            "InnoDB",
-            "Dynamic",
-            119074,
-            39,
-            4734976,
-            0,
-            4194304,
-        ]]
+        self.table_level_stats = [
+            [
+                "mysql",
+                "time_zone_transition",
+                "BASE TABLE",
+                "InnoDB",
+                "Dynamic",
+                119074,
+                39,
+                4734976,
+                0,
+                4194304,
+            ]
+        ]
         self.table_level_stats_meta = [
             ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
@@ -100,7 +107,7 @@ class SqlData:
                 4,
                 None,
                 "",
-                "BTREE"
+                "BTREE",
             ],
             [
                 "tpcc",
@@ -114,8 +121,8 @@ class SqlData:
                 48,
                 None,
                 "",
-                "BTREE"
-            ]
+                "BTREE",
+            ],
         ]
 
         self.index_stats_meta = [
@@ -130,28 +137,30 @@ class SqlData:
             ["CARDINALITY"],
             ["SUB_PART"],
             ["NULLABLE"],
-            ["INDEX_TYPE"]
+            ["INDEX_TYPE"],
         ]
-        self.index_usage = [[
-            "TABLE",
-            "tpcc",
-            "CUSTOMER",
-            "PRIMARY",
-            60000,
-            2834031795200,
-            1307086781600,
-            47233600,
-            1526945013600,
-            60000,
-            2834031795200,
-            1307086781600,
-            47233600,
-            1526945013600,
-            0,
-            0,
-            0,
-            0,
-        ]]
+        self.index_usage = [
+            [
+                "TABLE",
+                "tpcc",
+                "CUSTOMER",
+                "PRIMARY",
+                60000,
+                2834031795200,
+                1307086781600,
+                47233600,
+                1526945013600,
+                60000,
+                2834031795200,
+                1307086781600,
+                47233600,
+                1526945013600,
+                0,
+                0,
+                0,
+                0,
+            ]
+        ]
         self.index_usage_meta = [
             ["OBJECT_TYPE"],
             ["OBJECT_SCHEMA"],
@@ -170,49 +179,45 @@ class SqlData:
             ["COUNT_UPDATE"],
             ["SUM_TIMER_UPDATE"],
             ["COUNT_DELETE"],
-            ["SUM_TIMER_DELETE"]
+            ["SUM_TIMER_DELETE"],
         ]
-        self.index_size = [[
-            "tpcc",
-            "CUSTOMER",
-            "IDX_CUSTOMER_NAME",
-            675,
-            11059200
-        ]]
+        self.index_size = [["tpcc", "CUSTOMER", "IDX_CUSTOMER_NAME", 675, 11059200]]
         self.index_size_meta = [
             ["DATABASE_NAME"],
             ["TABLE_NAME"],
             ["INDEX_NAME"],
             ["STAT_VALUE"],
-            ["SIZE_IN_BYTE"]
+            ["SIZE_IN_BYTE"],
         ]
-        self.long_running_query_stats = [[
-            2545027,
-            187298929,
-            "statement/sql/select",
-            4283245906676357384,
-            4284245906749246384,
-            100000072889000,
-            0,
-            "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
-            "SELECT test FROM test WHERE test=?",
-            0, # ROWS_AFFECTED
-            1, # ROWS_SENT
-            1, # ROWS_EXAMINED
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0, # SORT_MERGE_PASSES
-            0,
-            0,
-            0,
-            0, # NO_INDEX_USED
-            0,
-        ]]
+        self.long_running_query_stats = [
+            [
+                2545027,
+                187298929,
+                "statement/sql/select",
+                4283245906676357384,
+                4284245906749246384,
+                100000072889000,
+                0,
+                "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
+                "SELECT test FROM test WHERE test=?",
+                0,  # ROWS_AFFECTED
+                1,  # ROWS_SENT
+                1,  # ROWS_EXAMINED
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,  # SORT_MERGE_PASSES
+                0,
+                0,
+                0,
+                0,  # NO_INDEX_USED
+                0,
+            ]
+        ]
         self.long_running_query_stats_meta = [
             ["THREAD_ID"],
             ["EVENT_ID"],
@@ -240,36 +245,38 @@ class SqlData:
             ["NO_INDEX_USED"],
             ["NO_GOOD_INDEX_USED"],
         ]
-        self.query_stats = [[
-            None,
-            "SELECT COUNT ( * ) FROM `information_schema` . `PLUGINS` WHERE `PLUGIN_NAME` = ?",
-            435321,
-            282100585546000,
-            427483000,
-            648028000,
-            51135477000,
-            679796000000,
-            0,
-            0,
-            0,
-            435321,
-            20895408,
-            435321,
-            435321,
-            0,
-            0,
-            0,
-            0,
-            435321,
-            0,
-            0,
-            0,
-            0,
-            435321,
-            0,
-            datetime.strptime("2022-07-28 19:21:48.350718", "%Y-%m-%d %H:%M:%S.%f"),
-            datetime.strptime("2022-08-22 23:58:23.005279", "%Y-%m-%d %H:%M:%S.%f"),
-        ]]
+        self.query_stats = [
+            [
+                None,
+                "SELECT COUNT ( * ) FROM `information_schema` . `PLUGINS` WHERE `PLUGIN_NAME` = ?",
+                435321,
+                282100585546000,
+                427483000,
+                648028000,
+                51135477000,
+                679796000000,
+                0,
+                0,
+                0,
+                435321,
+                20895408,
+                435321,
+                435321,
+                0,
+                0,
+                0,
+                0,
+                435321,
+                0,
+                0,
+                0,
+                0,
+                435321,
+                0,
+                datetime.strptime("2022-07-28 19:21:48.350718", "%Y-%m-%d %H:%M:%S.%f"),
+                datetime.strptime("2022-08-22 23:58:23.005279", "%Y-%m-%d %H:%M:%S.%f"),
+            ]
+        ]
         self.query_stats_meta = [
             ["SCHEMA_NAME"],
             ["DIGEST_TEXT"],
@@ -313,19 +320,21 @@ class SqlData:
             ["CREATE_OPTIONS"],
             ["TABLE_COMMENT"],
         ]
-        self.table_schema = [[
-            "main",
-            "Customers",
-            "BASE TABLE",
-            "InnoDB",
-            10,
-            "Dynamic",
-            0,
-            0,
-            "utf8mb4_0900_ai_ci",
-            "",
-            ""
-        ]]
+        self.table_schema = [
+            [
+                "main",
+                "Customers",
+                "BASE TABLE",
+                "InnoDB",
+                10,
+                "Dynamic",
+                0,
+                0,
+                "utf8mb4_0900_ai_ci",
+                "",
+                "",
+            ]
+        ]
         self.column_schema_meta = [
             ["TABLE_NAME"],
             ["TABLE_SCHEMA"],
@@ -337,17 +346,19 @@ class SqlData:
             ["COLLATION_NAME"],
             ["COLUMN_COMMENT"],
         ]
-        self.column_schema = [[
-          "CHECK_CONSTRAINTS",
-          "information_schema",
-          "CHECK_CLAUSE",
-          4,
-          None,
-          "NO",
-          "longtext",
-          "utf8_bin",
-          ""
-        ]]
+        self.column_schema = [
+            [
+                "CHECK_CONSTRAINTS",
+                "information_schema",
+                "CHECK_CLAUSE",
+                4,
+                None,
+                "NO",
+                "longtext",
+                "utf8_bin",
+                "",
+            ]
+        ]
         self.foreign_keys_schema_meta = [
             ["CONSTRAINT_SCHEMA"],
             ["TABLE_NAME"],
@@ -358,16 +369,18 @@ class SqlData:
             ["DELETE_RULE"],
             ["REFERENCED_TABLE_NAME"],
         ]
-        self.foreign_keys_schema = [[
-            "main",
-            "Pets",
-            "Pets_FK",
-            "main",
-            "PRIMARY",
-            "NO ACTION",
-            "NO ACTION",
-            "Customers"
-        ]]
+        self.foreign_keys_schema = [
+            [
+                "main",
+                "Pets",
+                "Pets_FK",
+                "main",
+                "PRIMARY",
+                "NO ACTION",
+                "NO ACTION",
+                "Customers",
+            ]
+        ]
         self.view_schema_meta = [
             ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
@@ -376,14 +389,16 @@ class SqlData:
             ["CHECK_OPTION"],
             ["SECURITY_TYPE"],
         ]
-        self.view_schema = [[
-            "sys",
-            "schema_redundant_indexes",
-            "select `sys`.`redundant_keys`.`ta",
-            "NO",
-            "NONE",
-            "INVOKER"
-        ]]
+        self.view_schema = [
+            [
+                "sys",
+                "schema_redundant_indexes",
+                "select `sys`.`redundant_keys`.`ta",
+                "NO",
+                "NONE",
+                "INVOKER",
+            ]
+        ]
         self.index_schema_meta = [
             ["TABLE_SCHEMA"],
             ["TABLE_NAME"],
@@ -396,20 +411,20 @@ class SqlData:
             ["NULLABLE"],
             ["PACKED"],
         ]
-        self.index_schema = [[
-            "PRIMARY",
-            0,
-            "O_D_ID",
-            "A",
-            None,
-            "BTREE",
-            "",
-            None,
-            "tpcc",
-            "WAREHOUSE",
-        ]]
-
-
+        self.index_schema = [
+            [
+                "PRIMARY",
+                0,
+                "O_D_ID",
+                "A",
+                None,
+                "BTREE",
+                "",
+                None,
+                "tpcc",
+                "WAREHOUSE",
+            ]
+        ]
 
     def expected_default_result(self) -> Dict[str, Any]:
         """
@@ -439,13 +454,7 @@ class SqlData:
                 },
                 "performance_schema": {
                     "events_statements_summary_by_digest": json.dumps(
-                        [
-                            {
-                                "queryid": "abc",
-                                "calls": 10,
-                                "avg_time_ms": 1.5
-                            }
-                        ]
+                        [{"queryid": "abc", "calls": 10, "avg_time_ms": 1.5}]
                     ),
                     "events_statements_histogram_global": json.dumps(
                         [
@@ -501,10 +510,16 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif sql in ("SHOW REPLICA STATUS;", "SHOW SLAVE STATUS;"):
             result.value = data.replica_status
             result.meta = data.replica_status_meta
-        elif "information_schema.TABLES".lower() in sql.lower() and "data_free" in sql.lower():
+        elif (
+            "information_schema.TABLES".lower() in sql.lower()
+            and "data_free" in sql.lower()
+        ):
             result.value = data.table_level_stats
             result.meta = data.table_level_stats_meta
-        elif "information_schema.STATISTICS".lower() in sql.lower() and "packed" not in sql.lower():
+        elif (
+            "information_schema.STATISTICS".lower() in sql.lower()
+            and "packed" not in sql.lower()
+        ):
             result.value = data.index_stats
             result.meta = data.index_stats_meta
         elif "mysql.innodb_index_stats".lower() in sql.lower():
@@ -513,10 +528,16 @@ def get_sql_api(data: SqlData, result: Result) -> Callable[[str], NoReturn]:
         elif "performance_schema.events_statements_current".lower() in sql.lower():
             result.value = data.long_running_query_stats
             result.meta = data.long_running_query_stats_meta
-        elif "performance_schema.events_statements_summary_by_digest".lower() in sql.lower():
+        elif (
+            "performance_schema.events_statements_summary_by_digest".lower()
+            in sql.lower()
+        ):
             result.value = data.query_stats
             result.meta = data.query_stats_meta
-        elif "information_schema.tables".lower() in sql.lower() and "table_comment" in sql.lower():
+        elif (
+            "information_schema.tables".lower() in sql.lower()
+            and "table_comment" in sql.lower()
+        ):
             result.value = data.table_schema
             result.meta = data.table_schema_meta
         elif "information_schema.column" in sql.lower():
@@ -563,7 +584,9 @@ def test_collect_knobs_sql_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
     assert "Failed to execute sql" in ex.value.message
 
 
-def test_collect_metrics_success_with_latency_hist(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_metrics_success_with_latency_hist(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -575,7 +598,9 @@ def test_collect_metrics_success_with_latency_hist(mock_conn: MagicMock) -> Opti
     assert metrics == data.expected_default_result()
 
 
-def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_metrics_success_no_latency_hist(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -585,11 +610,13 @@ def test_collect_metrics_success_no_latency_hist(mock_conn: MagicMock) -> Option
     collector = MysqlCollector(mock_conn, "7.9.9")
     metrics = collector.collect_metrics()
     result = data.expected_default_result()
-    result["global"]["performance_schema"].pop('events_statements_histogram_global')
+    result["global"]["performance_schema"].pop("events_statements_histogram_global")
     assert metrics == result
 
 
-def test_collect_metrics_success_no_master_status(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_metrics_success_no_master_status(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     data.master_status = []
@@ -604,7 +631,9 @@ def test_collect_metrics_success_no_master_status(mock_conn: MagicMock) -> Optio
     assert metrics == result
 
 
-def test_collect_metrics_success_no_replica_status(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_metrics_success_no_replica_status(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     data.replica_status = []
@@ -662,7 +691,9 @@ def test_check_permissions_specific_access_denied(
             assert "unknown" in info["example"]
 
 
-def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_table_level_metrics_success(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     data = SqlData()
     res = Result()
@@ -673,14 +704,14 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[N
     target_table_info = collector.get_target_table_info(num_table_to_collect_stats=1)
     assert collector.collect_table_level_metrics(target_table_info) == {
         "information_schema_TABLES": {
-            "columns":TABLE_LEVEL_MYSQL_COLUMNS,
+            "columns": TABLE_LEVEL_MYSQL_COLUMNS,
             "rows": [
                 [
-                    'mysql',
-                    'time_zone_transition',
-                    'BASE TABLE',
-                    'InnoDB',
-                    'Dynamic',
+                    "mysql",
+                    "time_zone_transition",
+                    "BASE TABLE",
+                    "InnoDB",
+                    "Dynamic",
                     119074,
                     39,
                     4734976,
@@ -690,101 +721,117 @@ def test_collect_table_level_metrics_success(mock_conn: MagicMock) -> Optional[N
             ],
         },
     }
-    assert collector.collect_index_metrics(target_table_info=target_table_info,
-                                           num_index_to_collect_stats=10) == {
-        'indexes_size': {
-            'columns': [
-                'DATABASE_NAME',
-                'TABLE_NAME',
-                'INDEX_NAME',
-                'STAT_VALUE',
-                'SIZE_IN_BYTE'],
-            'rows': [[
-                'tpcc',
-                'CUSTOMER',
-                'IDX_CUSTOMER_NAME',
-                675,
-                11059200]]},
-        'information_schema_STATISTICS': {
-            'columns': [
-                'TABLE_SCHEMA',
-                'TABLE_NAME',
-                'NON_UNIQUE',
-                'INDEX_SCHEMA',
-                'INDEX_NAME',
-                'SEQ_IN_INDEX',
-                'COLUMN_NAME',
-                'COLLATION',
-                'CARDINALITY',
-                'SUB_PART',
-                'NULLABLE',
-                'INDEX_TYPE'],
-            'rows': [[
-                'tpcc',
-                'OORDER',
-                0,
-                'tpcc',
-                'O_W_ID',
-                1,
-                'O_W_ID',
-                'A',
-                4,
-                None,
-                '',
-                'BTREE'],
-               ['tpcc',
-                'OORDER',
-                0,
-                'tpcc',
-                'O_W_ID',
-                2,
-                'O_D_ID',
-                'A',
-                48,
-                None,
-                '',
-                'BTREE']]},
-        'performance_schema_table_io_waits_summary_by_index_usage':
-            {'columns': ['TABLE_SCHEMA',
-                         'TABLE_NAME',
-                         'NON_UNIQUE',
-                         'INDEX_SCHEMA',
-                         'INDEX_NAME',
-                         'SEQ_IN_INDEX',
-                         'COLUMN_NAME',
-                         'COLLATION',
-                         'CARDINALITY',
-                         'SUB_PART',
-                         'NULLABLE',
-                         'INDEX_TYPE'],
-             'rows': [['tpcc',
-                       'OORDER',
-                       0,
-                       'tpcc',
-                       'O_W_ID',
-                       1,
-                       'O_W_ID',
-                       'A',
-                       4,
-                       None,
-                       '',
-                       'BTREE'],
-                      ['tpcc',
-                       'OORDER',
-                       0,
-                       'tpcc',
-                       'O_W_ID',
-                       2,
-                       'O_D_ID',
-                       'A',
-                       48,
-                       None,
-                       '',
-                       'BTREE']]}
+    assert collector.collect_index_metrics(
+        target_table_info=target_table_info, num_index_to_collect_stats=10
+    ) == {
+        "indexes_size": {
+            "columns": [
+                "DATABASE_NAME",
+                "TABLE_NAME",
+                "INDEX_NAME",
+                "STAT_VALUE",
+                "SIZE_IN_BYTE",
+            ],
+            "rows": [["tpcc", "CUSTOMER", "IDX_CUSTOMER_NAME", 675, 11059200]],
+        },
+        "information_schema_STATISTICS": {
+            "columns": [
+                "TABLE_SCHEMA",
+                "TABLE_NAME",
+                "NON_UNIQUE",
+                "INDEX_SCHEMA",
+                "INDEX_NAME",
+                "SEQ_IN_INDEX",
+                "COLUMN_NAME",
+                "COLLATION",
+                "CARDINALITY",
+                "SUB_PART",
+                "NULLABLE",
+                "INDEX_TYPE",
+            ],
+            "rows": [
+                [
+                    "tpcc",
+                    "OORDER",
+                    0,
+                    "tpcc",
+                    "O_W_ID",
+                    1,
+                    "O_W_ID",
+                    "A",
+                    4,
+                    None,
+                    "",
+                    "BTREE",
+                ],
+                [
+                    "tpcc",
+                    "OORDER",
+                    0,
+                    "tpcc",
+                    "O_W_ID",
+                    2,
+                    "O_D_ID",
+                    "A",
+                    48,
+                    None,
+                    "",
+                    "BTREE",
+                ],
+            ],
+        },
+        "performance_schema_table_io_waits_summary_by_index_usage": {
+            "columns": [
+                "TABLE_SCHEMA",
+                "TABLE_NAME",
+                "NON_UNIQUE",
+                "INDEX_SCHEMA",
+                "INDEX_NAME",
+                "SEQ_IN_INDEX",
+                "COLUMN_NAME",
+                "COLLATION",
+                "CARDINALITY",
+                "SUB_PART",
+                "NULLABLE",
+                "INDEX_TYPE",
+            ],
+            "rows": [
+                [
+                    "tpcc",
+                    "OORDER",
+                    0,
+                    "tpcc",
+                    "O_W_ID",
+                    1,
+                    "O_W_ID",
+                    "A",
+                    4,
+                    None,
+                    "",
+                    "BTREE",
+                ],
+                [
+                    "tpcc",
+                    "OORDER",
+                    0,
+                    "tpcc",
+                    "O_W_ID",
+                    2,
+                    "O_D_ID",
+                    "A",
+                    48,
+                    None,
+                    "",
+                    "BTREE",
+                ],
+            ],
+        },
     }
 
 
-def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> Optional[NoReturn]:
+def test_collect_table_level_metrics_failure(
+    mock_conn: MagicMock,
+) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
     mock_cursor.fetchall.side_effect = mysql.connector.ProgrammingError("bad query")
     collector = MysqlCollector(mock_conn, "5.7.3")
@@ -792,6 +839,7 @@ def test_collect_table_level_metrics_failure(mock_conn: MagicMock) -> Optional[N
         target_table_info = collector.get_target_table_info(10)
         collector.collect_table_level_metrics(target_table_info)
     assert "Failed to execute sql" in ex.value.message
+
 
 def test_collect_query_metrics_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
@@ -801,73 +849,76 @@ def test_collect_query_metrics_success(mock_conn: MagicMock) -> Optional[NoRetur
     mock_cursor.fetchall.side_effect = lambda: res.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
-    assert collector.collect_query_metrics(num_query_to_collect_stats=1) == \
-           {'events_statements_summary_by_digest': {
-               'columns': [
-                   'SCHEMA_NAME',
-                   'DIGEST_TEXT',
-                   'COUNT_STAR',
-                   'SUM_TIMER_WAIT',
-                   'MIN_TIMER_WAIT',
-                   'AVG_TIMER_WAIT',
-                   'MAX_TIMER_WAIT',
-                   'SUM_LOCK_TIME',
-                   'SUM_ERRORS',
-                   'SUM_WARNINGS',
-                   'SUM_ROWS_AFFECTED',
-                   'SUM_ROWS_SENT',
-                   'SUM_ROWS_EXAMINED',
-                   'SUM_CREATED_TMP_DISK_TABLES',
-                   'SUM_CREATED_TMP_TABLES',
-                   'SUM_SELECT_FULL_JOIN',
-                   'SUM_SELECT_FULL_RANGE_JOIN',
-                   'SUM_SELECT_RANGE',
-                   'SUM_SELECT_RANGE_CHECK',
-                   'SUM_SELECT_SCAN',
-                   'SUM_SORT_MERGE_PASSES',
-                   'SUM_SORT_RANGE',
-                   'SUM_SORT_ROWS',
-                   'SUM_SORT_SCAN',
-                   'SUM_NO_INDEX_USED',
-                   'SUM_NO_GOOD_INDEX_USED',
-                   'FIRST_SEEN',
-                   'LAST_SEEN',],
-               'rows': [
-                   [
-                       None,
-                       'SELECT COUNT ( * ) FROM '
-                       '`information_schema` . '
-                       '`PLUGINS` WHERE '
-                       '`PLUGIN_NAME` = ?',
-                       435321,
-                       282100585546000,
-                       427483000,
-                       648028000,
-                       51135477000,
-                       679796000000,
-                       0,
-                       0,
-                       0,
-                       435321,
-                       20895408,
-                       435321,
-                       435321,
-                       0,
-                       0,
-                       0,
-                       0,
-                       435321,
-                       0,
-                       0,
-                       0,
-                       0,
-                       435321,
-                       0,
-                       datetime(2022, 7, 28, 19, 21, 48, 350718),
-                       datetime(2022, 8, 22, 23, 58, 23, 5279),
-                   ]
-               ]}
-           }
+    assert collector.collect_query_metrics(num_query_to_collect_stats=1) == {
+        "events_statements_summary_by_digest": {
+            "columns": [
+                "SCHEMA_NAME",
+                "DIGEST_TEXT",
+                "COUNT_STAR",
+                "SUM_TIMER_WAIT",
+                "MIN_TIMER_WAIT",
+                "AVG_TIMER_WAIT",
+                "MAX_TIMER_WAIT",
+                "SUM_LOCK_TIME",
+                "SUM_ERRORS",
+                "SUM_WARNINGS",
+                "SUM_ROWS_AFFECTED",
+                "SUM_ROWS_SENT",
+                "SUM_ROWS_EXAMINED",
+                "SUM_CREATED_TMP_DISK_TABLES",
+                "SUM_CREATED_TMP_TABLES",
+                "SUM_SELECT_FULL_JOIN",
+                "SUM_SELECT_FULL_RANGE_JOIN",
+                "SUM_SELECT_RANGE",
+                "SUM_SELECT_RANGE_CHECK",
+                "SUM_SELECT_SCAN",
+                "SUM_SORT_MERGE_PASSES",
+                "SUM_SORT_RANGE",
+                "SUM_SORT_ROWS",
+                "SUM_SORT_SCAN",
+                "SUM_NO_INDEX_USED",
+                "SUM_NO_GOOD_INDEX_USED",
+                "FIRST_SEEN",
+                "LAST_SEEN",
+            ],
+            "rows": [
+                [
+                    None,
+                    "SELECT COUNT ( * ) FROM "
+                    "`information_schema` . "
+                    "`PLUGINS` WHERE "
+                    "`PLUGIN_NAME` = ?",
+                    435321,
+                    282100585546000,
+                    427483000,
+                    648028000,
+                    51135477000,
+                    679796000000,
+                    0,
+                    0,
+                    0,
+                    435321,
+                    20895408,
+                    435321,
+                    435321,
+                    0,
+                    0,
+                    0,
+                    0,
+                    435321,
+                    0,
+                    0,
+                    0,
+                    0,
+                    435321,
+                    0,
+                    datetime(2022, 7, 28, 19, 21, 48, 350718),
+                    datetime(2022, 8, 22, 23, 58, 23, 5279),
+                ]
+            ],
+        }
+    }
+
 
 def test_collect_long_running_query_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     mock_cursor = mock_conn.cursor.return_value
@@ -877,65 +928,66 @@ def test_collect_long_running_query_success(mock_conn: MagicMock) -> Optional[No
     mock_cursor.fetchall.side_effect = lambda: res.value
     type(mock_cursor).description = PropertyMock(side_effect=lambda: res.meta)
     collector = MysqlCollector(mock_conn, "7.9.9")
-    assert collector.collect_long_running_query(1, 1) == \
-           {'events_statements_current': {
-               'columns': [
-                    "THREAD_ID",
-                    "EVENT_ID",
-                    "EVENT_NAME",
-                    "TIMER_START",
-                    "TIMER_END",
-                    "TIMER_WAIT",
-                    "LOCK_TIME",
-                    "DIGEST",
-                    "DIGEST_TEXT",
-                    "ROWS_AFFECTED",
-                    "ROWS_SENT",
-                    "ROWS_EXAMINED",
-                    "CREATED_TMP_DISK_TABLES",
-                    "CREATED_TMP_TABLES",
-                    "SELECT_FULL_JOIN",
-                    "SELECT_FULL_RANGE_JOIN",
-                    "SELECT_RANGE",
-                    "SELECT_RANGE_CHECK",
-                    "SELECT_SCAN",
-                    "SORT_MERGE_PASSES",
-                    "SORT_RANGE",
-                    "SORT_ROWS",
-                    "SORT_SCAN",
-                    "NO_INDEX_USED",
-                    "NO_GOOD_INDEX_USED",
-                ],
-               'rows': [
-                    [
-                        2545027,
-                        187298929,
-                        "statement/sql/select",
-                        4283245906676357384,
-                        4284245906749246384,
-                        100000072889000,
-                        0,
-                        "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
-                        "SELECT test FROM test WHERE test=?",
-                        0, # ROWS_AFFECTED
-                        1, # ROWS_SENT
-                        1, # ROWS_EXAMINED
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0, # SORT_MERGE_PASSES
-                        0,
-                        0,
-                        0,
-                        0, # NO_INDEX_USED
-                        0,
-                    ]
-               ]}
-           }
+    assert collector.collect_long_running_query(1, 1) == {
+        "events_statements_current": {
+            "columns": [
+                "THREAD_ID",
+                "EVENT_ID",
+                "EVENT_NAME",
+                "TIMER_START",
+                "TIMER_END",
+                "TIMER_WAIT",
+                "LOCK_TIME",
+                "DIGEST",
+                "DIGEST_TEXT",
+                "ROWS_AFFECTED",
+                "ROWS_SENT",
+                "ROWS_EXAMINED",
+                "CREATED_TMP_DISK_TABLES",
+                "CREATED_TMP_TABLES",
+                "SELECT_FULL_JOIN",
+                "SELECT_FULL_RANGE_JOIN",
+                "SELECT_RANGE",
+                "SELECT_RANGE_CHECK",
+                "SELECT_SCAN",
+                "SORT_MERGE_PASSES",
+                "SORT_RANGE",
+                "SORT_ROWS",
+                "SORT_SCAN",
+                "NO_INDEX_USED",
+                "NO_GOOD_INDEX_USED",
+            ],
+            "rows": [
+                [
+                    2545027,
+                    187298929,
+                    "statement/sql/select",
+                    4283245906676357384,
+                    4284245906749246384,
+                    100000072889000,
+                    0,
+                    "9b53fec55dcd0e616a371391f1596e8fa9eeda5ecf7cd5eb80f2a5c86b661c3d",
+                    "SELECT test FROM test WHERE test=?",
+                    0,  # ROWS_AFFECTED
+                    1,  # ROWS_SENT
+                    1,  # ROWS_EXAMINED
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,  # SORT_MERGE_PASSES
+                    0,
+                    0,
+                    0,
+                    0,  # NO_INDEX_USED
+                    0,
+                ]
+            ],
+        }
+    }
 
 
 def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
@@ -948,12 +1000,19 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
     collector = MysqlCollector(mock_conn, "7.9.9")
     schema = collector.collect_schema()
     assert schema == {
-        "columns" : {
-            "columns" : [
-                "TABLE_NAME", "TABLE_SCHEMA", "COLUMN_NAME", "ORDINAL_POSITION",
-                "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "COLLATION_NAME", "COLUMN_COMMENT",
+        "columns": {
+            "columns": [
+                "TABLE_NAME",
+                "TABLE_SCHEMA",
+                "COLUMN_NAME",
+                "ORDINAL_POSITION",
+                "COLUMN_DEFAULT",
+                "IS_NULLABLE",
+                "DATA_TYPE",
+                "COLLATION_NAME",
+                "COLUMN_COMMENT",
             ],
-            "rows" : [
+            "rows": [
                 [
                     "CHECK_CONSTRAINTS",
                     "information_schema",
@@ -965,14 +1024,22 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     "utf8_bin",
                     "",
                 ],
-            ]
-        },
-        "indexes" : {
-            "columns" : [
-                "TABLE_SCHEMA", "TABLE_NAME", "INDEX_NAME", "NON_UNIQUE", "COLUMN_NAME",
-                "COLLATION", "SUB_PART", "INDEX_TYPE", "NULLABLE", "PACKED"
             ],
-            "rows" : [
+        },
+        "indexes": {
+            "columns": [
+                "TABLE_SCHEMA",
+                "TABLE_NAME",
+                "INDEX_NAME",
+                "NON_UNIQUE",
+                "COLUMN_NAME",
+                "COLLATION",
+                "SUB_PART",
+                "INDEX_TYPE",
+                "NULLABLE",
+                "PACKED",
+            ],
+            "rows": [
                 [
                     "PRIMARY",
                     0,
@@ -985,14 +1052,20 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     "tpcc",
                     "WAREHOUSE",
                 ],
-            ]
-        },
-        "foreign_keys" : {
-            "columns" : [
-                "CONSTRAINT_SCHEMA", "TABLE_NAME", "CONSTRAINT_NAME", "UNIQUE_CONSTRAINT_SCHEMA",
-                "UNIQUE_CONSTRAINT_NAME", "UPDATE_RULE", "DELETE_RULE", "REFERENCED_TABLE_NAME",
             ],
-            "rows" : [
+        },
+        "foreign_keys": {
+            "columns": [
+                "CONSTRAINT_SCHEMA",
+                "TABLE_NAME",
+                "CONSTRAINT_NAME",
+                "UNIQUE_CONSTRAINT_SCHEMA",
+                "UNIQUE_CONSTRAINT_NAME",
+                "UPDATE_RULE",
+                "DELETE_RULE",
+                "REFERENCED_TABLE_NAME",
+            ],
+            "rows": [
                 [
                     "main",
                     "Pets",
@@ -1003,15 +1076,23 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     "NO ACTION",
                     "Customers",
                 ],
-            ]
+            ],
         },
-        "tables" : {
-            "columns" : [
-                "TABLE_SCHEMA", "TABLE_NAME", "TABLE_TYPE", "ENGINE", "VERSION", "ROW_FORMAT",
-                "TABLE_ROWS", "MAX_DATA_LENGTH", "TABLE_COLLATION", "CREATE_OPTIONS",
+        "tables": {
+            "columns": [
+                "TABLE_SCHEMA",
+                "TABLE_NAME",
+                "TABLE_TYPE",
+                "ENGINE",
+                "VERSION",
+                "ROW_FORMAT",
+                "TABLE_ROWS",
+                "MAX_DATA_LENGTH",
+                "TABLE_COLLATION",
+                "CREATE_OPTIONS",
                 "TABLE_COMMENT",
             ],
-            "rows" : [
+            "rows": [
                 [
                     "main",
                     "Customers",
@@ -1025,14 +1106,18 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     "",
                     "",
                 ],
-            ]
+            ],
         },
-        "views" : {
-            "columns" : [
-                "TABLE_SCHEMA", "TABLE_NAME", "VIEW_DEFINITION", "IS_UPDATABLE", "CHECK_OPTION",
+        "views": {
+            "columns": [
+                "TABLE_SCHEMA",
+                "TABLE_NAME",
+                "VIEW_DEFINITION",
+                "IS_UPDATABLE",
+                "CHECK_OPTION",
                 "SECURITY_TYPE",
             ],
-            "rows" : [
+            "rows": [
                 [
                     "sys",
                     "schema_redundant_indexes",
@@ -1041,6 +1126,6 @@ def test_collect_schema_success(mock_conn: MagicMock) -> Optional[NoReturn]:
                     "NONE",
                     "INVOKER",
                 ],
-            ]
-        }
+            ],
+        },
     }
