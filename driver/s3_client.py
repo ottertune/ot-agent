@@ -31,7 +31,7 @@ OT_BUCKET_NAME = "customer-database-observations"  # OtterTune S3 bucket name
 class S3Client:
     """S3 client that interacts with the OtterTune S3 bucket."""
 
-    def __init__( # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         enable_s3,
         aws_region,
@@ -47,7 +47,7 @@ class S3Client:
         self._api_key = api_key
         self._s3_bucket_name = s3_bucket_name
 
-    def get_s3_session(): # pylint: disable=no-method-argument
+    def get_s3_session():  # pylint: disable=no-method-argument
         """Get the S3 session for operation in OtterTune S3 bucket."""
 
         session = boto3.Session()
@@ -73,12 +73,18 @@ class S3Client:
             ObservationType.LONG_RUNNING_QUERY.value,
             ObservationType.SCHEMA.value,
         ):
+            # Add headers to the compressed data
+            data["headers"]["Content-Type"] = "application/json; charset=utf-8"
+            data["headers"]["Content-Encoding"] = "gzip"
             compressed_data = zlib.compress(
                 json.dumps(data, default=str).encode("utf-8")
             )
             return compressed_data
 
-        serialized_data = json.dumps(data).encode("utf-8")
+        if obs_type.value == ObservationType.TABLE.value:
+            data["headers"]["Content-Type"] = "application/json"
+
+        serialized_data = json.dumps(data, default=str).encode("utf-8")
         return serialized_data
 
     def get_s3_bucket_object_key(self, obs_type: ObservationType):

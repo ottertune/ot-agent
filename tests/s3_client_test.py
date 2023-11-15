@@ -3,6 +3,7 @@ Tests for the S3 client
 """
 import zlib
 import json
+import datetime
 
 from agent_version import AGENT_VERSION
 from driver.s3_client import S3Client, ObservationType
@@ -28,6 +29,38 @@ def test_get_s3_bucket_object_key() -> None:
     assert "data" in object_key
 
 
+def test_process_observation_data_datetime_serialization() -> None:
+    client = S3Client(
+        enable_s3=True,
+        aws_region="us-east-1",
+        s3_bucket_name="test_bucket_name",
+        organization_id="81072a87-ef79-4a24-86be-84b2efd84688",
+        db_key="fed922a6-0cbc-429c-bbbd-fe4ef843421f",
+        api_key="test_api_key",
+    )
+    observation_data = {
+        "key1": "value1",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc),
+    }
+    observation_data["headers"] = client.generate_headers()
+    processed_observation_data = client.process_observation_data(
+        observation_data, ObservationType.TABLE
+    )
+    assert isinstance(processed_observation_data, bytes), True
+    assert processed_observation_data, json.dumps(observation_data)
+
+    observation_data = {
+        "key1": "value1",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+    observation_data["headers"] = client.generate_headers()
+    processed_observation_data = client.process_observation_data(
+        observation_data, ObservationType.DB
+    )
+    assert isinstance(processed_observation_data, bytes), True
+    assert processed_observation_data, json.dumps(observation_data)
+
+
 def test_process_observation_data() -> None:
     client = S3Client(
         enable_s3=True,
@@ -40,38 +73,59 @@ def test_process_observation_data() -> None:
     observation_data = {
         "key1": "value1",
     }
+    observation_data["headers"] = client.generate_headers()
     processed_observation_data = client.process_observation_data(
         observation_data, ObservationType.QUERY
     )
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
+    assert observation_data["headers"][
+        "Content-Type"
+    ], "application/json; charset=utf-8"
+    assert observation_data["headers"]["Content-Encoding"], "gzip"
 
+    observation_data["headers"] = client.generate_headers()
     processed_observation_data = client.process_observation_data(
         observation_data, ObservationType.SCHEMA
     )
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
+    assert observation_data["headers"][
+        "Content-Type"
+    ], "application/json; charset=utf-8"
+    assert observation_data["headers"]["Content-Encoding"], "gzip"
 
+    observation_data["headers"] = client.generate_headers()
     processed_observation_data = client.process_observation_data(
         observation_data, ObservationType.LONG_RUNNING_QUERY
     )
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
+    assert observation_data["headers"][
+        "Content-Type"
+    ], "application/json; charset=utf-8"
+    assert observation_data["headers"]["Content-Encoding"], "gzip"
 
+    observation_data["headers"] = client.generate_headers()
     processed_observation_data = client.process_observation_data(
         observation_data, ObservationType.DB
     )
     assert isinstance(processed_observation_data, bytes), True
     assert processed_observation_data, json.dumps(observation_data)
+    assert "Content-Type" not in observation_data["headers"], True
+    assert "Content-Encoding" not in observation_data["headers"], True
 
+    observation_data["headers"] = client.generate_headers()
     processed_observation_data = client.process_observation_data(
         observation_data, ObservationType.TABLE
     )
     assert isinstance(processed_observation_data, bytes), True
     assert processed_observation_data, json.dumps(observation_data)
+    assert "Content-Type" in observation_data["headers"], True
+    assert "Content-Encoding" not in observation_data["headers"], True
 
 
 def test_generate_headers() -> None:
@@ -93,7 +147,6 @@ def test_generate_headers() -> None:
 
 
 def test_get_s3_session() -> None:
-
     client = S3Client(
         enable_s3=True,
         aws_region="us-east-1",
