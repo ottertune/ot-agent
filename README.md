@@ -104,6 +104,10 @@ Also update the agent helm chart:
 agent-helm-chart/Chart.yaml
 ```
 
+Also update the documentation [here]( https://docs.ottertune.com/support/kb/articles/496D50mX/agent-upgrade) and [here](https://docs.ottertune.com/support/kb/articles/A93xgYW0/agent-setup) :
+
+
+
 ----
 
 # License
