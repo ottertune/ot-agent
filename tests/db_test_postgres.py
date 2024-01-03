@@ -298,7 +298,7 @@ def test_collect_table_level_data_from_database(
         pg_database,
         num_table_to_collect_stats,
         num_index_to_collect_stats,
-        lr_query_latency_threshold_min
+        lr_query_latency_threshold_min,
     )
     # pylint: disable=too-many-function-args
     observation = collect_table_level_data_from_database(driver_conf)
@@ -485,7 +485,8 @@ def test_pg_name_list_accepted(
         assert len(collector._conns) == 1  # pylint: disable=no-member, protected-access
         assert (
             # pylint: disable=no-member, protected-access
-            collector._conns["postgres"] is not None
+            collector._conns["postgres"]
+            is not None
         )  # pylint: disable=no-member, protected-access
 
     pg_database = "postgres"

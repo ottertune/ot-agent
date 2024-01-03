@@ -49,7 +49,7 @@ TABLE_SCHEMA_MYSQL_COLUMNS = [
     "MAX_DATA_LENGTH",
     "TABLE_COLLATION",
     "CREATE_OPTIONS",
-    "TABLE_COMMENT"
+    "TABLE_COMMENT",
 ]
 
 
@@ -86,7 +86,7 @@ FOREIGN_KEY_SCHEMA_MYSQL_COLUMNS = [
     "UNIQUE_CONSTRAINT_NAME",
     "UPDATE_RULE",
     "DELETE_RULE",
-    "REFERENCED_TABLE_NAME"
+    "REFERENCED_TABLE_NAME",
 ]
 
 VIEW_SCHEMA_MYSQL_COLUMNS = [
@@ -95,7 +95,7 @@ VIEW_SCHEMA_MYSQL_COLUMNS = [
     "VIEW_DEFINITION",
     "IS_UPDATABLE",
     "CHECK_OPTION",
-    "SECURITY_TYPE"
+    "SECURITY_TYPE",
 ]
 
 TABLE_SCHEMA_POSTGRES_COLUMNS = [
@@ -105,7 +105,7 @@ TABLE_SCHEMA_POSTGRES_COLUMNS = [
     "type",
     "owner",
     "persistence",
-    "description"
+    "description",
 ]
 
 COLUMN_SCHEMA_POSTGRES_COLUMNS = [
@@ -118,20 +118,15 @@ COLUMN_SCHEMA_POSTGRES_COLUMNS = [
     "identity",
     "storage_type",
     "stats_target",
-    "description"
+    "description",
 ]
 
 FOREIGN_KEY_SCHEMA_POSTGRES_COLUMNS = [
     "table_id",
     "constraint_name",
-    "constraint_expression"
+    "constraint_expression",
 ]
-VIEW_SCHEMA_POSTGRES_COLUMNS = [
-    "schemaname",
-    "viewname",
-    "viewowner",
-    "definition"
-]
+VIEW_SCHEMA_POSTGRES_COLUMNS = ["schemaname", "viewname", "viewowner", "definition"]
 
 INDEX_SCHEMA_POSTGRES_COLUMNS = [
     "table_id",
@@ -148,5 +143,5 @@ INDEX_SCHEMA_POSTGRES_COLUMNS = [
     "constraint_deferred_by_default",
     "index_replica_identity",
     "table_space",
-    "index_type"
+    "index_type",
 ]

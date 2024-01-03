@@ -14,7 +14,7 @@ from agent_version import AGENT_VERSION
 from driver.agent_health_heartbeat import (
     schedule_agent_health_job,
     add_error_to_global,
-    send_heartbeat
+    send_heartbeat,
 )
 from driver.driver_config_builder import DriverConfigBuilder, Overrides
 from driver.pipeline import (
@@ -172,6 +172,11 @@ def _get_args() -> argparse.Namespace:
         help="Whether to send observation data to S3.",
     )
     parser.add_argument(
+        "--s3-bucket-name",
+        type=str,
+        help="Client s3 bucket name.",
+    )
+    parser.add_argument(
         "--agent-health-report-interval",
         type=int,
         help="Interval (in seconds) to send agent health information to OtterTune.",
@@ -235,15 +240,11 @@ def get_essential_config(args):
         agent_health_report_interval=args.agent_health_report_interval,
     )
 
-    config_builder\
-        .from_placeholder_data()\
-        .from_file(args.config)\
-        .from_command_line(args)\
-        .from_overrides(overrides)
+    config_builder.from_placeholder_data().from_file(args.config).from_command_line(
+        args
+    ).from_overrides(overrides)
 
     config = config_builder.get_config()
-
-
 
     return config
 

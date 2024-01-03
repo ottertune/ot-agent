@@ -30,13 +30,13 @@ class AwsWrapper:
     """
     Wrapper class that returns boto client libraries.
     """
+
     @staticmethod
     def rds_client(region_name: str) -> RDSClient:
         """
         Wrapper for RDS client
         """
         return boto3.client("rds", region_name=region_name)
-
 
     @staticmethod
     def cloudwatch_client(region_name: str) -> CloudWatchClient:

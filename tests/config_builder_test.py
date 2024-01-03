@@ -51,7 +51,7 @@ def _test_config_data() -> Dict[str, Any]:
             "cloudwatch",
         ],
         "schema_monitor_interval": 300,
-        "agent_health_report_interval": 60
+        "agent_health_report_interval": 60,
     }
 
     partial_config_from_server: Dict[str, Any] = {
@@ -70,7 +70,7 @@ def _test_config_data() -> Dict[str, Any]:
         "db_host": "test_host",
         "db_port": 3306,
         "db_version": "14_2",
-        "db_non_default_parameters": ['test_parameter_1', 'test_parameter_2']
+        "db_non_default_parameters": ["test_parameter_1", "test_parameter_2"],
     }
 
     config: Dict[str, Any] = {}
@@ -85,9 +85,7 @@ def _test_config_data() -> Dict[str, Any]:
     )
 
 
-def test_partial_config_from_file_success(
-    test_config_data: Dict[str, Any]
-) -> None:
+def test_partial_config_from_file_success(test_config_data: Dict[str, Any]) -> None:
     # wrong type server_url fetched from env, string is expected, but int found
     test_data_from_file = test_config_data["file"]
     partial_config = PartialConfigFromFile(**test_data_from_file)
@@ -110,6 +108,7 @@ def test_partial_config_from_file_invalid_table_level_monitor_interval(
         PartialConfigFromFile(**test_data_from_file)
     assert "table_level_monitor_interval" in str(ex.value)
 
+
 def test_partial_config_from_file_invalid_num_table_to_collect_stats(
     test_config_data: Dict[str, Any]
 ) -> None:
@@ -119,6 +118,7 @@ def test_partial_config_from_file_invalid_num_table_to_collect_stats(
     with pytest.raises(ValidationError) as ex:
         PartialConfigFromFile(**test_data_from_file)
     assert "num_table_to_collect_stats" in str(ex.value)
+
 
 # Test PartialConfigFromFile
 def test_partial_config_from_file_invalid_type(
@@ -144,9 +144,7 @@ def test_partial_config_from_file_missing_value(
 
 
 # Test PartialConfigFromRDS
-def test_partial_config_from_rds_success(
-    test_config_data: Dict[str, Any]
-) -> None:
+def test_partial_config_from_rds_success(test_config_data: Dict[str, Any]) -> None:
     # rds config success: all key values intact
     test_data_from_rds = test_config_data["rds"]
     partial_config = PartialConfigFromRDS(**test_data_from_rds)
@@ -154,12 +152,13 @@ def test_partial_config_from_rds_success(
     assert partial_config.db_host == "test_host"
     assert partial_config.db_port == 3306
     assert partial_config.db_version == "14_2"
-    assert partial_config.db_non_default_parameters == ['test_parameter_1', 'test_parameter_2']
+    assert partial_config.db_non_default_parameters == [
+        "test_parameter_1",
+        "test_parameter_2",
+    ]
 
 
-def test_partial_config_from_rds_invalid_type(
-    test_config_data: Dict[str, Any]
-) -> None:
+def test_partial_config_from_rds_invalid_type(test_config_data: Dict[str, Any]) -> None:
     # wrong type db_version fetched from env, string is expected, but int found
     test_data_from_rds = test_config_data["rds"]
     test_data_from_rds["db_version"] = 10
@@ -182,7 +181,7 @@ def test_partial_config_from_rds_missing_value(
 def test_create_driver_config_builder_invalid_config_path() -> None:
     # Invalid config file path
     with pytest.raises(FileNotFoundError):
-        config_builder = DriverConfigBuilder('us-east-2')
+        config_builder = DriverConfigBuilder("us-east-2")
         config_builder.from_file("invalid_name")
 
 
@@ -192,46 +191,46 @@ def test_create_driver_config_builder_invalid_yaml() -> None:
         with pytest.raises(ValueError):
             temp.write("bad_format")
             temp.seek(0)
-            config_builder = DriverConfigBuilder('us-east-2')
+            config_builder = DriverConfigBuilder("us-east-2")
             config_builder.from_file(temp.name)
 
+
 def test_get_cloudwatch_metric_file_aurora_mysql56() -> None:
-    config_builder = DriverConfigBuilder('us-east-2')
-    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
-        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+    config_builder = DriverConfigBuilder("us-east-2")
+    with patch("driver.driver_config_builder.get_db_version") as mocked_db_version:
+        with patch("driver.driver_config_builder.get_db_type") as mocked_db_type:
             mocked_db_type.return_value = "aurora_mysql"
             mocked_db_version.return_value = "5_6_mysql_aurora_1_22_2"
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/"
-                "rds_aurora_mysql-5_6.json"
+                "./driver/config/cloudwatch_metrics/" "rds_aurora_mysql-5_6.json"
             )
 
+
 def test_get_cloudwatch_metric_file_aurora_mysql57() -> None:
-    config_builder = DriverConfigBuilder('us-east-2')
-    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
-        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+    config_builder = DriverConfigBuilder("us-east-2")
+    with patch("driver.driver_config_builder.get_db_version") as mocked_db_version:
+        with patch("driver.driver_config_builder.get_db_type") as mocked_db_type:
             mocked_db_type.return_value = "aurora_mysql"
             mocked_db_version.return_value = "5_7_mysql_aurora_2_10_1"
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/"
-                "rds_aurora_mysql-5_7.json"
+                "./driver/config/cloudwatch_metrics/" "rds_aurora_mysql-5_7.json"
             )
 
+
 def test_get_cloudwatch_metric_file_aurora_postgres12() -> None:
-    config_builder = DriverConfigBuilder('us-east-2')
-    with patch('driver.driver_config_builder.get_db_version') as mocked_db_version:
-        with patch('driver.driver_config_builder.get_db_type') as mocked_db_type:
+    config_builder = DriverConfigBuilder("us-east-2")
+    with patch("driver.driver_config_builder.get_db_version") as mocked_db_version:
+        with patch("driver.driver_config_builder.get_db_type") as mocked_db_type:
             mocked_db_type.return_value = "aurora_postgresql"
             mocked_db_version.return_value = "12_6"
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/"
-                "rds_aurora_postgresql-12.json"
+                "./driver/config/cloudwatch_metrics/" "rds_aurora_postgresql-12.json"
             )
 
 

@@ -21,28 +21,39 @@ class ObservationType(Enum):
     QUERY = "query"
 
 
-S3_BUCKET_SHARING_ROLE = (
+OT_S3_BUCKET_SHARING_ROLE = (
     "arn:aws:iam::691523222388:role/CrossAccountS3BucketSharingRole"
 )
-BUCKET_NAME = "customer-database-observations"
+
+OT_BUCKET_NAME = "customer-database-observations"  # OtterTune S3 bucket name
 
 
 class S3Client:
     """S3 client that interacts with the OtterTune S3 bucket."""
 
-    def __init__(self, enable_s3, organization_id, api_key) -> None:
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        enable_s3,
+        aws_region,
+        organization_id,
+        db_key,
+        api_key,
+        s3_bucket_name=OT_BUCKET_NAME,
+    ) -> None:
         self._enable_s3 = enable_s3
+        self._aws_region = aws_region
         self._organization_id = organization_id
+        self._db_key = db_key
         self._api_key = api_key
+        self._s3_bucket_name = s3_bucket_name
 
-    @staticmethod
-    def get_s3_session():
-        """Get the S3 session."""
+    def get_s3_session():  # pylint: disable=no-method-argument
+        """Get the S3 session for operation in OtterTune S3 bucket."""
 
         session = boto3.Session()
         client = session.client("sts")
         resp = client.assume_role(
-            RoleArn=S3_BUCKET_SHARING_ROLE, RoleSessionName="s3", DurationSeconds=900
+            RoleArn=OT_S3_BUCKET_SHARING_ROLE, RoleSessionName="s3", DurationSeconds=900
         )
         creds = resp["Credentials"]
         session = boto3.Session(
@@ -62,12 +73,18 @@ class S3Client:
             ObservationType.LONG_RUNNING_QUERY.value,
             ObservationType.SCHEMA.value,
         ):
+            # Add headers to the compressed data
+            data["headers"]["Content-Type"] = "application/json; charset=utf-8"
+            data["headers"]["Content-Encoding"] = "gzip"
             compressed_data = zlib.compress(
                 json.dumps(data, default=str).encode("utf-8")
             )
             return compressed_data
 
-        serialized_data = json.dumps(data).encode("utf-8")
+        if obs_type.value == ObservationType.TABLE.value:
+            data["headers"]["Content-Type"] = "application/json"
+
+        serialized_data = json.dumps(data, default=str).encode("utf-8")
         return serialized_data
 
     def get_s3_bucket_object_key(self, obs_type: ObservationType):
@@ -89,7 +106,7 @@ class S3Client:
         else:
             object_key = "UNKNOWN/" + object_key
 
-        return self._organization_id + "/" + object_key
+        return self._organization_id + "/" + self._db_key + "/" + object_key
 
     def generate_headers(self):
         """Generate the headers for the S3 request."""
@@ -100,6 +117,19 @@ class S3Client:
         headers["AgentVersion"] = AGENT_VERSION
         return headers
 
+    def get_s3_client(self):
+        """Get the S3 client."""
+
+        if self._s3_bucket_name == OT_BUCKET_NAME:
+            # s3 client for OtterTune
+            s3_session = S3Client.get_s3_session()
+            s3_client = s3_session.client("s3")
+            return s3_client
+
+        # s3 client for customer
+        s3_client = boto3.client("s3", region_name=self._aws_region)
+        return s3_client
+
     def post_observation(self, data, obs_type: ObservationType) -> None:
         """Post the observation to S3."""
 
@@ -108,7 +138,8 @@ class S3Client:
 
         data["headers"] = self.generate_headers()
         object_key = self.get_s3_bucket_object_key(obs_type)
-        s3_session = self.get_s3_session()
-        s3_client = s3_session.client("s3")
+        s3_client = self.get_s3_client()
         processed_data = self.process_observation_data(data, obs_type)
-        s3_client.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=processed_data)
+        s3_client.put_object(
+            Bucket=self._s3_bucket_name, Key=object_key, Body=processed_data
+        )

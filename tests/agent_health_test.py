@@ -9,7 +9,7 @@ import responses
 from driver.agent_health_heartbeat import (
     add_error_to_global,
     construct_error_list_and_clear,
-    send_heartbeat
+    send_heartbeat,
 )
 from driver.driver_config import DriverConfigFactory
 
@@ -64,7 +64,9 @@ def test_heartbeat_without_errors():
         "agent_status": "ok",
         "agent_starttime": body["agent_starttime"],
         "heartbeat_time": body["heartbeat_time"],
-        "agent_version": agent_version, "errors": []}
+        "agent_version": agent_version,
+        "errors": [],
+    }
 
 
 @responses.activate
