@@ -35,7 +35,9 @@ ENV OTTERTUNE_AGENT_HEALTH_REPORT_INTERVAL="60"
 
 RUN   apt-get clean \
    && apt-get update \
-   && apt-get install -yq gcc musl-dev python3-dev libpq-dev g++
+   && apt-get install -yq gcc musl-dev python3-dev libpq-dev g++ \
+      dpkg/oldstable gzip/oldstable libtasn1-6/oldstable openssl/oldstable \
+      util-linux/oldstable
 RUN cp /usr/lib/ssl/openssl.cnf /usr/lib/ssl/openssl_cipher1.cnf && \
     sed -i "s/\(CipherString *= *\).*/\1DEFAULT@SECLEVEL=1 /" "/usr/lib/ssl/openssl_cipher1.cnf" && \
     sed -i "s/\(MinProtocol *= *\).*/\1TLSv1 /" "/usr/lib/ssl/openssl_cipher1.cnf"
