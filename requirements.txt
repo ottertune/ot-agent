@@ -17,3 +17,4 @@ Requests==2.31.0
 setuptools==65.5.1
 simplejson==3.19.1
 wheel==0.38.0
+pip==23.3.2
