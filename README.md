@@ -97,8 +97,9 @@ Once you've deployed the release, please update the fixture located in:
 [service/backend/settings/fixtures/agent_release.json](https://github.com/ottertune/service/blob/develop/backend/settings/fixtures/agent_release.json)
 
 Also update the agent helm chart:
-
 [agent-helm-chart/Chart.yaml](https://github.com/ottertune/agent-helm-chart/blob/main/Chart.yaml)
+Then create a release by [making one in the Github UI](https://github.com/ottertune/agent-helm-chart/releases/new)
+This will utomatically trigger a job to build and push images to support installing agent via Helm Chart
 
 Also update the documentation [here]( https://docs.ottertune.com/support/kb/articles/496D50mX/agent-upgrade) and [here](https://docs.ottertune.com/support/kb/articles/A93xgYW0/agent-setup) :
 
