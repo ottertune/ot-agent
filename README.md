@@ -8,8 +8,8 @@
 
 # Support / Documentation
 
-- Quick Start: https://docs.ottertune.com/#getting-started
-- Agent Setup: https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database/agent
+- Quick Start: https://docs.ottertune.com/support/kb/categories/amRZXxmJ/getting-started
+- Agent Setup: https://docs.ottertune.com/support/kb/articles/A93xgYW0/agent-setup
 - [Reach out on Slack!](https://join.slack.com/t/ottertune-community/shared_invite/zt-wr4gztk0-Sta_86xRQ6~o3WRpMvRlgA)
 
 ----
@@ -64,7 +64,7 @@ If you are using postgres you will need to set the `POSTGRES_OTTERTUNE_DB_NAME` 
 ```
 
 ## Permissions
-To collect metrics from the database, you need to [configure database settings](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database#configure-database-settings), and [grant permissions](https://docs.ottertune.com/info/connect-your-database-to-ottertune/add-database/guarded-public-access#create-the-database-user-and-grant-permissions-1) to the database user.
+To collect metrics from the database, you need to [configure database settings](https://docs.ottertune.com/support/kb/articles/wmjvaGmV/enabling-database-instances), and [grant permissions](https://docs.ottertune.com/support/kb/articles/j9bXRMmn/agent-database-permissions) to the database user.
 
 ## Makefile
 
@@ -77,9 +77,9 @@ To collect metrics from the database, you need to [configure database settings](
 | make docker [VERSION=0.1.0] | to build the docker image with provided tag (default: `ottertune/agent:0.1.0`).                                                                                                                                                                                                                                                                                              |
 | make publish                | builds the Docker image for `linux/amd64` and `linux/arm64`, then uploads the images to Dockerhub. To use, you must first run create a Docker builder using the following command:  ```bash docker buildx create --name mybuilder --use ```  `mybuilder` can be any name. You only need to run this command once; after which, you can run `make publish` whenever you want. |
 
-## Code Flow 
+## Code Flow
 
-A basic diagram showing the logic flow of different components: 
+A basic diagram showing the logic flow of different components:
 https://www.figma.com/file/SwvHqpya7BGBj9MHot6dGC/OT-Agent?node-id=0%3A1
 
 <img width="1295" alt="Screen Shot 2022-08-10 at 11 39 45 AM" src="https://user-images.githubusercontent.com/5196925/183947336-b0743c9e-2a75-4cfe-af4a-c81bbdecbd6f.png">
