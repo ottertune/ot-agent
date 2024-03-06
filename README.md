@@ -101,7 +101,7 @@ Also update the agent helm chart:
 Then create a release by [making one in the Github UI](https://github.com/ottertune/agent-helm-chart/releases/new)
 This will utomatically trigger a job to build and push images to support installing agent via Helm Chart
 
-Also update the documentation [here]( https://docs.ottertune.com/support/kb/articles/496D50mX/agent-upgrade) and [here](https://docs.ottertune.com/support/kb/articles/A93xgYW0/agent-setup) :
+Also update the documentation [here]( https://docs.ottertune.com/support/kb/articles/496D50mX/agent-upgrade) and [here](https://docs.ottertune.com/support/kb/articles/A93xgYW0/agent-setup)
 
 
 
