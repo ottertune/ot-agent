@@ -88,7 +88,7 @@ https://www.figma.com/file/SwvHqpya7BGBj9MHot6dGC/OT-Agent?node-id=0%3A1
 
 # Deploying a Release
 
-Make sure the value in the code for the agent version number is correct: https://github.com/ottertune/ot-agent/blob/main/driver/compute_server_client.py#L23
+Make sure the agent version number is correct: https://github.com/ottertune/ot-agent/blob/main/agent_version.py
 
 Create a release by [making one in the Github UI](https://github.com/ottertune/ot-agent/releases/new). This will automatically trigger a job to build and push images to public ECR and Dockerhub. Each version name is a two word alliteration of the form: Adjective Animal.
 
