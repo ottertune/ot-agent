@@ -302,8 +302,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_table_level_stats=args.disable_table_level_stats.lower()
                 == "true",
                 disable_index_stats=args.disable_index_stats.lower() == "true",
-                disable_long_running_query_monitoring=args.disable_long_running_query_monitoring.lower()
-                == "true",
+                disable_long_running_query_monitoring=\
+                    args.disable_long_running_query_monitoring.lower() == "true",
                 disable_query_monitoring=args.disable_query_monitoring.lower()
                 == "true",
                 disable_schema_monitoring=args.disable_schema_monitoring.lower()
@@ -351,7 +351,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
         """build config options from rds description of database"""
         config_from_rds = {
             "db_cluster_identifier": get_db_cluster_identifier(
-                db_instance_identifier, self.rds_clien
+                db_instance_identifier, self.rds_client
             ),
             "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
             "db_port": get_db_port(db_instance_identifier, self.rds_client),
@@ -426,8 +426,8 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     ) -> BaseDriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""
         metric_names = []
-        file_path, cluster_file_path = self._get_cloudwatch_metrics_file(
-            db_instance_identifier, False
+        cluster_file_path, file_path = self._get_cloudwatch_metrics_file(
+            db_instance_identifier
         )
         with open(file_path, "r", encoding="utf-8") as metrics_file:
             metrics = json.load(metrics_file)
