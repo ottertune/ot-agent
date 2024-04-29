@@ -45,8 +45,8 @@ def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> Non
 
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
-    # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
         scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
     )
 
@@ -64,12 +64,12 @@ def test_schedule_or_update_job_same_job_twice(
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
 
-    # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
         scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
     )
-    # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
         scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
     )
     # pyre-ignore - mocks used
