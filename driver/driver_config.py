@@ -15,6 +15,7 @@ class DriverConfig(NamedTuple):  # pylint: disable=too-many-instance-attributes
     aws_region: str  # AWS Region of Database and cloudwatch logs, required
 
     db_type: str  # Database type (mysql or postgres), required
+    db_cluster_identifier: str  # Database cluster identifier
     db_host: str  # Database host address, required
     db_port: int  # Database port, required
     db_version: str  # Database version number, key for what metrics to fetch, required
@@ -69,6 +70,7 @@ class DriverConfigFactory(factory.Factory):
     db_identifier = factory.Faker("pystr")
     aws_region = factory.Faker("pystr")
     db_type = factory.Faker("pystr")
+    db_cluster_identifier = factory.Faker("pystr")
     db_host = factory.Faker("pystr")
     db_port = factory.Faker("pyint")
     db_version = factory.Faker("pystr")

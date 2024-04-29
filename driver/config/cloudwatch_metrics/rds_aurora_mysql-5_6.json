@@ -181,5 +181,65 @@
 {
     "name": "WriteLatency",
     "description": "The average amount of time taken per disk I/O operation."
+},
+{
+    "Metric": "BinLogDiskUsage",
+    "Description": "The amount of disk space occupied by binary logs. If automatic backups are enabled for MySQL and MariaDB instances,\n including read replicas, binary logs are created."
+},
+{
+    "Metric": "CheckpointLag",
+    "Description": "The amount of time since the most recent checkpoint."
+},
+{
+    "Metric": "ConnectionAttempts",
+    "Description": "The number of attempts to connect to an instance, whether successful or not."
+},
+{
+    "Metric": "DiskQueueDepthLogVolume",
+    "Description": "The number of outstanding I/Os (read/write requests) waiting to access the log volume disk."
+},
+{
+    "Metric": "EBSByteBalance%",
+    "Description": "The percentage of throughput credits remaining in the burst bucket of your RDS database. This metric is available\n for basic monitoring only. \n The metric value is based on the throughput of all volumes, including the root volume, rather than on only those volumes containing database files.\n To find the instance sizes that support this metric, see the instance sizes with an asterisk (*) in the EBS optimized by default\n table in Amazon EC2 User Guide for Linux Instances. The Sum statistic is not applicable to this\n metric."
+},
+{
+    "Metric": "EBSIOBalance%",
+    "Description": "The percentage of I/O credits remaining in the burst bucket of your RDS database. This metric is available for basic\n monitoring only.\n The metric value is based on the IOPS of all volumes, including the root volume, rather than on only those volumes containing database files.\n To find the instance sizes that support this metric, see the instance sizes with an asterisk (*) in the EBS optimized by default\n table in Amazon EC2 User Guide for Linux Instances. The Sum statistic is not applicable to this\n metric.\n This metric is different from BurstBalance. To learn how to use this metric, see Improving application performance and reducing costs with Amazon EBS-Optimized Instance burst capability."
+},
+{
+    "Metric": "FailedSQLServerAgentJobsCount",
+    "Description": "The number of failed Microsoft SQL Server Agent jobs during the last minute."
+},
+{
+    "Metric": "FreeStorageSpaceLogVolume",
+    "Description": "The amount of available storage space on the log volume."
+},
+{
+    "Metric": "ReadIOPSLogVolume",
+    "Description": "The average number of disk read I/O operations per second for the log volume."
+},
+{
+    "Metric": "ReadLatencyLogVolume",
+    "Description": "The average amount of time taken per disk I/O operation for the log volume."
+},
+{
+    "Metric": "ReadThroughputLogVolume",
+    "Description": "The average number of bytes read from disk per second for the log volume."
+},
+{
+    "Metric": "ReplicationChannelLag",
+    "Description": "For multi-source replica configurations, the amount of time a particular channel on the multi-source replica lags behind \n the source DB instance. For more information, see Monitoring multi-source replication channels."
+},
+{
+    "Metric": "WriteIOPSLogVolume",
+    "Description": "The average number of disk write I/O operations per second for the log volume."
+},
+{
+    "Metric": "WriteLatencyLogVolume",
+    "Description": "The average amount of time taken per disk I/O operation for the log volume."
+},
+{
+    "Metric": "WriteThroughputLogVolume",
+    "Description": "The average number of bytes written to disk per second for the log volume."
 }
 ]

@@ -73,6 +73,7 @@ def _get_driver_conf(
     conf = {
         "db_user": mysql_user,
         "db_password": mysql_password,
+        "db_cluster_identifier": "",
         "db_host": mysql_host,
         "db_port": mysql_port,
         "db_name": mysql_database,

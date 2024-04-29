@@ -53,6 +53,7 @@ def _get_driver_conf(
     conf = {
         "db_user": pg_user,
         "db_password": pg_password,
+        "db_cluster_identifier": "",
         "db_host": pg_host,
         "db_port": pg_port,
         "db_name": pg_database,

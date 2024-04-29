@@ -64,6 +64,25 @@ def get_db_hostname(db_instance_identifier: str, client: RDSClient) -> str:
     return instance_info["Endpoint"]["Address"]
 
 
+def get_db_cluster_identifier(db_instance_identifier: str, client: RDSClient) -> str:
+    """
+    Get the cluster identifier for the given db instance if it's a member of a cluster
+    Returns:
+        The DBInstance object returned by AWS
+    Raises:
+        botocore.exceptions.ClientError: If we receive an error from AWS
+        InvalidCustomerSettingsError: If customer supplied an invalid db_instance_identifier
+        InvalidPermissionError: If it's not allowed to describe db instances
+        DBInstanceNotFound: If the database instance is not found
+    """
+    instance_info = get_db_instance_info(db_instance_identifier, client)
+    return (
+        instance_info["DBClusterIdentifier"]
+        if "DBClusterIdentifier" in instance_info
+        else ""
+    )
+
+
 def get_db_port(db_instance_identifier: str, client: RDSClient) -> str:
     """
     Ensures that we can connect to the target AWS RDS instance by calling describe_db_instances.
