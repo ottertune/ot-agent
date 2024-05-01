@@ -30,6 +30,7 @@ def _test_config_data() -> Dict[str, Any]:
         "server_http_proxy": "test_server_http_proxy",
         "server_https_proxy": "test_server_https_proxy",
         "db_type": "mysql",
+        "db_cluster_identifier": "test_cluster_identifier",
         "db_host": "test_host",
         "db_port": 3306,
         "db_user": "test_user",
@@ -67,6 +68,7 @@ def _test_config_data() -> Dict[str, Any]:
 
     partial_config_from_rds: Dict[str, Any] = {
         "db_type": "mysql",
+        "db_cluster_identifier": "test_cluster_identifier",
         "db_host": "test_host",
         "db_port": 3306,
         "db_version": "14_2",
@@ -149,6 +151,7 @@ def test_partial_config_from_rds_success(test_config_data: Dict[str, Any]) -> No
     test_data_from_rds = test_config_data["rds"]
     partial_config = PartialConfigFromRDS(**test_data_from_rds)
     assert partial_config.db_type == "mysql"
+    assert partial_config.db_cluster_identifier == "test_cluster_identifier"
     assert partial_config.db_host == "test_host"
     assert partial_config.db_port == 3306
     assert partial_config.db_version == "14_2"
@@ -204,7 +207,8 @@ def test_get_cloudwatch_metric_file_aurora_mysql56() -> None:
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/" "rds_aurora_mysql-5_6.json"
+                ("./driver/config/cloudwatch_metrics_cluster/rds_aurora_mysql-5_6.json"),
+                ("./driver/config/cloudwatch_metrics/rds_aurora_mysql-5_6.json")
             )
 
 
@@ -217,7 +221,8 @@ def test_get_cloudwatch_metric_file_aurora_mysql57() -> None:
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/" "rds_aurora_mysql-5_7.json"
+                ("./driver/config/cloudwatch_metrics_cluster/rds_aurora_mysql-5_7.json"),
+                ("./driver/config/cloudwatch_metrics/rds_aurora_mysql-5_7.json")
             )
 
 
@@ -230,7 +235,8 @@ def test_get_cloudwatch_metric_file_aurora_postgres12() -> None:
             # pylint: disable=protected-access
             file_path = config_builder._get_cloudwatch_metrics_file("")
             assert file_path == (
-                "./driver/config/cloudwatch_metrics/" "rds_aurora_postgresql-12.json"
+                ("./driver/config/cloudwatch_metrics_cluster/rds_aurora_postgresql-12.json"),
+                ("./driver/config/cloudwatch_metrics/rds_aurora_postgresql-12.json"),
             )
 
 

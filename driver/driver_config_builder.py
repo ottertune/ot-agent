@@ -22,6 +22,7 @@ from driver.aws.rds import (
     get_db_version,
     get_db_port,
     get_db_hostname,
+    get_db_cluster_identifier,
     get_db_type,
     get_db_non_default_parameters,
 )
@@ -233,6 +234,7 @@ class PartialConfigFromRDS(  # pyre-ignore[13]: pydantic uninitialized variables
     Such options are part of the complete driver options (defined in DriverConfig).
     """
 
+    db_cluster_identifier: StrictStr
     db_host: StrictStr
     db_port: StrictInt
     db_version: StrictStr
@@ -300,7 +302,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                 disable_table_level_stats=args.disable_table_level_stats.lower()
                 == "true",
                 disable_index_stats=args.disable_index_stats.lower() == "true",
-                disable_long_running_query_monitoring=
+                disable_long_running_query_monitoring=\
                     args.disable_long_running_query_monitoring.lower() == "true",
                 disable_query_monitoring=args.disable_query_monitoring.lower()
                 == "true",
@@ -348,6 +350,9 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
     def from_rds(self, db_instance_identifier) -> BaseDriverConfigBuilder:
         """build config options from rds description of database"""
         config_from_rds = {
+            "db_cluster_identifier": get_db_cluster_identifier(
+                db_instance_identifier, self.rds_client
+            ),
             "db_host": get_db_hostname(db_instance_identifier, self.rds_client),
             "db_port": get_db_port(db_instance_identifier, self.rds_client),
             "db_version": get_db_version(db_instance_identifier, self.rds_client),
@@ -409,22 +414,39 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
                     release, major = db_version.split("_")
                 db_version = f"{release}_{major}"
 
+        cluster_folder_path = "./driver/config/cloudwatch_metrics_cluster"
         folder_path = "./driver/config/cloudwatch_metrics"
-        return f"{folder_path}/rds_{db_type}-{db_version}.json"
+        return (
+            f"{cluster_folder_path}/rds_{db_type}-{db_version}.json",
+            f"{folder_path}/rds_{db_type}-{db_version}.json",
+        )
 
     def from_cloudwatch_metrics(
         self, db_instance_identifier
     ) -> BaseDriverConfigBuilder:
         """Build config options from cloudwatch metrics configurations"""
         metric_names = []
-        file_path = self._get_cloudwatch_metrics_file(db_instance_identifier)
+        cluster_file_path, file_path = self._get_cloudwatch_metrics_file(
+            db_instance_identifier
+        )
         with open(file_path, "r", encoding="utf-8") as metrics_file:
             metrics = json.load(metrics_file)
             for metric in metrics:
                 metric_names.append(metric["name"])
 
+        cluster_metric_names = []
+        with open(cluster_file_path, "r", encoding="utf-8") as metrics_file:
+            metrics = json.load(metrics_file)
+            for metric in metrics:
+                cluster_metric_names.append(metric["name"])
+
         self.config.update(
-            {"metrics_to_retrieve_from_source": {"cloudwatch": metric_names}}
+            {
+                "metrics_to_retrieve_from_source": {
+                    "cloudwatch": metric_names,
+                    "cloudwatch_cluster": cluster_metric_names,
+                }
+            }
         )
         return self
 
@@ -442,6 +464,7 @@ class DriverConfigBuilder(BaseDriverConfigBuilder):
             {
                 "db_type": "placeholder_db_type",
                 "db_host": "placeholder_db_host",
+                "db_cluster_identifier": "placeholder_db_cluster_identifier",
                 "db_port": 0,
                 "db_version": "placeholder_db_version",
                 "db_name": "placeholder_db_name",

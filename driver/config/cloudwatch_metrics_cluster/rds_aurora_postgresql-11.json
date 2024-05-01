@@ -1,0 +1,62 @@
+[
+	{
+		"Metric": "AuroraGlobalDBDataTransferBytes",
+		"Description": "In an Aurora Global Database, the amount of redo log data transferred from the master AWS\n                Region to a secondary AWS Region.\n            NoteThis metric is available only in secondary AWS Region."
+	},
+	{
+		"Metric": "AuroraGlobalDBProgressLag",
+		"Description": "In an Aurora Global Database, the measure of how far the secondary cluster is behind the primary\n                cluster for both user transactions and system transactions.\n            NoteThis metric is available only in secondary AWS Region."
+	},
+	{
+		"Metric": "AuroraGlobalDBReplicatedWriteIO",
+		"Description": "In an Aurora Global Database, the number of write I/O operations replicated from the primary\n                AWS Region to the cluster volume in a secondary AWS Region. The billing calculations for the\n                secondary AWS Regions in a global database use VolumeWriteIOPs to account for\n                writes performed within the cluster. The billing calculations for the primary AWS Region in a\n                global database use VolumeWriteIOPs to account for the write activity within that\n                cluster, and AuroraGlobalDBReplicatedWriteIO to account for cross-Region replication\n                within the global database.\n            NoteThis metric is available only in secondary AWS Region."
+	},
+	{
+		"Metric": "AuroraGlobalDBReplicationLag",
+		"Description": "For an Aurora Global Database, the amount of lag when replicating updates from the primary AWS\n                Region.\n            NoteThis metric is available only in secondary AWS Region."
+	},
+	{
+		"Metric": "AuroraGlobalDBRPOLag",
+		"Description": "In an Aurora Global Database, the recovery point objective (RPO) lag time. This metric measures\n                how far the secondary cluster is behind the primary cluster for user transactions.\n            NoteThis metric is available only in secondary AWS Region."
+	},
+	{
+		"Metric": "AuroraVolumeBytesLeftTotal",
+		"Description": "The remaining available space for the cluster volume. As the cluster volume grows, this value decreases. If it\n                reaches zero, the cluster reports an out-of-space error.\n            If you want to detect whether your Aurora MySQL cluster is approaching the size limit of\n                128 tebibytes (TiB), this value is simpler and more reliable to monitor than VolumeBytesUsed.\n                    AuroraVolumeBytesLeftTotal takes into account storage used for internal housekeeping and other\n                allocations that don't affect your storage billing."
+	},
+	{
+		"Metric": "BacktrackChangeRecordsCreationRate",
+		"Description": "The number of backtrack change records created over 5 minutes for your DB cluster."
+	},
+	{
+		"Metric": "BacktrackChangeRecordsStored",
+		"Description": "The number of backtrack change records used by your DB cluster."
+	},
+	{
+		"Metric": "BackupRetentionPeriodStorageUsed",
+		"Description": "The total amount of backup storage used to support the point-in-time restore feature within the\n                Aurora DB cluster's backup retention window. This amount is included in the total reported by the\n                    TotalBackupStorageBilled metric. It is computed separately for each Aurora\n                cluster. For instructions, see Understanding Amazon Aurora backup storage usage."
+	},
+	{
+		"Metric": "ServerlessDatabaseCapacity",
+		"Description": "The current capacity of an Aurora Serverless DB cluster."
+	},
+	{
+		"Metric": "SnapshotStorageUsed",
+		"Description": "The total amount of backup storage consumed by all Aurora snapshots for an Aurora DB cluster\n                outside its backup retention window. This amount is included in the total reported by the\n                    TotalBackupStorageBilled metric. It is computed separately for each Aurora\n                cluster. For instructions, see Understanding Amazon Aurora backup storage usage."
+	},
+	{
+		"Metric": "TotalBackupStorageBilled",
+		"Description": "The total amount of backup storage in bytes for which you are billed for a given Aurora DB\n                cluster. The metric includes the backup storage measured by the\n                    BackupRetentionPeriodStorageUsed and SnapshotStorageUsed metrics.\n                This metric is computed separately for each Aurora cluster. For instructions, see Understanding Amazon Aurora backup storage usage."
+	},
+	{
+		"Metric": "VolumeBytesUsed",
+		"Description": "The amount of storage used by your Aurora DB cluster.\n            This value affects the cost of the Aurora DB cluster (for pricing information, see the Amazon RDS pricing page).\n             This value doesn't reflect some internal storage allocations that don't affect\n                storage billing. For Aurora MySQL you can anticipate out-of-space issues more accurately by testing whether\n                    AuroraVolumeBytesLeftTotal is approaching zero instead of comparing\n                    VolumeBytesUsed against the storage limit of 128 TiB.\n            For clusters that are clones, the value of this metric depends on the amount of data added\n                or changed on the clone. The metric can also increase or decrease when the original cluster\n                is deleted, or as new clones are added or deleted. For details, see Deleting a source cluster volume"
+	},
+	{
+		"Metric": "VolumeReadIOPs",
+		"Description": "The number of billed read I/O operations from a cluster volume within a 5-minute\n                interval.\n            Billed read operations are calculated at the cluster volume level, aggregated from all\n                instances in the Aurora DB cluster, and then reported at 5-minute intervals. The value is\n                calculated by taking the value of the Read operations metric\n                over a 5-minute period. You can determine the amount of billed read operations per second by\n                taking the value of the Billed read operations metric and\n                dividing by 300 seconds. For example, if the Billed read\n                    operations returns 13,686, then the billed read operations per second is 45\n                (13,686 / 300 = 45.62). \n            You accrue billed read operations for queries that request database pages that aren't in\n                the buffer cache and must be loaded from storage. You might see spikes in billed read operations\n                as query results are read from storage and then loaded into the buffer cache.\n            Tip If your Aurora MySQL cluster uses parallel query, you might see an increase in\n                        VolumeReadIOPS values. Parallel queries don't use the buffer pool.\n                    Thus, although the queries are fast, this optimized processing can result in an increase in\n                    read operations and associated charges."
+	},
+	{
+		"Metric": "VolumeWriteIOPs",
+		"Description": "The number of write disk I/O operations to the cluster volume, reported at 5-minute intervals.\n                For a detailed description of how billed write operations are calculated, see\n                    VolumeReadIOPs."
+	}
+]

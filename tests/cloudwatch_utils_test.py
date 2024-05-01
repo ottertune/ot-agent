@@ -93,8 +93,10 @@ def _mock_cloudwatch_client() -> MagicMock:
 def test_get_metrics(mock_cloudwatch_client: MagicMock) -> None:
     metrics = _get_metrics_from_cloudwatch(
         "db_id",
+        "",
         mock_cloudwatch_client,
         ["WriteIOPS", "CPUUtilization", "ReplicaLag", "CPUCreditUsage"],
+        [],
         UTC_NOW,
     )
 

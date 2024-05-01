@@ -18,20 +18,26 @@ def _prepare_for_cloudwatch(driver_conf: Dict[str, Any]) -> Dict[str, Any]:
     can collect data from cloudwatch"""
     preparations: Dict[str, Any] = {}
     preparations["db_identifier"] = driver_conf["db_identifier"]
+    preparations["db_cluster_identifier"] = driver_conf["db_cluster_identifier"]
     preparations["client"] = AwsWrapper.cloudwatch_client(
         region_name=driver_conf["aws_region"]
     )
     preparations["metrics_to_retrieve"] = driver_conf[
         "metrics_to_retrieve_from_source"
     ]["cloudwatch"]
+    preparations["metrics_to_retrieve_cluster"] = driver_conf[
+        "metrics_to_retrieve_from_source"
+    ]["cloudwatch_cluster"]
     preparations["now_time"] = datetime.utcnow()
     return preparations
 
 
 def _get_metrics_from_cloudwatch(
     db_identifier: str,
+    db_cluster_identifier: str,
     client: CloudWatchClient,
     metrics_to_retrieve: List[str],
+    metrics_to_retrieve_cluster: List[str],
     now_time: datetime,
     query_window_in_seconds: int = 600,
 ) -> Dict[str, Any]:
@@ -67,6 +73,27 @@ def _get_metrics_from_cloudwatch(
                 },
             },
         )
+    if db_cluster_identifier:
+        for metric in metrics_to_retrieve_cluster:
+            queries.append(
+                {
+                    "Id": f"id_{metric}",
+                    "MetricStat": {
+                        "Metric": {
+                            "Namespace": "AWS/RDS",
+                            "MetricName": metric,
+                            "Dimensions": [
+                                {
+                                    "Name": "DBClusterIdentifier",
+                                    "Value": db_cluster_identifier,
+                                },
+                            ],
+                        },
+                        "Period": 60,
+                        "Stat": "Average",
+                    },
+                },
+            )
     try:
         response = client.get_metric_data(
             MetricDataQueries=queries,

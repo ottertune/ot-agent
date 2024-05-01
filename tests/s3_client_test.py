@@ -81,7 +81,9 @@ def test_process_observation_data() -> None:
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
-    assert observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    assert (
+        observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    )
     assert observation_data["headers"]["Content-Encoding"] == "gzip"
 
     observation_data["headers"] = client.generate_headers()
@@ -91,7 +93,9 @@ def test_process_observation_data() -> None:
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
-    assert observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    assert (
+        observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    )
     assert observation_data["headers"]["Content-Encoding"] == "gzip"
 
     observation_data["headers"] = client.generate_headers()
@@ -101,7 +105,9 @@ def test_process_observation_data() -> None:
     decompressed_data = zlib.decompress(processed_observation_data).decode("utf-8")
     assert isinstance(processed_observation_data, bytes), True
     assert decompressed_data, json.dumps(observation_data, default=str)
-    assert observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    assert (
+        observation_data["headers"]["Content-Type"] == "application/json; charset=utf-8"
+    )
     assert observation_data["headers"]["Content-Encoding"] == "gzip"
 
     observation_data["headers"] = client.generate_headers()

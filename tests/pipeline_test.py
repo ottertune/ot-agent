@@ -4,8 +4,11 @@
 from apscheduler.schedulers.background import BlockingScheduler
 import mock
 
-from driver.pipeline import DB_LEVEL_MONITOR_JOB_ID, TABLE_LEVEL_MONITOR_JOB_ID, \
-    SCHEMA_MONITOR_JOB_ID
+from driver.pipeline import (
+    DB_LEVEL_MONITOR_JOB_ID,
+    TABLE_LEVEL_MONITOR_JOB_ID,
+    SCHEMA_MONITOR_JOB_ID,
+)
 
 
 import driver.pipeline as module_under_test
@@ -16,7 +19,7 @@ import driver.pipeline as module_under_test
 # pylint: disable=protected-access
 
 
-class MockConfig: # pylint: disable=too-many-instance-attributes
+class MockConfig:  # pylint: disable=too-many-instance-attributes
     """Quick mock for testing pipeline code"""
 
     def __init__(self) -> None:
@@ -42,8 +45,10 @@ def test_schedule_or_update_job_cloud(pipeline_function_patch: mock.Mock) -> Non
 
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
-    # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
+    module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
+        scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
+    )
 
 
 @mock.patch("driver.pipeline.driver_pipeline")
@@ -59,9 +64,13 @@ def test_schedule_or_update_job_same_job_twice(
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, DB_LEVEL_MONITOR_JOB_ID)
 
-    # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
-    # pyre-ignore - mocks used
-    module_under_test.schedule_or_update_job(scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID)
+    module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
+        scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
+    )
+    module_under_test.schedule_or_update_job(
+        # pyre-ignore - mocks used
+        scheduler, config, TABLE_LEVEL_MONITOR_JOB_ID
+    )
     # pyre-ignore - mocks used
     module_under_test.schedule_or_update_job(scheduler, config, SCHEMA_MONITOR_JOB_ID)
